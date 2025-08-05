@@ -55,7 +55,6 @@ const ReservasEspacio = () => {
                     />
                 </div>
             </main>
-
             <Footer />
         </div>
     );

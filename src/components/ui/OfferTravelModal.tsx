@@ -36,7 +36,7 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit }) => {
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center px-4">
-            <div className="bg-[#FAFAF0] w-full max-w-lg rounded-xl shadow-xl relative p-6">
+            <div className="bg-white w-full max-w-lg rounded-xl shadow-xl relative p-6">
                 {/* Botón cerrar */}
                 <button
                     className="absolute top-3 right-4 text-gray-500 hover:text-black text-xl"

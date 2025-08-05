@@ -1,4 +1,3 @@
-import { Utensils, Dumbbell, Users, Dribbble, BadgePercent, Landmark } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import NavMenu from '@/components/NavMenu';
@@ -15,13 +14,10 @@ const AsociacionMosquitos = () => {
                     Historia e información sobre nuestra peña
                 </p>
                 <div>
-
                     
                 </div>
-
                 
             </main>
-
             <Footer />
         </div>
     );
