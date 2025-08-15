@@ -39,14 +39,16 @@ const EventModal: FC<EventModalProps> = ({ onClose, event }) => {
                 <p className="text-sm text-gray-600 mb-4">{event.location}</p>
 
                 <form className="space-y-3" onSubmit={handleSubmit}>
+                    <label className="text-sm text-gray-700 block mb-1">Nombre</label>
                     <Input
-                        placeholder="Tu nombre"
+                        placeholder="nombre"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                     />
+                    
+                    <label className="text-sm text-gray-700 block mb-1">Número de asistentes</label>
                     <Input
                         type="number"
-                        placeholder="Número de personas"
                         value={peopleCount.toString()}
                         onChange={(e) => setPeopleCount(Number(e.target.value))}
                     />

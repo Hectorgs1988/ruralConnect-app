@@ -48,6 +48,13 @@ const Inicio: FC = () => {
                         buttonText="Ver Viajes Disponibles"
                         href="/CompartirCoche"
                     />
+                    <ActionCard
+                        icon=""
+                        title="La asociación"
+                        description="Descubre la asociación Los mosquitos"
+                        buttonText="Los mosquitos"
+                        href="/AsociacionMosquitos"
+                    />
                 </div>
 
                 <div className="bg-white rounded-xl p-4 shadow w-full max-w-6xl mx-auto">

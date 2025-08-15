@@ -5,6 +5,7 @@ interface ReservationCardProps {
     icon: ReactElement;
     capacity: string;
     description: string;
+    onClick?: () => void;
 }
 
 const ReservationCard: FC<ReservationCardProps> = ({
@@ -12,9 +13,14 @@ const ReservationCard: FC<ReservationCardProps> = ({
     icon,
     capacity,
     description,
+    onClick,
 }) => {
     return (
-        <div className="bg-white p-4 rounded-lg shadow flex flex-col gap-2 h-full">
+        <div onClick={onClick} 
+        className="bg-white p-4 rounded-lg shadow flex flex-col gap-2 h-full"
+        role={onClick ? "button" : undefined}
+        tabIndex={onClick ? 0 : -1}
+        >
             <div className="flex items-center gap-2 text-xl font-semibold">
                 {icon}
                 {title}

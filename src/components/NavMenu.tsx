@@ -11,9 +11,9 @@ const NavMenu = () => {
 
     const navItems = [
         { to: '/inicio', label: 'Inicio' },
-        { to: '/ReservarEspacio', label: 'ReservarEspacio' },
-        { to: '/CompartirCoche', label: 'CompartirCoche' },
-        { to: '/AsociacionMosquitos', label: 'AsociacionMosquitos' },
+        { to: '/ReservarEspacio', label: 'Reservar Espacio' },
+        { to: '/CompartirCoche', label: 'Compartir Coche' },
+        { to: '/AsociacionMosquitos', label: 'Asociacion Los Mosquitos' },
     ];
 
     return (
