@@ -1,0 +1,81 @@
+// server/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  SOCIO
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  phone     String?
+  role      Role     @default(SOCIO)
+  createdAt DateTime @default(now())
+
+  Reservas Reserva[]
+  Viajes   Viaje[]         @relation("Conductor")
+  Pasajes  PasajeroViaje[]
+}
+
+model Espacio {
+  id       String    @id @default(cuid())
+  nombre   String
+  tipo     String
+  aforo    Int?
+  Reservas Reserva[]
+
+  @@index([nombre])
+}
+
+model Reserva {
+  id        String   @id @default(cuid())
+  usuarioId String
+  espacioId String
+  fecha     DateTime
+  inicio    DateTime
+  fin       DateTime
+  estado    String   @default("CONFIRMADA")
+
+  User    User    @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  Espacio Espacio @relation(fields: [espacioId], references: [id], onDelete: Cascade)
+
+  @@index([espacioId, inicio, fin])
+}
+
+model Viaje {
+  id          String   @id @default(cuid())
+  conductorId String
+  from        String
+  to          String
+  fecha       DateTime
+  plazas      Int
+  notas       String?
+
+  Conductor User            @relation("Conductor", fields: [conductorId], references: [id], onDelete: Cascade)
+  Pasajeros PasajeroViaje[]
+
+  @@index([fecha])
+}
+
+model PasajeroViaje {
+  id      String @id @default(cuid())
+  viajeId String
+  userId  String
+
+  Viaje Viaje @relation(fields: [viajeId], references: [id], onDelete: Cascade)
+  User  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([viajeId, userId])
+}
