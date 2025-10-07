@@ -7,9 +7,12 @@ import Footer from '@/components/Footer';
 import NavMenu from '@/components/NavMenu';
 import OfferTravelModal from '@/components/ui/OfferTravelModal';
 import Button from '@/components/ui/button';
+import JoinTripModal from '@/components/ui/JoinTripModal';
 
 const CompartirCoche = () => {
     const [showModal, setShowModal] = useState(false);
+    const [showJoinModal, setShowJoinModal] = useState(false);
+    const [selectedTravel, setSelectedTravel] = useState<Travel | null>(null);
     const [travels, setTravels] = useState([
         {
             name: "Pedro García",
@@ -27,6 +30,12 @@ const CompartirCoche = () => {
         setTravels((prev) => [...prev, newTravel]);
         setShowModal(false);
     };
+
+    const openJoin = (travel: Travel) => {
+        setSelectedTravel(travel);
+        setShowJoinModal(true);
+    };
+
 
     return (
         <div className="min-h-screen bg-background text-black flex flex-col">

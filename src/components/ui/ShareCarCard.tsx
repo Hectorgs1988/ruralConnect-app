@@ -1,4 +1,4 @@
-import type { FC } from "react";
+import { useState, type FC } from "react";
 import Button from '@/components/ui/button';
 import { Phone, Calendar, MapPin, UsersRound } from "lucide-react";
 
@@ -11,6 +11,7 @@ interface ShareCarCardProps {
     time: string;
     phone: string;
     occupancy: string;
+    onJoin?: () => void;
 }
 
 const ShareCarCard: FC<ShareCarCardProps> = ({
@@ -22,6 +23,7 @@ const ShareCarCard: FC<ShareCarCardProps> = ({
     time,
     phone,
     occupancy,
+    onJoin,
 }) => {
     return (
         <div className="bg-white rounded-lg shadow-md p-4 w-full max-w-sm">
@@ -42,7 +44,7 @@ const ShareCarCard: FC<ShareCarCardProps> = ({
                 <span className="text-sm flex items-center gap-1">
                     <UsersRound size={16} /> {occupancy}
                 </span>
-                <Button type="submit" className="text-sm px-4 py-1 rounded font-medium">Unirse</Button>
+                <Button type="submit" className="text-sm px-4 py-1 rounded font-medium" onClick={onJoin}>Unirse</Button>
             </div>
         </div>
     );
