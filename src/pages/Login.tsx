@@ -61,9 +61,7 @@ const Login = () => {
       <p className="text-sm text-gray-500">© 2025 desde Susinos del Páramo con amor</p>
 
       {/* Modal para recuperar la contraseña*/}
-      {showRecoverModal && (
-        <RecoverPasswordModal onClose={() => setShowRecoverModal(false)} />
-      )}
+      {showRecoverModal && (<RecoverPasswordModal onClose={() => setShowRecoverModal(false)} />)}
     </div>
   );
 };
