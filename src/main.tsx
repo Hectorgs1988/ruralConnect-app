@@ -6,10 +6,13 @@ import router from './routes'
 import './index.css'
 // @ts-ignore
 import '@fontsource/inter';
+import { AuthProvider } from "@/context/AuthContext";
 
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
   </React.StrictMode>
-)
+);
