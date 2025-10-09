@@ -23,6 +23,7 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
 
+    /* 👇 Alias para imports */
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
