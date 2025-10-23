@@ -1,28 +1,39 @@
-// Tipo que usa TU CARD (vista)
+// Tipo de la CARD (front/UI)
 export interface Travel {
-    id: string;            // 👈 añadido para poder unirse/salir
-    name: string;
-    car: string;
+    id: string;
+
+    // datos para mostrar
+    name: string;           // lo sacas de Conductor.name o "Tú u otro socio"
+    car: string;            // de momento texto fijo en UI
     from: string;
     to: string;
-    date: string;          // "YYYY-MM-DD"
-    time: string;          // "HH:mm"
-    phone: string;
-    occupancy: string;     // "2/4 plazas"
-    description?: string;
-    joined?: boolean;      // 👈 si el user ya está dentro
-    isDriver?: boolean;    // 👈 si el user es el conductor
+    date: string;           // "YYYY-MM-DD" (derivado de fecha ISO)
+    time: string;           // "HH:mm"       (derivado de fecha ISO)
+    phone: string;          // aún no de backend
+    occupancy: string;      // "1/3 plazas" (calculado con Pasajeros.length / plazas)
+    description?: string;   // mapeado desde notas
+
+    // flags calculados en el front
+    joined?: boolean;       // si el usuario ya es pasajero
+    isDriver?: boolean;     // si el usuario es el conductor
 }
 
 // Tipo que devuelve el BACKEND (ajústalo si tu API difiere)
-export type Viaje = {
+export interface Viaje {
     id: string;
     conductorId: string;
     from: string;
     to: string;
-    fecha: string;     // ISO
+    fecha: string;          // ISO (DateTime de Prisma serializado)
     plazas: number;
     notas?: string | null;
-    // si tu GET /api/viajes incluye relaciones:
-    Pasajeros?: { userId: string }[];
-};
+    estado: 'ABIERTO' | 'COMPLETO' | 'CANCELADO';
+
+    // relaciones si las incluyes en el GET
+    Pasajeros?: Array<{ userId: string }>;
+    Conductor?: { id: string; name: string };
+
+    // meta, por si lo necesitas
+    createdAt?: string;
+    updatedAt?: string;
+}

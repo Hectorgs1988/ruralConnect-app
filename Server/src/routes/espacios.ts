@@ -16,9 +16,24 @@ espaciosRouter.get('/', async (_req, res, next) => {
 espaciosRouter.post('/', async (req, res, next) => {
     try {
         const body = createEspacioSchema.parse(req.body);
-        const espacio = await prisma.espacio.create({ data: body });
+
+        const espacio = await prisma.espacio.create({
+            data: {
+                nombre: body.nombre,
+                tipo: body.tipo,
+                aforo: body.aforo ?? null,
+                descripcion: body.descripcion ?? null,
+            },
+        });
+
         res.status(201).json(espacio);
-    } catch (e) { next(e); }
+    } catch (e: any) {
+        // capturar UNIQUE nombre (P2002)
+        if (e?.code === 'P2002') {
+            return res.status(409).json({ error: 'Ya existe un espacio con ese nombre' });
+        }
+        next(e);
+    }
 });
 
 // DELETE /api/espacios/:id

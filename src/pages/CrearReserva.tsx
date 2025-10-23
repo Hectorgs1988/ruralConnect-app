@@ -171,10 +171,10 @@ export default function CrearReserva() {
                 body: JSON.stringify({
                     usuarioId: USER_ID,
                     espacioId: espacio.id,
-                    fecha,
+                    //fecha,
                     inicio: inicioIso,
                     fin: finIso,
-                    // motivo: se mantiene en UI; si deseas guardarlo, añadimos columna en Prisma y lo enviamos aquí
+                    // motivo: Abra que añadirlo en algun momento
                 }),
             });
 
