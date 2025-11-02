@@ -12,14 +12,14 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [showRecoverModal, setShowRecoverModal] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth(); // ← cuando conectes con backend
+  const { login } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
     try {
-      const user = await login(username, password); // haz que login devuelva el user
+      const user = await login(username, password);
       navigate(user.role === "ADMIN" ? "/PanelAdmin" : "/inicio", { replace: true });
     } catch (err: any) {
       setError(err?.message ?? "Usuario o contraseña incorrectos");
@@ -28,9 +28,9 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-background px-4">
-      <img src="src/assets/susinosLogo.png" alt="Logo" className="mb-6 w-24 h-24" />
+      <img src="src/assets/RuralConnect.png" alt="Logo" className="mb-1 w-44 h-44" />
       <h1 className="text-2xl font-semibold text-center mb-4">
-        Bienvenido a la peña <br /> Los Mosquitos
+        Bienvenido a Rural Connect <br />
       </h1>
 
       <form onSubmit={handleLogin} className="bg-white p-6 rounded-lg shadow-md w-full max-w-sm">

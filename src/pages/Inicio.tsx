@@ -26,7 +26,7 @@ const Inicio: FC = () => {
 
             <main className="flex-1 px-4 md:px-10 mt-6">
                 <h1 className="text-center text-2xl md:text-3xl font-bold mb-2">
-                    Bienvenido a la asociación "Los Mosquitos"
+                    Bienvenido a Rural Connect
                 </h1>
                 <p className="text-center text-sm md:text-base text-muted-foreground mb-8">
                     Reserva espacios, consulta todas las actividades de la peña,

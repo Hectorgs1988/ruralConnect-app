@@ -7,7 +7,6 @@ import Button from "@/components/ui/button";
 import DayTimeline from "@/components/ui/DayTimeline";
 import type { Espacio } from "@/types/Espacio";
 
-const USER_ID = "1"; // TODO: tomar del JWT cuando haya auth
 type LocationState = { espacio: Espacio };
 
 const STEP_MIN = 30;
@@ -165,11 +164,22 @@ export default function CrearReserva() {
 
         setLoading(true);
         try {
+            //const token = localStorage.getItem('token');
+            let token: string | null = null;
+            const raw = localStorage.getItem('auth');
+            if (raw) {
+                try {
+                    const parsed = JSON.parse(raw);
+                    token = typeof parsed?.token === 'string' ? parsed.token : null;
+                } catch { /* ignore */ }
+            }
             const res = await fetch("/api/reservas", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
                 body: JSON.stringify({
-                    usuarioId: USER_ID,
                     espacioId: espacio.id,
                     //fecha,
                     inicio: inicioIso,

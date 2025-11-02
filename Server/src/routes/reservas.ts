@@ -1,10 +1,8 @@
 // Server/src/routes/reservas.ts
 import { Router } from "express";
 import { prisma } from "../db/prisma.js";
-import {
-    createReservaSchema,
-    listReservasQuerySchema,
-} from "../schemas/reservas.js";
+import { createReservaSchema, listReservasQuerySchema, } from "../schemas/reservas.js";
+import { requireAuth } from '../middlewares/auth';
 
 export const reservasRouter = Router();
 
@@ -52,44 +50,38 @@ reservasRouter.get("/", async (req, res, next) => {
  * - Comprueba solapes en el mismo espacio:
  *   existe r tal que !(r.fin <= nuevoInicio OR r.inicio >= nuevoFin)
  */
-reservasRouter.post("/", async (req, res, next) => {
+reservasRouter.post('/', requireAuth, async (req, res, next) => {
     try {
-        const data = createReservaSchema.parse(req.body);
+        const body = createReservaSchema.parse(req.body);
+        const user = (req as any).user;          // puesto por requireAuth
+        const userId: string = user.sub;         // <-- este es tu usuario real
 
-        const nuevoInicio = data.inicio;
-        const nuevoFin = data.fin;
-
+        // solapes (igual que antes)
         const solape = await prisma.reserva.findFirst({
             where: {
-                espacioId: data.espacioId,
-                // Si quieres ignorar canceladas en el solape, descomenta:
-                // estado: { not: 'CANCELADA' },
-                NOT: [
-                    { fin: { lte: nuevoInicio } }, // r.fin <= nuevoInicio
-                    { inicio: { gte: nuevoFin } }, // r.inicio >= nuevoFin
-                ],
-            },
+                espacioId: body.espacioId,
+                AND: [
+                    { inicio: { lt: body.fin } },
+                    { fin: { gt: body.inicio } },
+                ]
+            }
         });
-
-        if (solape) {
-            return res.status(409).json({ error: "Horario no disponible" });
-        }
+        if (solape) return res.status(409).json({ error: 'Horario no disponible' });
 
         const r = await prisma.reserva.create({
             data: {
-                usuarioId: data.usuarioId,
-                espacioId: data.espacioId,
-                inicio: data.inicio,
-                fin: data.fin,
-                // estado -> usa el default(CONFIRMADA) del schema
+                usuarioId: userId,          // <-- tomado del JWT
+                espacioId: body.espacioId,
+                inicio: body.inicio,
+                fin: body.fin,
+                // estado: se queda por defecto CONFIRMADA
             },
         });
 
         res.status(201).json(r);
-    } catch (e) {
-        next(e);
-    }
+    } catch (e) { next(e); }
 });
+
 
 // PATCH /api/reservas/:id  { estado: 'PENDIENTE'|'CONFIRMADA'|'CANCELADA' }
 reservasRouter.patch("/:id", async (req, res, next) => {

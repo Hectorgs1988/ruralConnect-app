@@ -3,9 +3,11 @@ import { prisma } from "../db/prisma";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { requireAuth } from "../middlewares/auth";
+import { JWT_SECRET } from "../config/jwt.js";
+
 
 const auth = Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
+//const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 
 // POST /api/auth/login { email, password }
 auth.post('/login', async (req, res, next) => {

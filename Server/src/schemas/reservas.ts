@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const createReservaSchema = z.object({
-    usuarioId: z.string(),
+    //usuarioId: z.string(),
     espacioId: z.string(),
     //fecha: z.coerce.date(),
     inicio: z.coerce.date(),
