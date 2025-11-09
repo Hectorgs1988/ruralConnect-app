@@ -9,7 +9,19 @@ import OfferTravelModal from "@/components/ui/OfferTravelModal";
 import type { Travel, Viaje } from "@/types/Travel";
 import { listViajes, createViaje, joinViaje, leaveViaje } from "@/api/viajes";
 
-const USER_ID = "1"; // TODO: del JWT cuando haya login
+// Lee el usuario actual desde localStorage (auth guardado en el login)
+function getCurrentUserId(): string {
+    const raw = localStorage.getItem("auth");
+    if (!raw) return "";
+    try {
+        const parsed = JSON.parse(raw);
+        return typeof parsed?.user?.id === "string" ? parsed.user.id : "";
+    } catch {
+        return "";
+    }
+}
+
+const USER_ID = getCurrentUserId();
 
 function isoToDateTimeParts(iso: string) {
     const d = new Date(iso);
@@ -28,21 +40,28 @@ function toIsoLocal(dateStr: string, timeStr: string) {
 // Mapea viaje de backend a tu card Travel
 function mapViajeToTravelCard(v: Viaje): Travel {
     const { date, time } = isoToDateTimeParts(v.fecha);
+
     const ocupadas = v.Pasajeros?.length ?? 0;
     const joined = !!v.Pasajeros?.some((p) => p.userId === USER_ID);
+    const isDriver = v.conductorId === USER_ID;
+
+    const driverName = v.Conductor?.name ?? "Socio";
+    const driverPhone = v.Conductor?.phone ?? "—";
+
     return {
         id: v.id,
-        name: joined || v.conductorId === USER_ID ? "Tú u otro socio" : "Socio",
+        name: isDriver ? "Tú" : driverName,
         car: "Coche del conductor",
-        from: v.from,
-        to: v.to,
+        // OJO: ahora los campos vienen como origen / destino desde el backend
+        from: v.origen,
+        to: v.destino,
         date,
         time,
-        phone: "—",
+        phone: driverPhone,
         occupancy: `${ocupadas}/${v.plazas} plazas`,
         description: v.notas ?? undefined,
         joined,
-        isDriver: v.conductorId === USER_ID,
+        isDriver,
     };
 }
 
@@ -76,10 +95,7 @@ export default function CompartirCoche() {
             const t = overrides?.to ?? to;
 
             // si overrides.desde es null => fuerza sin filtro; si es string => úsalo; si es undefined => usa estado
-            const dParam =
-                overrides && "desde" in overrides
-                    ? overrides.desde
-                    : desde;
+            const dParam = overrides && "desde" in overrides ? overrides.desde : desde;
 
             const data = await listViajes({
                 from: f || undefined,
@@ -111,7 +127,8 @@ export default function CompartirCoche() {
     }) {
         try {
             await createViaje({
-                conductorId: USER_ID,
+                // el backend ya saca conductorId del JWT,
+                // así que solo mandamos estos campos:
                 from: payload.from,
                 to: payload.to,
                 fecha: toIsoLocal(payload.date, payload.time),
@@ -127,7 +144,7 @@ export default function CompartirCoche() {
 
     async function onJoin(travel: Travel) {
         try {
-            await joinViaje(travel.id, USER_ID);
+            await joinViaje(travel.id);
             await cargar();
         } catch (e: any) {
             alert(e.message ?? "No se pudo unir");
@@ -136,7 +153,7 @@ export default function CompartirCoche() {
 
     async function onLeave(travel: Travel) {
         try {
-            await leaveViaje(travel.id, USER_ID);
+            await leaveViaje(travel.id);
             await cargar();
         } catch (e: any) {
             alert(e.message ?? "No se pudo salir");
@@ -216,7 +233,6 @@ export default function CompartirCoche() {
                         <div key={t.id} className="flex flex-col">
                             <ShareCarCard {...t} />
                             <div className="mt-2 flex gap-2">
-                                {/* Tu lógica original con occupancy */}
                                 {!t.isDriver && !t.joined && (
                                     <Button className="flex-1" onClick={() => onJoin(t)}>
                                         Unirse
@@ -248,7 +264,10 @@ export default function CompartirCoche() {
             <Footer />
 
             {showModal && (
-                <OfferTravelModal onClose={() => setShowModal(false)} onSubmit={handleAddTravel} />
+                <OfferTravelModal
+                    onClose={() => setShowModal(false)}
+                    onSubmit={handleAddTravel}
+                />
             )}
         </div>
     );

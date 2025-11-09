@@ -6,7 +6,7 @@ import EventCard from "@/components/ui/EventCard";
 import Footer from "@/components/Footer";
 import EventModal from "@/components/ui/EventModal";
 
-const Inicio: FC = () => {
+const PanelAdmin: FC = () => {
     const [showModal, setShowModal] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<{
         title: string;
@@ -116,4 +116,4 @@ const Inicio: FC = () => {
     );
 };
 
-export default Inicio;
+export default PanelAdmin;

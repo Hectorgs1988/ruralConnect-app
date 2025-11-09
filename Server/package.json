@@ -7,7 +7,9 @@
         "build": "tsc -p tsconfig.json",
         "start": "node dist/server.js",
         "migrate": "prisma migrate dev",
-        "prisma": "prisma"
+        "prisma": "prisma",
+        "seed:admin": "tsx src/scripts/seed-admin.ts",
+        "seed:socio": "tsx src/scripts/seed-socio.ts"
     },
     "dependencies": {
         "@prisma/client": "^6.17.0",

@@ -1,28 +1,43 @@
-// Tipo que usa TU CARD (vista)
+// src/types/Travel.ts
+
 export interface Travel {
-    id: string;            // 👈 añadido para poder unirse/salir
+    id: string;
     name: string;
     car: string;
     from: string;
     to: string;
-    date: string;          // "YYYY-MM-DD"
-    time: string;          // "HH:mm"
+    date: string;
+    time: string;
     phone: string;
-    occupancy: string;     // "2/4 plazas"
+    occupancy: string;
     description?: string;
-    joined?: boolean;      // 👈 si el user ya está dentro
-    isDriver?: boolean;    // 👈 si el user es el conductor
+    joined?: boolean;
+    isDriver?: boolean;
 }
 
-// Tipo que devuelve el BACKEND (ajústalo si tu API difiere)
-export type Viaje = {
+// Tipo que devuelve el BACKEND
+export interface Viaje {
     id: string;
     conductorId: string;
-    from: string;
-    to: string;
-    fecha: string;     // ISO
+    origen: string;
+    destino: string;
+    fecha: string;          // ISO
     plazas: number;
     notas?: string | null;
-    // si tu GET /api/viajes incluye relaciones:
-    Pasajeros?: { userId: string }[];
-};
+    estado: "ABIERTO" | "COMPLETO" | "CANCELADO";
+
+    // Lo que viene del include:
+    Pasajeros?: Array<{
+        userId: string;
+        User: { id: string; name: string };
+    }>;
+
+    Conductor?: {
+        id: string;
+        name: string;
+        phone?: string | null;
+    };
+
+    createdAt?: string;
+    updatedAt?: string;
+}

@@ -12,20 +12,28 @@ import PanelAdmin from '../pages/PanelAdmin'
 import NuevoSocio from '../pages/NuevoSocio'
 import DetalleSocio from '../pages/DetalleSocio'
 import AsociacionMosquitos from '../pages/AsociacionMosquitos'
+import PrivateRoute, { RoleGuard } from "@/components/guards/PrivateRoute";
 
 const router = createBrowserRouter([
-{path: '/', element: <Home />,},
-{path: '/login',element: <Login />},
-{path: '/RecuperarContrasena',element: <RecuperarContrasena />},
-{path: '/inicio',element: <Inicio />},
-{path: '/ReservarEspacio',element: <ReservarEspacio />},
-{path: '/CrearReserva',element: <CrearReserva />},
-{path: '/CompartirCoche',element: <CompartirCoche />},
-{path: '/OfrecerViaje',element: <OfrecerViaje />},
-{path: '/PanelAdmin',element: <PanelAdmin />},
-{path: '/NuevoSocio',element: <NuevoSocio />},
-{path: '/DetalleSocio',element: <DetalleSocio />},
-{path: '/AsociacionMosquitos',element: <AsociacionMosquitos />}
+    // públicas
+    { path: "/", element: <Home /> },
+    { path: "/login", element: <Login /> },
+    { path: "/RecuperarContrasena", element: <RecuperarContrasena /> },
 
-])
-export default router
+    // protegidas (cualquier usuario logeado)
+    {path: "/inicio", element: (<PrivateRoute><Inicio /></PrivateRoute>),},
+    {path: "/ReservarEspacio", element: (<PrivateRoute><ReservarEspacio /></PrivateRoute>),},
+    {path: "/CrearReserva",element: (<PrivateRoute><CrearReserva /></PrivateRoute>),},
+    { path: "/CompartirCoche",element: (<PrivateRoute><CompartirCoche /></PrivateRoute>),},
+    {path: "/OfrecerViaje",element: (<PrivateRoute><OfrecerViaje /></PrivateRoute>),},
+
+    // solo ADMIN
+    {path: "/PanelAdmin",element: (<RoleGuard role="ADMIN"><PanelAdmin /></RoleGuard>),},
+    {path: "/NuevoSocio",element: (<RoleGuard role="ADMIN"><NuevoSocio /></RoleGuard>),},
+    {path: "/DetalleSocio",element: (<RoleGuard role="ADMIN"><DetalleSocio /></RoleGuard>),},
+
+    // puedes dejar pública o también protegerla
+    { path: "/AsociacionMosquitos", element: <AsociacionMosquitos /> },
+]);
+
+export default router;

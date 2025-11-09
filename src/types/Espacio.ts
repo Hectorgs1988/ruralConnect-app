@@ -3,4 +3,5 @@ export type Espacio = {
     nombre: string;
     tipo: string;
     aforo: number | null;
+    descripcion: string;
 };

@@ -62,7 +62,7 @@ const ReservasEspacio = () => {
                         iconByTipo[e.tipo?.toLowerCase()] ??
                         <Landmark size={28} />; // icono por defecto
                     const capacity = e.aforo != null ? `${e.aforo} personas` : "—";
-                    const descripcion = `${e.nombre} · Tipo: ${e.tipo}`;
+                    const descripcion = `Descripción: ${e.descripcion} · Tipo: ${e.tipo}`;
 
                     return (
                         <ReservationCard

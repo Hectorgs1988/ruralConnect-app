@@ -11,9 +11,9 @@ const Header: FC = () => {
             />
             <div>
                 <h1 className="text-xl font-bold leading-none text-black">
-                    Los mosquitos
+                    Rural Connect
                 </h1>
-                <p className="text-sm text-gray-600">Susinos del Páramo</p>
+                <p className="text-sm text-gray-600">Conetando entornos rurales</p>
             </div>
         </header>
     );

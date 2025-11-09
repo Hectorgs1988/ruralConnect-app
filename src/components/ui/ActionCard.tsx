@@ -19,7 +19,7 @@ const ActionCard: FC<ActionCardProps> = ({
     onClick,
 }) => {
     return (
-        <div className="bg-yellow-300 p-5 rounded-xl w-full max-w-sm shadow-md">
+        <div className="bg-yellow-400 p-5 rounded-xl w-full max-w-sm shadow-md">
             <div className="text-3xl mb-2">{icon}</div>
             <h3 className="text-lg font-semibold mb-1">{title}</h3>
             <p className="text-sm text-gray-700 mb-4">{description}</p>
