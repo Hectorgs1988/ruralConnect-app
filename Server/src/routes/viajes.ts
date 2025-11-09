@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../db/prisma.js';
 import { createViajeSchema, joinViajeSchema } from '../schemas/viajes.js';
+import { requireAuth } from '../middlewares/auth';
 
 export const viajesRouter = Router();
 
@@ -27,23 +28,31 @@ viajesRouter.get('/', async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
-// POST /api/viajes  (crear viaje)
-viajesRouter.post('/', async (req, res, next) => {
+/** POST /api/viajes  (crear viaje) */
+viajesRouter.post("/", requireAuth, async (req, res, next) => {
     try {
-        // parsea + transforma from/to -> origen/destino
-        const data = createViajeSchema.parse(req.body);
+        const body = createViajeSchema.parse(req.body);
+        const user = (req as any).user; 
+        const userId: string = user.sub;
 
         const viaje = await prisma.viaje.create({
-            data, // { conductorId, origen, destino, fecha, plazas, notas }
-            include: {
-                Conductor: { select: { id: true, name: true } },
-                Pasajeros: true,
+            data: {
+                conductorId: userId,         
+                origen: body.origen,            
+                destino: body.destino,             
+                fecha: body.fecha,
+                plazas: body.plazas,
+                notas: body.notas ?? null,
+                estado: "ABIERTO",
             },
         });
 
         res.status(201).json(viaje);
-    } catch (e) { next(e); }
+    } catch (e) {
+        next(e);
+    }
 });
+
 
 // POST /api/viajes/:id/unirse
 viajesRouter.post('/:id/unirse', async (req, res, next) => {

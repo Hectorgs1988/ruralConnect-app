@@ -6,8 +6,8 @@ import Textarea from "./TextArea";
 interface OfferTravelPayload {
     from: string;
     to: string;
-    date: string;       // YYYY-MM-DD
-    time: string;       // HH:mm
+    date: string;       
+    time: string;      
     plazas: number;
     description?: string;
 }

@@ -1,14 +1,14 @@
 import { z } from 'zod';
 
 export const createViajeSchema = z.object({
-    conductorId: z.string(),       // provisional hasta auth
+    //conductorId: z.string(),       // provisional hasta auth
     from: z.string().min(2),
     to: z.string().min(2),
     fecha: z.coerce.date(),
     plazas: z.number().int().positive(),
     notas: z.string().optional(),
 }).transform(v => ({
-    conductorId: v.conductorId,
+    //conductorId: v.conductorId,
     origen: v.from,
     destino: v.to,
     fecha: v.fecha,

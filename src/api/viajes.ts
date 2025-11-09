@@ -11,36 +11,76 @@ export async function listViajes(params?: { from?: string; to?: string; desde?: 
 }
 
 export async function createViaje(body: {
-    conductorId: string;
     from: string;
     to: string;
     fecha: string;   // ISO
     plazas: number;
     notas?: string;
 }) {
+    let token: string | null = null;
+    const raw = localStorage.getItem("auth");
+    if (raw) {
+        try {
+            const parsed = JSON.parse(raw);
+            token = typeof parsed?.token === "string" ? parsed.token : null;
+        } catch { }
+    }
+
     const res = await fetch("/api/viajes", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(body),
     });
+
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
     return (await res.json()) as Viaje;
 }
 
-export async function joinViaje(viajeId: string, userId: string) {
+export async function joinViaje(viajeId: string) {
+    let token: string | null = null;
+    const raw = localStorage.getItem("auth");
+    if (raw) {
+        try {
+            const parsed = JSON.parse(raw);
+            token = typeof parsed?.token === "string" ? parsed.token : null;
+        } catch { }
+    }
+
     const res = await fetch(`/api/viajes/${viajeId}/unirse`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
+        headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
     });
+
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+    return await res.json();
 }
 
-export async function leaveViaje(viajeId: string, userId: string) {
+export async function leaveViaje(viajeId: string) {
+    let token: string | null = null;
+    const raw = localStorage.getItem("auth");
+    if (raw) {
+        try {
+            const parsed = JSON.parse(raw);
+            token = typeof parsed?.token === "string" ? parsed.token : null;
+        } catch { }
+    }
+
     const res = await fetch(`/api/viajes/${viajeId}/unirse`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
+        headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
     });
-    if (!res.ok && res.status !== 204) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+
+    if (!res.ok && res.status !== 204) {
+        throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+    }
 }
+
