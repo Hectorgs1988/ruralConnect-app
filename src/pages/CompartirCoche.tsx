@@ -8,20 +8,7 @@ import OfferTravelModal from "@/components/ui/OfferTravelModal";
 
 import type { Travel, Viaje } from "@/types/Travel";
 import { listViajes, createViaje, joinViaje, leaveViaje } from "@/api/viajes";
-
-// Lee el usuario actual desde localStorage (auth guardado en el login)
-function getCurrentUserId(): string {
-    const raw = localStorage.getItem("auth");
-    if (!raw) return "";
-    try {
-        const parsed = JSON.parse(raw);
-        return typeof parsed?.user?.id === "string" ? parsed.user.id : "";
-    } catch {
-        return "";
-    }
-}
-
-const USER_ID = getCurrentUserId();
+import { useAuth } from "@/context/AuthContext";   // 👈 NUEVO
 
 function isoToDateTimeParts(iso: string) {
     const d = new Date(iso);
@@ -37,13 +24,16 @@ function toIsoLocal(dateStr: string, timeStr: string) {
     return new Date(`${dateStr}T${timeStr}`).toISOString();
 }
 
-// Mapea viaje de backend a tu card Travel
-function mapViajeToTravelCard(v: Viaje): Travel {
+// Mapea viaje de backend a tu card Travel,
+// pero ahora recibiendo el id del usuario actual
+function mapViajeToTravelCard(v: Viaje, currentUserId: string): Travel {
     const { date, time } = isoToDateTimeParts(v.fecha);
 
     const ocupadas = v.Pasajeros?.length ?? 0;
-    const joined = !!v.Pasajeros?.some((p) => p.userId === USER_ID);
-    const isDriver = v.conductorId === USER_ID;
+    const joined = currentUserId
+        ? !!v.Pasajeros?.some((p) => p.userId === currentUserId)
+        : false;
+    const isDriver = currentUserId ? v.conductorId === currentUserId : false;
 
     const driverName = v.Conductor?.name ?? "Socio";
     const driverPhone = v.Conductor?.phone ?? "—";
@@ -52,7 +42,6 @@ function mapViajeToTravelCard(v: Viaje): Travel {
         id: v.id,
         name: isDriver ? "Tú" : driverName,
         car: "Coche del conductor",
-        // OJO: ahora los campos vienen como origen / destino desde el backend
         from: v.origen,
         to: v.destino,
         date,
@@ -66,6 +55,9 @@ function mapViajeToTravelCard(v: Viaje): Travel {
 }
 
 export default function CompartirCoche() {
+    const { user } = useAuth();                     // 👈 sacamos usuario del contexto
+    const currentUserId = user?.id ?? "";          // si no hay user, string vacío
+
     const [showModal, setShowModal] = useState(false);
     const [travels, setTravels] = useState<Travel[]>([]);
     const [loading, setLoading] = useState(true);
@@ -78,14 +70,9 @@ export default function CompartirCoche() {
 
     const hayFiltros = useMemo(() => !!(from || to || desde), [from, to, desde]);
 
-    // helper para construir el "desde" ISO
     const buildDesdeISO = (val?: string) =>
         val && val.trim() ? new Date(`${val}T00:00`).toISOString() : undefined;
 
-    /**
-     * Cargar viajes.
-     * Permite overrides para evitar depender del estado cuando lo estamos reseteando.
-     */
     async function cargar(overrides?: { from?: string; to?: string; desde?: string | null }) {
         try {
             setLoading(true);
@@ -94,7 +81,6 @@ export default function CompartirCoche() {
             const f = overrides?.from ?? from;
             const t = overrides?.to ?? to;
 
-            // si overrides.desde es null => fuerza sin filtro; si es string => úsalo; si es undefined => usa estado
             const dParam = overrides && "desde" in overrides ? overrides.desde : desde;
 
             const data = await listViajes({
@@ -103,7 +89,7 @@ export default function CompartirCoche() {
                 desde: buildDesdeISO(dParam || undefined),
             });
 
-            setTravels(data.map(mapViajeToTravelCard));
+            setTravels(data.map((v) => mapViajeToTravelCard(v, currentUserId))); // 👈 usamos el id
         } catch (e: any) {
             setErr(e.message ?? "Error cargando viajes");
         } finally {
@@ -112,11 +98,10 @@ export default function CompartirCoche() {
     }
 
     useEffect(() => {
-        cargar(); // estado inicial
+        cargar();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [currentUserId]); // si cambiara el usuario, se recalcula
 
-    // crear viaje desde el modal
     async function handleAddTravel(payload: {
         from: string;
         to: string;
@@ -127,8 +112,6 @@ export default function CompartirCoche() {
     }) {
         try {
             await createViaje({
-                // el backend ya saca conductorId del JWT,
-                // así que solo mandamos estos campos:
                 from: payload.from,
                 to: payload.to,
                 fecha: toIsoLocal(payload.date, payload.time),
@@ -160,21 +143,17 @@ export default function CompartirCoche() {
         }
     }
 
-    // acciones de UI
     const buscar = () =>
         cargar({
             from,
             to,
-            desde, // usa el string del input; cargar lo convertirá a ISO
+            desde,
         });
 
     const limpiar = async () => {
-        // 1) vacía inputs
         setFrom("");
         setTo("");
         setDesde("");
-
-        // 2) recarga lista SIN depender del estado (un solo clic)
         await cargar({ from: "", to: "", desde: null });
     };
 
