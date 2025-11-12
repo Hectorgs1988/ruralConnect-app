@@ -39,7 +39,7 @@ export async function createViaje(body: {
     return (await res.json()) as Viaje;
 }
 
-export async function joinViaje(viajeId: string) {
+export async function joinViaje(viajeId: string, userId: string) {
     let token: string | null = null;
     const raw = localStorage.getItem("auth");
     if (raw) {
@@ -55,13 +55,14 @@ export async function joinViaje(viajeId: string) {
             "Content-Type": "application/json",
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
+        body: JSON.stringify({userId}),
     });
 
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
     return await res.json();
 }
 
-export async function leaveViaje(viajeId: string) {
+export async function leaveViaje(viajeId: string, userId: string) {
     let token: string | null = null;
     const raw = localStorage.getItem("auth");
     if (raw) {
@@ -77,6 +78,7 @@ export async function leaveViaje(viajeId: string) {
             "Content-Type": "application/json",
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
+        body: JSON.stringify({userId}),
     });
 
     if (!res.ok && res.status !== 204) {

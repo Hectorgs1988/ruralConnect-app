@@ -6,6 +6,7 @@ import NavMenu from "@/components/NavMenu";
 import Button from "@/components/ui/button";
 import DayTimeline from "@/components/ui/DayTimeline";
 import type { Espacio } from "@/types/Espacio";
+import { useAuth } from "@/context/AuthContext";
 
 type LocationState = { espacio: Espacio };
 
@@ -17,22 +18,30 @@ const toMinutes = (hhmm: string) => {
     const [h, m] = hhmm.split(":").map(Number);
     return h * 60 + m;
 };
+
 const fromMinutes = (mins: number) => {
     const clamp = Math.max(0, Math.min(24 * 60 - STEP_MIN, mins));
     const h = Math.floor(clamp / 60);
     const m = clamp % 60;
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 };
+
 const addMinutes = (hhmm: string, mins: number) => {
     const val = toMinutes(hhmm) + mins;
     if (val > 24 * 60) return null;
     return fromMinutes(val);
 };
+
 function buildTimeOptions(step = STEP_MIN) {
     const out: string[] = [];
-    for (let h = 0; h < 24; h++) for (let m = 0; m < 60; m += step) out.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+    for (let h = 0; h < 24; h++) {
+        for (let m = 0; m < 60; m += step) {
+            out.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+        }
+    }
     return out;
 }
+
 function toIsoLocal(dateStr: string, timeStr: string) {
     return new Date(`${dateStr}T${timeStr}`).toISOString();
 }
@@ -42,12 +51,13 @@ type Reserva = {
     usuarioId: string;
     espacioId: string;
     inicio: string; // ISO
-    fin: string;    // ISO
+    fin: string; // ISO
 };
 
 export default function CrearReserva() {
     const navigate = useNavigate();
     const { state } = useLocation() as { state?: LocationState };
+    const { token } = useAuth(); // 👈 token del contexto
 
     // Redirige si llegan sin espacio en el state
     useEffect(() => {
@@ -77,7 +87,9 @@ export default function CrearReserva() {
         const desde = toIsoLocal(fechaStr, "00:00");
         const hasta = toIsoLocal(fechaStr, "23:59");
         const q = new URLSearchParams({ espacioId, desde, hasta }).toString();
-        const r = await fetch(`/api/reservas?${q}`);
+        const r = await fetch(`/api/reservas?${q}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const data: Reserva[] = await r.json();
         setReservasDia(data);
@@ -89,14 +101,17 @@ export default function CrearReserva() {
         reloadReservasDia(fecha, espacio.id)
             .catch((e) => setError(e.message ?? "Error cargando disponibilidad"))
             .finally(() => setLoadingSlots(false));
-    }, [fecha, espacio.id]);
+    }, [fecha, espacio.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // transformar reservas en intervalos (minutos del día) y fusionar solapes
     const intervals = useMemo(() => {
         const list = reservasDia
-            .map(r => ({ s: new Date(r.inicio), e: new Date(r.fin) }))
-            .map(({ s, e }) => ({ s: s.getHours() * 60 + s.getMinutes(), e: e.getHours() * 60 + e.getMinutes() }))
-            .filter(x => x.e > x.s)
+            .map((r) => ({ s: new Date(r.inicio), e: new Date(r.fin) }))
+            .map(({ s, e }) => ({
+                s: s.getHours() * 60 + s.getMinutes(),
+                e: e.getHours() * 60 + e.getMinutes(),
+            }))
+            .filter((x) => x.e > x.s)
             .sort((a, b) => a.s - b.s);
 
         const merged: Array<{ s: number; e: number }> = [];
@@ -113,9 +128,9 @@ export default function CrearReserva() {
         const opts: string[] = [];
         for (const t of timeOptions) {
             const start = toMinutes(t);
-            const nextBlock = intervals.find(iv => iv.s > start);
+            const nextBlock = intervals.find((iv) => iv.s > start);
             const until = nextBlock ? nextBlock.s : 24 * 60;
-            const insideBlock = intervals.some(iv => start >= iv.s && start < iv.e);
+            const insideBlock = intervals.some((iv) => start >= iv.s && start < iv.e);
             if (!insideBlock && until - start >= MIN_DURATION) {
                 opts.push(t);
             }
@@ -128,9 +143,9 @@ export default function CrearReserva() {
         const minEnd = addMinutes(inicio, MIN_DURATION);
         if (!minEnd) return [];
         const start = toMinutes(inicio);
-        const nextBlock = intervals.find(iv => iv.s > start);
+        const nextBlock = intervals.find((iv) => iv.s > start);
         const limit = nextBlock ? nextBlock.s : 24 * 60;
-        return timeOptions.filter(t => {
+        return timeOptions.filter((t) => {
             const tm = toMinutes(t);
             return tm >= toMinutes(minEnd) && tm <= limit;
         });
@@ -141,7 +156,7 @@ export default function CrearReserva() {
         if (!inicioOptions.includes(inicio)) {
             if (inicioOptions.length) setInicio(inicioOptions[0]);
         }
-    }, [inicioOptions]); // eslint-disable-line
+    }, [inicioOptions]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         const minEnd = addMinutes(inicio, MIN_DURATION);
@@ -149,7 +164,7 @@ export default function CrearReserva() {
         if (!finOptions.includes(fin)) {
             setFin(finOptions[0] ?? "");
         }
-    }, [inicio, finOptions]); // eslint-disable-line
+    }, [inicio, finOptions]); // eslint-disable-line react-hooks/exhaustive-deps
 
     async function onSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -159,32 +174,28 @@ export default function CrearReserva() {
         if (!fecha) return setError("Selecciona una fecha");
         if (!inicio || !fin) return setError("Selecciona hora de inicio y fin");
 
+        // si no hay token → no debería dejar reservar
+        if (!token) {
+            setError("Debes iniciar sesión para realizar una reserva.");
+            return;
+        }
+
         const inicioIso = toIsoLocal(fecha, inicio);
         const finIso = toIsoLocal(fecha, fin);
 
         setLoading(true);
         try {
-            //const token = localStorage.getItem('token');
-            let token: string | null = null;
-            const raw = localStorage.getItem('auth');
-            if (raw) {
-                try {
-                    const parsed = JSON.parse(raw);
-                    token = typeof parsed?.token === 'string' ? parsed.token : null;
-                } catch { /* ignore */ }
-            }
             const res = await fetch("/api/reservas", {
                 method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                     espacioId: espacio.id,
-                    //fecha,
                     inicio: inicioIso,
                     fin: finIso,
-                    // motivo: Abra que añadirlo en algun momento
+                    // motivo: se puede añadir más adelante
                 }),
             });
 
@@ -212,7 +223,11 @@ export default function CrearReserva() {
             <NavMenu />
 
             <main className="flex-grow container mx-auto px-4 py-8">
-                <Button type="button" onClick={() => navigate(-1)} className="mb-4 text-sm px-3 py-1 rounded">
+                <Button
+                    type="button"
+                    onClick={() => navigate(-1)}
+                    className="mb-4 text-sm px-3 py-1 rounded"
+                >
                     ← Volver a espacios
                 </Button>
 
@@ -223,9 +238,13 @@ export default function CrearReserva() {
                     <div className="bg-white rounded-xl shadow p-5 border border-gray-200">
                         <h3 className="text-xl font-semibold mb-2">{espacio.nombre}</h3>
                         {espacio.aforo != null && (
-                            <p className="text-sm text-gray-600 mb-2">👥 {espacio.aforo} personas</p>
+                            <p className="text-sm text-gray-600 mb-2">
+                                👥 {espacio.aforo} personas
+                            </p>
                         )}
-                        <p className="text-sm text-gray-700">Tipo: <b>{espacio.tipo}</b></p>
+                        <p className="text-sm text-gray-700">
+                            Tipo: <b>{espacio.tipo}</b>
+                        </p>
 
                         <div className="mt-5">
                             <h4 className="font-medium mb-2">Disponibilidad</h4>
@@ -238,12 +257,19 @@ export default function CrearReserva() {
                                 }
                                 step={30}
                             />
-                            {loadingSlots && <p className="text-sm text-gray-600 mt-2">Actualizando disponibilidad…</p>}
+                            {loadingSlots && (
+                                <p className="text-sm text-gray-600 mt-2">
+                                    Actualizando disponibilidad…
+                                </p>
+                            )}
                         </div>
                     </div>
 
                     {/* Formulario */}
-                    <form onSubmit={onSubmit} className="bg-white rounded-xl shadow p-5 border border-gray-200">
+                    <form
+                        onSubmit={onSubmit}
+                        className="bg-white rounded-xl shadow p-5 border border-gray-200"
+                    >
                         <h3 className="text-lg font-semibold mb-4">Realizar reserva</h3>
 
                         <label className="block text-sm mb-1">Fecha</label>
@@ -263,7 +289,11 @@ export default function CrearReserva() {
                                 className="rounded border border-gray-300 bg-[#FAFAF0] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
                                 disabled={loadingSlots || !fecha}
                             >
-                                {inicioOptions.map((t) => <option key={t} value={t}>{t}</option>)}
+                                {inicioOptions.map((t) => (
+                                    <option key={t} value={t}>
+                                        {t}
+                                    </option>
+                                ))}
                             </select>
 
                             <select
@@ -272,7 +302,11 @@ export default function CrearReserva() {
                                 className="rounded border border-gray-300 bg-[#FAFAF0] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
                                 disabled={loadingSlots || !fecha || !inicioOptions.length}
                             >
-                                {finOptions.map((t) => <option key={t} value={t}>{t}</option>)}
+                                {finOptions.map((t) => (
+                                    <option key={t} value={t}>
+                                        {t}
+                                    </option>
+                                ))}
                             </select>
                         </div>
 
@@ -287,7 +321,9 @@ export default function CrearReserva() {
                         />
 
                         {noHayHueco && fecha && !loadingSlots && (
-                            <p className="text-sm text-red-600 mb-2">No hay huecos de al menos 60 min en esa fecha.</p>
+                            <p className="text-sm text-red-600 mb-2">
+                                No hay huecos de al menos 60 min en esa fecha.
+                            </p>
                         )}
                         {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
                         {ok && <p className="text-green-700 text-sm mb-2">{ok}</p>}

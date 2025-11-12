@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../db/prisma.js';
 import { createViajeSchema, joinViajeSchema } from '../schemas/viajes.js';
 import { requireAuth } from '../middlewares/auth';
+import { Phone } from 'lucide-react';
 
 export const viajesRouter = Router();
 
@@ -19,7 +20,7 @@ viajesRouter.get('/', async (req, res, next) => {
             where,
             orderBy: { fecha: 'asc' },
             include: {
-                Conductor: { select: { id: true, name: true } },
+                Conductor: { select: { id: true, name: true, phone: true, } },
                 Pasajeros: { include: { User: { select: { id: true, name: true } } } },
             },
         });

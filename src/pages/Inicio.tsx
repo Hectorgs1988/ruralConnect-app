@@ -14,7 +14,9 @@ const Inicio: FC = () => {
         location: string;
     } | null>(null);
 
-    const handleOpenModal = (event: { title: string, date: string, location: string }) => {
+
+
+    const handleOpenModal = (event: { title: string; date: string; location: string }) => {
         setSelectedEvent(event);
         setShowModal(true);
     };
@@ -25,6 +27,7 @@ const Inicio: FC = () => {
             <NavMenu />
 
             <main className="flex-1 px-4 md:px-10 mt-6">
+                
                 <h1 className="text-center text-2xl md:text-3xl font-bold mb-2">
                     Bienvenido a Rural Connect
                 </h1>
@@ -101,6 +104,7 @@ const Inicio: FC = () => {
                     </div>
                 </div>
             </main>
+
             {showModal && selectedEvent && (
                 <EventModal
                     event={selectedEvent}
