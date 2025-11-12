@@ -5,10 +5,11 @@ import NavMenu from "@/components/NavMenu";
 import Button from "@/components/ui/button";
 import ShareCarCard from "@/components/ui/ShareCarCard";
 import OfferTravelModal from "@/components/ui/OfferTravelModal";
+import ConfirmJoinTravelModal from "@/components/ui/ConfirmJoinTravelModal";
 
 import type { Travel, Viaje } from "@/types/Travel";
 import { listViajes, createViaje, joinViaje, leaveViaje } from "@/api/viajes";
-import { useAuth } from "@/context/AuthContext";   // 👈 NUEVO
+import { useAuth } from "@/context/AuthContext";
 
 function isoToDateTimeParts(iso: string) {
     const d = new Date(iso);
@@ -24,8 +25,14 @@ function toIsoLocal(dateStr: string, timeStr: string) {
     return new Date(`${dateStr}T${timeStr}`).toISOString();
 }
 
-// Mapea viaje de backend a tu card Travel,
-// pero ahora recibiendo el id del usuario actual
+// inicio de hoy en ISO (00:00)
+function getTodayStartIso() {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+}
+
+// Mapea viaje de backend a tu card Travel
 function mapViajeToTravelCard(v: Viaje, currentUserId: string): Travel {
     const { date, time } = isoToDateTimeParts(v.fecha);
 
@@ -40,8 +47,8 @@ function mapViajeToTravelCard(v: Viaje, currentUserId: string): Travel {
 
     return {
         id: v.id,
-        name: isDriver ? "Tú" : driverName,
-        car: "Coche del conductor",
+        name: isDriver ? "Eres el conductor" : driverName,
+        car: " ",
         from: v.origen,
         to: v.destino,
         date,
@@ -55,23 +62,20 @@ function mapViajeToTravelCard(v: Viaje, currentUserId: string): Travel {
 }
 
 export default function CompartirCoche() {
-    const { user } = useAuth();                     // 👈 sacamos usuario del contexto
-    const currentUserId = user?.id ?? "";          // si no hay user, string vacío
+    const { user } = useAuth();
+    const currentUserId = user?.id ?? "";
 
     const [showModal, setShowModal] = useState(false);
     const [travels, setTravels] = useState<Travel[]>([]);
     const [loading, setLoading] = useState(true);
     const [err, setErr] = useState<string | null>(null);
+    const [travelToJoin, setTravelJoin] = useState<Travel | null>(null);
 
     // filtros
     const [from, setFrom] = useState("");
     const [to, setTo] = useState("");
-    const [desde, setDesde] = useState(() => new Date().toISOString().slice(0, 10));
-
+    const [desde, setDesde] = useState("");
     const hayFiltros = useMemo(() => !!(from || to || desde), [from, to, desde]);
-
-    const buildDesdeISO = (val?: string) =>
-        val && val.trim() ? new Date(`${val}T00:00`).toISOString() : undefined;
 
     async function cargar(overrides?: { from?: string; to?: string; desde?: string | null }) {
         try {
@@ -80,16 +84,25 @@ export default function CompartirCoche() {
 
             const f = overrides?.from ?? from;
             const t = overrides?.to ?? to;
-
             const dParam = overrides && "desde" in overrides ? overrides.desde : desde;
+
+            // si el usuario NO ha puesto fecha, usamos hoy como mínimo
+            let desdeIso: string | undefined;
+            if (dParam && dParam.trim()) {
+                // fecha elegida por el usuario (input type="date" en formato YYYY-MM-DD)
+                desdeIso = new Date(`${dParam}T00:00`).toISOString();
+            } else {
+                // por defecto, hoy 00:00
+                desdeIso = getTodayStartIso();
+            }
 
             const data = await listViajes({
                 from: f || undefined,
                 to: t || undefined,
-                desde: buildDesdeISO(dParam || undefined),
+                desde: desdeIso,
             });
 
-            setTravels(data.map((v) => mapViajeToTravelCard(v, currentUserId))); // 👈 usamos el id
+            setTravels(data.map((v) => mapViajeToTravelCard(v, currentUserId)));
         } catch (e: any) {
             setErr(e.message ?? "Error cargando viajes");
         } finally {
@@ -99,8 +112,7 @@ export default function CompartirCoche() {
 
     useEffect(() => {
         cargar();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentUserId]); // si cambiara el usuario, se recalcula
+    }, [currentUserId]);
 
     async function handleAddTravel(payload: {
         from: string;
@@ -125,9 +137,17 @@ export default function CompartirCoche() {
         }
     }
 
-    async function onJoin(travel: Travel) {
+    async function ConfirmJoin() {
+        if (!travelToJoin) return;
+
+        if (!currentUserId) {
+            alert("Inicia sesión para unirte");
+            return;
+        }
+
         try {
-            await joinViaje(travel.id);
+            await joinViaje(travelToJoin.id, currentUserId);
+            setTravelJoin(null);
             await cargar();
         } catch (e: any) {
             alert(e.message ?? "No se pudo unir");
@@ -136,7 +156,7 @@ export default function CompartirCoche() {
 
     async function onLeave(travel: Travel) {
         try {
-            await leaveViaje(travel.id);
+            await leaveViaje(travel.id, currentUserId);
             await cargar();
         } catch (e: any) {
             alert(e.message ?? "No se pudo salir");
@@ -209,30 +229,12 @@ export default function CompartirCoche() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
                     {travels.map((t) => (
-                        <div key={t.id} className="flex flex-col">
-                            <ShareCarCard {...t} />
-                            <div className="mt-2 flex gap-2">
-                                {!t.isDriver && !t.joined && (
-                                    <Button className="flex-1" onClick={() => onJoin(t)}>
-                                        Unirse
-                                    </Button>
-                                )}
-                                {!t.isDriver && t.joined && (
-                                    <Button
-                                        className="flex-1"
-                                        variant="secondary"
-                                        onClick={() => onLeave(t)}
-                                    >
-                                        Salir
-                                    </Button>
-                                )}
-                                {t.isDriver && (
-                                    <span className="text-xs text-gray-500 self-center">
-                                        Eres el conductor
-                                    </span>
-                                )}
-                            </div>
-                        </div>
+                        <ShareCarCard
+                            key={t.id}
+                            {...t}
+                            onJoin={() => setTravelJoin(t)}
+                            onLeave={() => onLeave(t)}
+                        />
                     ))}
                     {!loading && !travels.length && (
                         <p className="text-gray-600">No hay viajes.</p>
@@ -246,6 +248,13 @@ export default function CompartirCoche() {
                 <OfferTravelModal
                     onClose={() => setShowModal(false)}
                     onSubmit={handleAddTravel}
+                />
+            )}
+            {travelToJoin && (
+                <ConfirmJoinTravelModal
+                    travel={travelToJoin}
+                    onClose={() => setTravelJoin(null)}
+                    onConfirm={ConfirmJoin}
                 />
             )}
         </div>

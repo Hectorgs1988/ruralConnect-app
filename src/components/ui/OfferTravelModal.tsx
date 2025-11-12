@@ -50,10 +50,7 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit }) => {
                 plazas: plazasNum,
                 description: descripcion || undefined,
             });
-            // si quieres cerrar automáticamente:
             onClose();
-            // si prefieres resetear el formulario antes de cerrar:
-            // setOrigen(""); setDestino(""); setFecha(""); setHora(""); setPlazas(""); setDescripcion("");
         } finally {
             setSending(false);
         }

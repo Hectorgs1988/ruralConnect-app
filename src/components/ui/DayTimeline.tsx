@@ -1,4 +1,3 @@
-// src/components/ui/DayTimeline.tsx
 import type { FC } from "react";
 
 type Interval = { s: number; e: number }; // minutos del día [s, e)
