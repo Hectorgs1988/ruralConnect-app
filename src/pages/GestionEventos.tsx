@@ -1,67 +1,104 @@
 import type { FC } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import NavMenu from "@/components/NavMenu";
 import Footer from "@/components/Footer";
 import Button from "@/components/ui/button";
+import NuevoEventoModal from "@/components/ui/NuevoEventoModal";
+import EditarEventoModal from "@/components/ui/EditarEventoModal";
+import EliminarEventoModal from "@/components/ui/EliminarEventoModal";
+import { useAuth } from "@/context/AuthContext";
 
 
 type Evento = {
     id: string;
     titulo: string;
-    fecha: string;
+    fecha: string; // ISO string
     lugar: string;
-    estado: string;
-    aforo: number;
+    estado: "BORRADOR" | "PUBLICADO" | "CANCELADO";
+    aforo: number | null;
+    descripcion: string;
 };
 
-const eventosMock: Evento[] = [
-    {
-        id: "1",
-        titulo: "Paellada",
-        fecha: "25-08-2025",
-        lugar: "Polideportivo",
-        estado: "Publicado",
-        aforo: 300,
-    },
-    {
-        id: "2",
-        titulo: "Romeria",
-        fecha: "20-07-2025",
-        lugar: "Villegas",
-        estado: "Publicado",
-        aforo: 300,
-    },
-    {
-        id: "3",
-        titulo: "Mariscada",
-        fecha: "10-08-2025",
-        lugar: "Escuela",
-        estado: "Cancelado",
-        aforo: 50,
-    },
-    {
-        id: "4",
-        titulo: "Excursion",
-        fecha: "15-05-2025",
-        lugar: "Excursion",
-        estado: "Borrador",
-        aforo: 80,
-    },
-];
 
 
 const GestionEventos: FC = () => {
-    const [search, setSearch] = useState("");
+    const { token } = useAuth();
 
-    const eventosFiltrados = eventosMock.filter((evento) => {
+    const [search, setSearch] = useState("");
+    const [showNuevoEventoModal, setShowNuevoEventoModal] = useState(false);
+    const [eventos, setEventos] = useState<Evento[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [reloadFlag, setReloadFlag] = useState(0);
+    const [editingEvento, setEditingEvento] = useState<Evento | null>(null);
+    const [deletingEvento, setDeletingEvento] = useState<Evento | null>(null);
+
+    useEffect(() => {
+        if (!token) {
+            setEventos([]);
+            setError("Debes iniciar sesion como admin.");
+            return;
+        }
+
+        const fetchEventos = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+
+                const res = await fetch("http://localhost:4000/api/eventos", {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+
+                if (!res.ok) {
+                    const text = await res.text().catch(() => "");
+                    throw new Error(text || `Error ${res.status} al cargar los eventos`);
+                }
+
+                type ApiEvento = {
+                    id: string;
+                    titulo: string;
+                    fecha: string;
+                    lugar?: string | null;
+                    aforo?: number | null;
+                    estado: "BORRADOR" | "PUBLICADO" | "CANCELADO";
+                    descripcion?: string | null;
+                };
+
+                const data: ApiEvento[] = await res.json();
+
+                const mapped: Evento[] = data.map((e) => ({
+                    id: e.id,
+                    titulo: e.titulo,
+                    fecha: e.fecha,
+                    lugar: e.lugar ?? "",
+                    estado: e.estado,
+                    aforo: e.aforo ?? null,
+                    descripcion: e.descripcion ?? "",
+                }));
+
+                setEventos(mapped);
+            } catch (err: any) {
+                setError(err?.message ?? "Error al cargar los eventos");
+                setEventos([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        void fetchEventos();
+    }, [token, reloadFlag]);
+
+    const eventosFiltrados = eventos.filter((evento) => {
         const term = search.toLowerCase();
         if (!term) return true;
         return (
             evento.titulo.toLowerCase().includes(term) ||
             evento.lugar.toLowerCase().includes(term) ||
             evento.estado.toLowerCase().includes(term) ||
-            String(evento.aforo).includes(term)
+            String(evento.aforo ?? "").includes(term)
         );
     });
 
@@ -95,15 +132,20 @@ const GestionEventos: FC = () => {
                             <Button
                                 type="button"
                                 className="self-end md:self-auto flex items-center justify-center gap-2"
-                                onClick={() => {
-                                    // TODO: abrir modal de nuevo evento
-                                }}
+                                onClick={() => setShowNuevoEventoModal(true)}
                             >
                                 <span className="text-lg">+</span>
                                 <span>Nuevo evento</span>
                             </Button>
                         </div>
                     </div>
+
+                    {error && (
+                        <p className="text-sm text-red-600 mb-3">{error}</p>
+                    )}
+                    {loading && !error && (
+                        <p className="text-sm text-gray-500 mb-3">Cargando eventos...</p>
+                    )}
 
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
@@ -124,20 +166,22 @@ const GestionEventos: FC = () => {
                                         className="border-b border-gray-100 last:border-0"
                                     >
                                         <td className="py-2 px-3 whitespace-nowrap">{evento.titulo}</td>
-                                        <td className="py-2 px-3 whitespace-nowrap">{evento.fecha}</td>
+                                        <td className="py-2 px-3 whitespace-nowrap">{new Date(evento.fecha).toLocaleDateString("es-ES")}</td>
                                         <td className="py-2 px-3 whitespace-nowrap">{evento.lugar}</td>
                                         <td className="py-2 px-3 whitespace-nowrap">{evento.estado}</td>
-                                        <td className="py-2 px-3 whitespace-nowrap">{evento.aforo}</td>
+                                        <td className="py-2 px-3 whitespace-nowrap">{evento.aforo != null ? evento.aforo : "-"}</td>
                                         <td className="py-2 px-3 whitespace-nowrap">
                                             <button
                                                 type="button"
                                                 className="text-xs text-blue-600 hover:underline mr-2"
+                                                onClick={() => setEditingEvento(evento)}
                                             >
                                                 Editar
                                             </button>
                                             <button
                                                 type="button"
                                                 className="text-xs text-red-600 hover:underline"
+                                                onClick={() => setDeletingEvento(evento)}
                                             >
                                                 Eliminar
                                             </button>
@@ -161,6 +205,27 @@ const GestionEventos: FC = () => {
             </main>
 
             <Footer />
+            {showNuevoEventoModal && (
+                <NuevoEventoModal
+                    onClose={() => setShowNuevoEventoModal(false)}
+                    onCreated={() => setReloadFlag((v) => v + 1)}
+                />
+            )}
+            {editingEvento && (
+                <EditarEventoModal
+                    evento={editingEvento}
+                    onClose={() => setEditingEvento(null)}
+                    onUpdated={() => setReloadFlag((v) => v + 1)}
+                />
+            )}
+            {deletingEvento && (
+                <EliminarEventoModal
+                    evento={deletingEvento}
+                    onClose={() => setDeletingEvento(null)}
+                    onDeleted={() => setReloadFlag((v) => v + 1)}
+                />
+            )}
+
         </div>
     );
 };

@@ -39,6 +39,7 @@ const PanelAdmin: FC = () => {
                         title="Resumen general"
                         description="Datos generales de la asociación"
                         buttonText="Acceder"
+                        href="/ResumenGeneral"
                     />
                 </div>
             </main>
