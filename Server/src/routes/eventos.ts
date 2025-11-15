@@ -1,8 +1,7 @@
 import { Router } from "express";
 import { prisma } from "../db/prisma.js";
-import { createEventoSchema, upsertInscripcionSchema } from "../schemas/eventos.js";
-import { requireAuth } from "../middlewares/auth.js"; // ya lo tienes
-// opcional: requireAdmin si quieres restringir alta/edición de eventos
+import { createEventoSchema, upsertInscripcionSchema, updateEventoSchema } from "../schemas/eventos.js";
+import { requireAuth, requireAdmin } from "../middlewares/auth.js";
 
 export const eventosRouter = Router();
 
@@ -37,11 +36,30 @@ eventosRouter.get("/", async (req, res, next) => {
 });
 
 /** POST /api/eventos  (ADMIN) */
-eventosRouter.post("/", requireAuth /* + requireAdmin */, async (req, res, next) => {
+eventosRouter.post("/", requireAuth, requireAdmin, async (req, res, next) => {
     try {
         const data = createEventoSchema.parse(req.body);
         const evento = await prisma.evento.create({ data });
         res.status(201).json(evento);
+    } catch (e) { next(e); }
+});
+
+/** PATCH /api/eventos/:id  (ADMIN) */
+eventosRouter.patch("/:id", requireAuth, requireAdmin, async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const data = updateEventoSchema.parse(req.body);
+        const evento = await prisma.evento.update({ where: { id }, data });
+        res.json(evento);
+    } catch (e) { next(e); }
+});
+
+/** DELETE /api/eventos/:id  (ADMIN) */
+eventosRouter.delete("/:id", requireAuth, requireAdmin, async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        await prisma.evento.delete({ where: { id } });
+        res.status(204).end();
     } catch (e) { next(e); }
 });
 

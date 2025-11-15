@@ -47,6 +47,15 @@ const NavMenu = () => {
                             {item.label}
                         </Link>
                     ))}
+
+                    {user?.role === "ADMIN" && (
+                        <Link
+                            to="/PanelAdmin"
+                            className="px-4 py-2 rounded-md hover:bg-yellow-100 font-semibold"
+                        >
+                            Admin
+                        </Link>
+                    )}
                 </div>
 
                 {/* Botón logout derecha */}
@@ -91,6 +100,16 @@ const NavMenu = () => {
                                 {item.label}
                             </Link>
                         ))}
+
+                        {user?.role === "ADMIN" && (
+                            <Link
+                                to="/PanelAdmin"
+                                onClick={closeMenu}
+                                className="py-2 px-4 rounded hover:bg-yellow-100 font-semibold"
+                            >
+                                Admin
+                            </Link>
+                        )}
 
                         {user && (
                             <button
