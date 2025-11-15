@@ -32,6 +32,7 @@ const PanelAdmin: FC = () => {
                         title="Gestión de eventos"
                         description="Añadir o modificar eventos"
                         buttonText="Acceder"
+                        href="/GestionEventos"
                     />
                     <ActionCard
                         icon=""
