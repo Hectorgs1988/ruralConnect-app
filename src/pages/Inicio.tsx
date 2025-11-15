@@ -1,4 +1,4 @@
-import { useState, type FC } from "react";
+import { useEffect, useState, type FC } from "react";
 import Header from "@/components/Header";
 import NavMenu from "@/components/NavMenu";
 import ActionCard from "@/components/ui/ActionCard";
@@ -6,17 +6,44 @@ import EventCard from "@/components/ui/EventCard";
 import Footer from "@/components/Footer";
 import EventModal from "@/components/ui/EventModal";
 
+type EventoApi = {
+    id: string;
+    titulo: string;
+    fecha: string;
+    lugar?: string | null;
+};
+
 const Inicio: FC = () => {
     const [showModal, setShowModal] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<{
+        id: string;
         title: string;
         date: string;
         location: string;
     } | null>(null);
+    const [eventos, setEventos] = useState<EventoApi[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
+    useEffect(() => {
+        const loadEventos = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                const res = await fetch("http://localhost:4000/api/eventos?estado=PUBLICADO");
+                if (!res.ok) throw new Error("Error cargando eventos");
+                const data = await res.json();
+                setEventos(data);
+            } catch (e: any) {
+                setError(e.message ?? "Error al cargar eventos");
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadEventos();
+    }, []);
 
-
-    const handleOpenModal = (event: { title: string; date: string; location: string }) => {
+    const handleOpenModal = (event: { id: string; title: string; date: string; location: string }) => {
         setSelectedEvent(event);
         setShowModal(true);
     };
@@ -64,44 +91,48 @@ const Inicio: FC = () => {
                     <h2 className="flex items-center text-lg font-semibold mb-4">
                         <span className="mr-2">⏰</span> Próximos eventos
                     </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                        <EventCard
-                            title="Comida de San Vicente"
-                            date="Sábado 15 de Enero - 15:00h"
-                            location="Escuela"
-                            onClick={() =>
-                                handleOpenModal({
-                                    title: "Comida de San Vicente",
-                                    date: "Sábado 15 de Enero - 15:00h",
-                                    location: "Escuela",
-                                })
-                            }
-                        />
-                        <EventCard
-                            title="Paella inicio verano"
-                            date="Sábado 12 de Julio - 15:00h"
-                            location="Polideportivo"
-                            onClick={() =>
-                                handleOpenModal({
-                                    title: "Paellada",
-                                    date: "Sábado 12 de Julio - 15:00h",
-                                    location: "Polideportivo",
-                                })
-                            }
-                        />
-                        <EventCard
-                            title="Mariscada"
-                            date="Sábado 19 de Julio - 15:00h"
-                            location="Bolera"
-                            onClick={() =>
-                                handleOpenModal({
-                                    title: "Mariscada",
-                                    date: "Sábado 19 de Julio - 15:00h",
-                                    location: "Bolera",
-                                })
-                            }
-                        />
-                    </div>
+
+                    {loading && <p>Cargando eventos...</p>}
+                    {error && <p className="text-red-600">{error}</p>}
+
+                    {!loading && !error && eventos.length === 0 && (
+                        <p>No hay eventos publicados por ahora.</p>
+                    )}
+
+                    {!loading && !error && eventos.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                            {eventos.map((evento) => {
+                                const fechaObj = new Date(evento.fecha);
+                                const date = fechaObj.toLocaleDateString("es-ES", {
+                                    weekday: "long",
+                                    day: "2-digit",
+                                    month: "long",
+                                });
+                                const time = fechaObj.toLocaleTimeString("es-ES", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                });
+
+                                return (
+                                    <EventCard
+                                        key={evento.id}
+                                        title={evento.titulo}
+                                        date={date}
+                                        time={time}
+                                        location={evento.lugar ?? ""}
+                                        onClick={() =>
+                                            handleOpenModal({
+                                                id: evento.id,
+                                                title: evento.titulo,
+                                                date: `${date} - ${time}`,
+                                                location: evento.lugar ?? "",
+                                            })
+                                        }
+                                    />
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             </main>
 

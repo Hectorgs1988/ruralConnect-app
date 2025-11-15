@@ -9,8 +9,7 @@ import CrearReserva from '../pages/CrearReserva'
 import CompartirCoche from '../pages/CompartirCoche'
 import OfrecerViaje from '../pages/OfrecerViaje'
 import PanelAdmin from '../pages/PanelAdmin'
-import NuevoSocio from '../pages/NuevoSocio'
-import DetalleSocio from '../pages/DetalleSocio'
+import GestionSocio from '../pages/GestionSocio'
 import AsociacionMosquitos from '../pages/AsociacionMosquitos'
 import PrivateRoute, { RoleGuard } from "@/components/guards/PrivateRoute";
 
@@ -29,8 +28,7 @@ const router = createBrowserRouter([
 
     // solo ADMIN
     {path: "/PanelAdmin",element: (<RoleGuard role="ADMIN"><PanelAdmin /></RoleGuard>),},
-    {path: "/NuevoSocio",element: (<RoleGuard role="ADMIN"><NuevoSocio /></RoleGuard>),},
-    {path: "/DetalleSocio",element: (<RoleGuard role="ADMIN"><DetalleSocio /></RoleGuard>),},
+    {path: "/GestionSocio",element: (<RoleGuard role="ADMIN"><GestionSocio /></RoleGuard>),},
 
     // puedes dejar pública o también protegerla
     { path: "/AsociacionMosquitos", element: <AsociacionMosquitos /> },

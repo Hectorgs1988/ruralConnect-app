@@ -20,7 +20,7 @@ export default function Login() {
 
     try {
       const user = await login(username, password);
-      navigate(user.role === "ADMIN" ? "/PanelAdmin" : "/inicio", { replace: true });
+      navigate("/inicio", { replace: true });
     } catch (err: any) {
       setError(err?.message ?? "Usuario o contraseña incorrectos");
     }
