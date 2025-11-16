@@ -3,6 +3,8 @@ import { prisma } from '../db/prisma.js';
 import { createViajeSchema, joinViajeSchema } from '../schemas/viajes.js';
 import { requireAuth } from '../middlewares/auth';
 import { Phone } from 'lucide-react';
+import { sendTripJoinDriverEmail, sendTripJoinPassengerEmail } from '../services/email.js';
+
 
 export const viajesRouter = Router();
 
@@ -33,14 +35,14 @@ viajesRouter.get('/', async (req, res, next) => {
 viajesRouter.post("/", requireAuth, async (req, res, next) => {
     try {
         const body = createViajeSchema.parse(req.body);
-        const user = (req as any).user; 
+        const user = (req as any).user;
         const userId: string = user.sub;
 
         const viaje = await prisma.viaje.create({
             data: {
-                conductorId: userId,         
-                origen: body.origen,            
-                destino: body.destino,             
+                conductorId: userId,
+                origen: body.origen,
+                destino: body.destino,
                 fecha: body.fecha,
                 plazas: body.plazas,
                 notas: body.notas ?? null,
@@ -74,6 +76,56 @@ viajesRouter.post('/:id/unirse', async (req, res, next) => {
         const pv = await prisma.pasajeroViaje.create({
             data: { viajeId: viaje.id, userId },
         });
+
+        // Intentar enviar emails (no rompemos la respuesta si fallan)
+        try {
+            const pasajero = await prisma.user.findUnique({
+                where: { id: userId },
+                select: { name: true, email: true, phone: true },
+            });
+
+            const conductor = await prisma.user.findUnique({
+                where: { id: viaje.conductorId },
+                select: { name: true, email: true, phone: true },
+            });
+
+            // Email al pasajero
+            if (pasajero?.email) {
+                try {
+                    await sendTripJoinPassengerEmail({
+                        to: pasajero.email,
+                        name: pasajero.name,
+                        origen: viaje.origen,
+                        destino: viaje.destino,
+                        fecha: viaje.fecha,
+                        conductorNombre: conductor?.name ?? null,
+                        conductorTelefono: conductor?.phone ?? null,
+                    });
+                } catch (err) {
+                    console.error("Error enviando email de confirmación de viaje al pasajero:", err);
+                }
+            }
+
+            // Email al conductor
+            if (conductor?.email && pasajero?.email) {
+                try {
+                    await sendTripJoinDriverEmail({
+                        to: conductor.email,
+                        conductorName: conductor.name,
+                        pasajeroNombre: pasajero.name,
+                        pasajeroTelefono: pasajero.phone ?? null,
+                        pasajeroEmail: pasajero.email,
+                        origen: viaje.origen,
+                        destino: viaje.destino,
+                        fecha: viaje.fecha,
+                    });
+                } catch (err) {
+                    console.error("Error enviando email de aviso de nuevo pasajero al conductor:", err);
+                }
+            }
+        } catch (err) {
+            console.error("Error preparando datos para emails de viaje:", err);
+        }
 
         res.status(201).json(pv);
     } catch (e: any) {
