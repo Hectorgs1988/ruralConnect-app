@@ -1,4 +1,3 @@
-// server/src/services/email.ts
 import sgMail from "@sendgrid/mail";
 
 const apiKey = process.env.SENDGRID_API_KEY;
@@ -11,7 +10,7 @@ if (!apiKey) {
 }
 
 export async function sendTestEmail(to?: string) {
-    const toEmail = to || FROM; // si no pasas destinatario, te lo manda a ti mismo
+    const toEmail = to || FROM;
 
     const msg = {
         to: toEmail,
@@ -27,7 +26,6 @@ export async function sendTestEmail(to?: string) {
 
     await sgMail.send(msg);
 }
-
 
 export interface ReservationConfirmationEmail {
     to: string;
@@ -45,7 +43,7 @@ export async function sendReservationConfirmationEmail({
     fin,
 }: ReservationConfirmationEmail) {
     if (!apiKey) {
-        console.error("❌ No se puede enviar email de reserva: falta SENDGRID_API_KEY");
+        console.error("No se puede enviar email de reserva: falta SENDGRID_API_KEY");
         return;
     }
 
@@ -71,12 +69,12 @@ export async function sendReservationConfirmationEmail({
         subject: `Reserva confirmada · ${espacioNombre}`,
         text: `${greeting} tu reserva de ${espacioNombre} está confirmada desde ${inicioStr}${textFin}.`,
         html: `
-      <h1>Reserva confirmada</h1>
-      <p>${greeting}</p>
-      <p>Tu reserva de <strong>${espacioNombre}</strong> está confirmada.</p>
-      <p><strong>Desde:</strong> ${inicioStr}${htmlFin}</p>
-      <p>¡Gracias por usar Rural Connect!</p>
-    `,
+        <h1>Reserva confirmada</h1>
+        <p>${greeting}</p>
+        <p>Tu reserva de <strong>${espacioNombre}</strong> está confirmada.</p>
+        <p><strong>Desde:</strong> ${inicioStr}${htmlFin}</p>
+        <p>¡Gracias por usar Rural Connect!</p>
+        `,
     };
 
     await sgMail.send(msg as any);
@@ -90,7 +88,7 @@ export interface PasswordResetEmail {
 
 export async function sendPasswordResetEmail({ to, name, resetUrl }: PasswordResetEmail) {
     if (!apiKey) {
-        console.error("❌ No se puede enviar email de reset: falta SENDGRID_API_KEY");
+        console.error("No se puede enviar email de reset: falta SENDGRID_API_KEY");
         return;
     }
 
@@ -103,19 +101,17 @@ export async function sendPasswordResetEmail({ to, name, resetUrl }: PasswordRes
         subject: "Recuperación de contraseña · Rural Connect",
         text: `${greeting} hemos recibido una solicitud para restablecer tu contraseña. Puedes hacerlo en: ${resetUrl}`,
         html: `
-      <h1>Recuperación de contraseña</h1>
-      <p>${greeting}</p>
-      <p>Hemos recibido una solicitud para restablecer tu contraseña de Rural Connect.</p>
-      <p>Si has sido tú, haz clic en el siguiente enlace:</p>
-      <p><a href="${resetUrl}" target="_blank" rel="noopener noreferrer">Restablecer contraseña</a></p>
-      <p>Si no has solicitado este cambio, puedes ignorar este mensaje.</p>
+        <h1>Recuperación de contraseña</h1>
+        <p>${greeting}</p>
+        <p>Hemos recibido una solicitud para restablecer tu contraseña de Rural Connect.</p>
+        <p>Si has sido tú, haz clic en el siguiente enlace:</p>
+        <p><a href="${resetUrl}" target="_blank" rel="noopener noreferrer">Restablecer contraseña</a></p>
+        <p>Si no has solicitado este cambio, puedes ignorar este mensaje.</p>
     `,
     };
 
     await sgMail.send(msg as any);
 }
-
-
 
 export interface EventInscriptionEmail {
     to: string;
@@ -135,7 +131,7 @@ export async function sendEventInscriptionEmail({
     asistentes,
 }: EventInscriptionEmail) {
     if (!apiKey) {
-        console.error("❌ No se puede enviar email de evento: falta SENDGRID_API_KEY");
+        console.error("No se puede enviar email de evento: falta SENDGRID_API_KEY");
         return;
     }
 
@@ -160,19 +156,18 @@ export async function sendEventInscriptionEmail({
         subject: `Inscripción confirmada · ${titulo}`,
         text: `${greeting} tu inscripción al evento "${titulo}" está confirmada para el ${fechaStr}.${lugarTexto}\n${asistentesTexto}\n\n¡Gracias por participar en Rural Connect!`,
         html: `
-      <h1>Inscripción confirmada</h1>
-      <p>${greeting}</p>
-      <p>Tu inscripción al evento <strong>${titulo}</strong> está confirmada.</p>
-      <p><strong>Fecha y hora:</strong> ${fechaStr}</p>
-      ${lugarHtml}
-      <p>${asistentesTexto}</p>
-      <p>¡Gracias por participar en Rural Connect!</p>
+        <h1>Inscripción confirmada</h1>
+        <p>${greeting}</p>
+        <p>Tu inscripción al evento <strong>${titulo}</strong> está confirmada.</p>
+        <p><strong>Fecha y hora:</strong> ${fechaStr}</p>
+        ${lugarHtml}
+        <p>${asistentesTexto}</p>
+        <p>¡Gracias por participar en Rural Connect!</p>
     `,
     };
 
     await sgMail.send(msg as any);
 }
-
 
 export interface TripJoinPassengerEmail {
     to: string;
@@ -221,13 +216,13 @@ export async function sendTripJoinPassengerEmail({
         subject: `Te has unido al viaje · ${origen} → ${destino}`,
         text: `${greeting} te has unido al viaje ${origen} → ${destino} el ${fechaStr}.${conductorLineText}\n\nSi no puedes asistir, por favor avisa al conductor.\n\n¡Gracias por usar Rural Connect!`,
         html: `
-      <h1>Te has unido a un viaje</h1>
-      <p>${greeting}</p>
-      <p>Te has unido al viaje <strong>${origen} → ${destino}</strong>.</p>
-      <p><strong>Fecha y hora:</strong> ${fechaStr}</p>
-      ${conductorLineHtml}
-      <p>Si no puedes asistir, por favor avisa al conductor.</p>
-      <p>¡Gracias por usar Rural Connect!</p>
+        <h1>Te has unido a un viaje</h1>
+        <p>${greeting}</p>
+        <p>Te has unido al viaje <strong>${origen} → ${destino}</strong>.</p>
+        <p><strong>Fecha y hora:</strong> ${fechaStr}</p>
+        ${conductorLineHtml}
+        <p>Si no puedes asistir, por favor avisa al conductor.</p>
+        <p>¡Gracias por usar Rural Connect!</p>
     `,
     };
 
@@ -256,7 +251,7 @@ export async function sendTripJoinDriverEmail({
     fecha,
 }: TripJoinDriverEmail) {
     if (!apiKey) {
-        console.error("❌ No se puede enviar email de viaje (conductor): falta SENDGRID_API_KEY");
+        console.error("No se puede enviar email de viaje (conductor): falta SENDGRID_API_KEY");
         return;
     }
 
@@ -278,15 +273,126 @@ export async function sendTripJoinDriverEmail({
         subject: `Nuevo pasajero en tu viaje · ${origen} → ${destino}`,
         text: `${greeting} ${pasajeroNombreText} se ha unido a tu viaje ${origen} → ${destino} del ${fechaStr}.\n\nContacto del pasajero: ${pasajeroEmail}${telefonoLineaText}\n\nPor favor, ponte en contacto para coordinar el viaje.\n\nRural Connect`,
         html: `
-      <h1>Nuevo pasajero en tu viaje</h1>
-      <p>${greeting}</p>
-      <p><strong>${pasajeroNombreText}</strong> se ha unido a tu viaje <strong>${origen} → ${destino}</strong>.</p>
-      <p><strong>Fecha y hora:</strong> ${fechaStr}</p>
-      <p><strong>Contacto del pasajero:</strong> ${pasajeroEmail}${telefonoLineaHtml}</p>
-      <p>Por favor, ponte en contacto para coordinar el viaje.</p>
-      <p>Rural Connect</p>
+        <h1>Nuevo pasajero en tu viaje</h1>
+        <p>${greeting}</p>
+        <p><strong>${pasajeroNombreText}</strong> se ha unido a tu viaje <strong>${origen} → ${destino}</strong>.</p>
+        <p><strong>Fecha y hora:</strong> ${fechaStr}</p>
+        <p><strong>Contacto del pasajero:</strong> ${pasajeroEmail}${telefonoLineaHtml}</p>
+        <p>Por favor, ponte en contacto para coordinar el viaje.</p>
+        <p>Rural Connect</p>
     `,
     };
 
     await sgMail.send(msg as any);
 }
+
+export interface TripLeavePassengerEmail {
+    to: string;
+    name?: string | null;
+    origen: string;
+    destino: string;
+    fecha: Date;
+}
+
+export async function sendTripLeavePassengerEmail({
+    to,
+    name,
+    origen,
+    destino,
+    fecha,
+}: TripLeavePassengerEmail) {
+    if (!apiKey) {
+        console.error("No se puede enviar email de viaje (baja pasajero): falta SENDGRID_API_KEY");
+        return;
+    }
+
+    const displayName = name || "";
+    const greeting = displayName ? `Hola ${displayName},` : "Hola,";
+
+    const fechaStr = fecha.toLocaleString("es-ES", {
+        dateStyle: "short",
+        timeStyle: "short",
+    });
+
+    const msg = {
+        to,
+        from: FROM,
+        subject: `Has cancelado tu plaza · ${origen} → ${destino}`,
+        text: `${greeting} has cancelado tu plaza en el viaje ${origen} → ${destino} del ${fechaStr}.
+
+Si ha sido un error, puedes volver a unirte al viaje desde Rural Connect.
+
+Rural Connect`,
+        html: `
+        <h1>Has cancelado tu plaza en un viaje</h1>
+        <p>${greeting}</p>
+        <p>Has cancelado tu plaza en el viaje <strong>${origen} → ${destino}</strong>.</p>
+        <p><strong>Fecha y hora:</strong> ${fechaStr}</p>
+        <p>Si ha sido un error, puedes volver a unirte al viaje desde Rural Connect.</p>
+        <p>Rural Connect</p>
+    `,
+    };
+
+    await sgMail.send(msg as any);
+}
+
+export interface TripLeaveDriverEmail {
+    to: string;
+    conductorName?: string | null;
+    pasajeroNombre?: string | null;
+    pasajeroTelefono?: string | null;
+    pasajeroEmail: string;
+    origen: string;
+    destino: string;
+    fecha: Date;
+}
+
+export async function sendTripLeaveDriverEmail({
+    to,
+    conductorName,
+    pasajeroNombre,
+    pasajeroTelefono,
+    pasajeroEmail,
+    origen,
+    destino,
+    fecha,
+}: TripLeaveDriverEmail) {
+    if (!apiKey) {
+        console.error("No se puede enviar email de viaje (baja pasajero al conductor): falta SENDGRID_API_KEY");
+        return;
+    }
+
+    const displayName = conductorName || "";
+    const greeting = displayName ? `Hola ${displayName},` : "Hola,";
+
+    const fechaStr = fecha.toLocaleString("es-ES", {
+        dateStyle: "short",
+        timeStyle: "short",
+    });
+
+    const pasajeroNombreText = pasajeroNombre || "Un socio";
+    const telefonoLineaText = pasajeroTelefono ? ` · Teléfono: ${pasajeroTelefono}` : "";
+    const telefonoLineaHtml = pasajeroTelefono ? ` · Teléfono: ${pasajeroTelefono}` : "";
+
+    const msg = {
+        to,
+        from: FROM,
+        subject: `Un pasajero ha cancelado su plaza · ${origen} → ${destino}`,
+        text: `${greeting} ${pasajeroNombreText} ha cancelado su plaza en tu viaje ${origen} → ${destino} del ${fechaStr}.
+
+Contacto del pasajero: ${pasajeroEmail}${telefonoLineaText}
+
+Rural Connect`,
+        html: `
+        <h1>Un pasajero ha cancelado su plaza</h1>
+        <p>${greeting}</p>
+        <p><strong>${pasajeroNombreText}</strong> ha cancelado su plaza en tu viaje <strong>${origen} → ${destino}</strong>.</p>
+        <p><strong>Fecha y hora:</strong> ${fechaStr}</p>
+        <p><strong>Contacto del pasajero:</strong> ${pasajeroEmail}${telefonoLineaHtml}</p>
+        <p>Rural Connect</p>
+    `,
+    };
+
+    await sgMail.send(msg as any);
+}
+
