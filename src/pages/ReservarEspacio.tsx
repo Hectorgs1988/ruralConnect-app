@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import NavMenu from "@/components/NavMenu";
 import ReservationCard from "@/components/ui/ReservationCard";
 import type { Espacio } from "@/types/Espacio";
+import { listEspacios } from "@/api/espacios";
 
 const iconByTipo: Record<string, JSX.Element> = {
     comedor: <Utensils size={28} />,
@@ -27,19 +28,24 @@ const ReservasEspacio = () => {
     useEffect(() => {
         let alive = true;
         setLoading(true);
-        fetch("/api/espacios")
-            .then((r) => {
-                if (!r.ok) throw new Error(`HTTP ${r.status}`);
-                return r.json();
-            })
-            .then((data: Espacio[]) => {
-                if (alive) {
-                    setEspacios(data);
-                    setError(null);
-                }
-            })
-            .catch((e) => alive && setError(e.message))
-            .finally(() => alive && setLoading(false));
+
+        const fetchEspacios = async () => {
+            try {
+                const data = await listEspacios();
+                if (!alive) return;
+                setEspacios(data);
+                setError(null);
+            } catch (err: any) {
+                if (!alive) return;
+                setError(err?.message ?? "Error al cargar los espacios");
+            } finally {
+                if (!alive) return;
+                setLoading(false);
+            }
+        };
+
+        void fetchEspacios();
+
         return () => {
             alive = false;
         };

@@ -3,6 +3,7 @@ import { useState } from "react";
 import Button from "./button";
 import Input from "./input";
 import { useAuth } from "@/context/AuthContext";
+import { updateUser } from "@/api/users";
 
 interface EditarSocioModalProps {
     socio: {
@@ -49,7 +50,13 @@ const EditarSocioModal: FC<EditarSocioModalProps> = ({ socio, onClose, onUpdated
             return;
         }
 
-        if (!nombre.trim() || !apellidos.trim() || !email.trim() || !telefono.trim() || !rol.trim()) {
+        if (
+            !nombre.trim() ||
+            !apellidos.trim() ||
+            !email.trim() ||
+            !telefono.trim() ||
+            !rol.trim()
+        ) {
             setError("Rellena todos los campos obligatorios.");
             return;
         }
@@ -60,34 +67,21 @@ const EditarSocioModal: FC<EditarSocioModalProps> = ({ socio, onClose, onUpdated
             return;
         }
 
-        const body = {
-            email: email.trim(),
-            name: `${nombre.trim()} ${apellidos.trim()}`.trim(),
-            phone: telefono.trim() || null,
-            role: roleUpper as "ADMIN" | "SOCIO",
-        };
+        const fullName = `${nombre.trim()} ${apellidos.trim()}`.trim();
+        const phoneValue = telefono.trim() || null;
 
         try {
             setSubmitting(true);
-            const res = await fetch(`http://localhost:4000/api/users/${socio.id}`, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
+            await updateUser(
+                socio.id,
+                {
+                    email: email.trim(),
+                    name: fullName,
+                    phone: phoneValue,
+                    role: roleUpper as "ADMIN" | "SOCIO",
                 },
-                body: JSON.stringify(body),
-            });
-
-            if (res.status === 409) {
-                const j = await res.json().catch(() => null);
-                setError(j?.error ?? "Ya existe un usuario con ese email");
-                return;
-            }
-
-            if (!res.ok) {
-                const text = await res.text().catch(() => "");
-                throw new Error(text || `Error ${res.status} al actualizar el socio`);
-            }
+                token
+            );
 
             if (onUpdated) onUpdated();
             onClose();
@@ -97,6 +91,7 @@ const EditarSocioModal: FC<EditarSocioModalProps> = ({ socio, onClose, onUpdated
             setSubmitting(false);
         }
     };
+
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center px-4">

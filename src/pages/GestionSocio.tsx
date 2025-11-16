@@ -8,6 +8,7 @@ import NuevoSocioModal from "@/components/ui/NuevoSocioModal";
 import EditarSocioModal from "@/components/ui/EditarSocioModal";
 import EliminarSocioModal from "@/components/ui/EliminarSocioModal";
 import { useAuth } from "@/context/AuthContext";
+import { listUsers } from "@/api/users";
 
 
 type Socio = {
@@ -44,31 +45,7 @@ const GestionSocio: FC = () => {
                 setLoading(true);
                 setError(null);
 
-                const res = await fetch(
-                    "http://localhost:4000/api/users?active=true&page=1&size=100",
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
-                );
-
-                if (!res.ok) {
-                    const text = await res.text().catch(() => "");
-                    throw new Error(text || `Error ${res.status} al cargar los socios`);
-                }
-
-                type ApiUser = {
-                    id: string;
-                    email: string;
-                    name: string;
-                    phone: string | null;
-                    role: "ADMIN" | "SOCIO";
-                    isActive: boolean;
-                    createdAt: string;
-                };
-
-                const data: { items: ApiUser[] } = await res.json();
+                const data = await listUsers({ active: true, page: 1, size: 100 }, token);
 
                 const mapped: Socio[] = data.items.map((u) => ({
                     id: u.id,
