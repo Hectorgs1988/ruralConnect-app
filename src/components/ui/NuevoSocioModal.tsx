@@ -3,6 +3,7 @@ import { useState } from "react";
 import Button from "./button";
 import Input from "./input";
 import { useAuth } from "@/context/AuthContext";
+import { createUser } from "@/api/users";
 
 interface NuevoSocioModalProps {
     onClose: () => void;
@@ -29,7 +30,13 @@ const NuevoSocioModal: FC<NuevoSocioModalProps> = ({ onClose, onCreated }) => {
             return;
         }
 
-        if (!nombre.trim() || !apellidos.trim() || !email.trim() || !telefono.trim() || !rol.trim()) {
+        if (
+            !nombre.trim() ||
+            !apellidos.trim() ||
+            !email.trim() ||
+            !telefono.trim() ||
+            !rol.trim()
+        ) {
             setError("Rellena todos los campos obligatorios.");
             return;
         }
@@ -40,38 +47,21 @@ const NuevoSocioModal: FC<NuevoSocioModalProps> = ({ onClose, onCreated }) => {
             return;
         }
 
-        const isAdmin = roleUpper === "ADMIN";
-        const baseUrl = "http://localhost:4000/api/users";
-        const url = isAdmin ? `${baseUrl}/admin` : baseUrl;
-
-        const body = {
-            email: email.trim(),
-            password: "socio123",
-            name: `${nombre.trim()} ${apellidos.trim()}`.trim(),
-            phone: telefono.trim() || undefined,
-        };
+        const fullName = `${nombre.trim()} ${apellidos.trim()}`.trim();
+        const phoneValue = telefono.trim() || undefined;
 
         try {
             setSubmitting(true);
-            const res = await fetch(url, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
+            await createUser(
+                {
+                    email: email.trim(),
+                    password: "socio123",
+                    name: fullName,
+                    phone: phoneValue,
+                    role: roleUpper as "ADMIN" | "SOCIO",
                 },
-                body: JSON.stringify(body),
-            });
-
-            if (res.status === 409) {
-                const j = await res.json().catch(() => null);
-                setError(j?.error ?? "Ya existe un usuario con ese email");
-                return;
-            }
-
-            if (!res.ok) {
-                const text = await res.text().catch(() => "");
-                throw new Error(text || `Error ${res.status} al crear el socio`);
-            }
+                token
+            );
 
             if (onCreated) onCreated();
             onClose();

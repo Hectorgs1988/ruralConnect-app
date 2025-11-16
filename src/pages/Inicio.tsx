@@ -5,13 +5,8 @@ import ActionCard from "@/components/ui/ActionCard";
 import EventCard from "@/components/ui/EventCard";
 import Footer from "@/components/Footer";
 import EventModal from "@/components/ui/EventModal";
+import { listEventos, type ApiEvento } from "@/api/eventos";
 
-type EventoApi = {
-    id: string;
-    titulo: string;
-    fecha: string;
-    lugar?: string | null;
-};
 
 const Inicio: FC = () => {
     const [showModal, setShowModal] = useState(false);
@@ -21,7 +16,7 @@ const Inicio: FC = () => {
         date: string;
         location: string;
     } | null>(null);
-    const [eventos, setEventos] = useState<EventoApi[]>([]);
+    const [eventos, setEventos] = useState<ApiEvento[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -30,9 +25,7 @@ const Inicio: FC = () => {
             try {
                 setLoading(true);
                 setError(null);
-                const res = await fetch("http://localhost:4000/api/eventos?estado=PUBLICADO");
-                if (!res.ok) throw new Error("Error cargando eventos");
-                const data = await res.json();
+                const data = await listEventos({ estado: "PUBLICADO" });
                 setEventos(data);
             } catch (e: any) {
                 setError(e.message ?? "Error al cargar eventos");
@@ -40,8 +33,9 @@ const Inicio: FC = () => {
                 setLoading(false);
             }
         };
-        loadEventos();
+        void loadEventos();
     }, []);
+
 
     const handleOpenModal = (event: { id: string; title: string; date: string; location: string }) => {
         setSelectedEvent(event);

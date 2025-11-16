@@ -4,6 +4,7 @@ import { useState } from "react";
 import Button from "./button";
 import Input from "./input";
 import { useAuth } from "@/context/AuthContext";
+import { joinEvento } from "@/api/eventos";
 
 interface EventModalProps {
     onClose: () => void;
@@ -43,24 +44,7 @@ const EventModal: FC<EventModalProps> = ({ onClose, event }) => {
 
         try {
             setSubmitting(true);
-            const res = await fetch(`http://localhost:4000/api/eventos/${event.id}/inscribirme`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ asistentes: peopleCount }),
-            });
-
-            if (res.status === 409) {
-                const j = await res.json().catch(() => null);
-                throw new Error(j?.error ?? "Aforo completo para este evento");
-            }
-
-            if (!res.ok) {
-                const text = await res.text().catch(() => "");
-                throw new Error(text || `Error ${res.status} al apuntarte al evento`);
-            }
+            await joinEvento(event.id, { asistentes: peopleCount }, token);
 
             onClose();
         } catch (err: any) {
@@ -69,6 +53,7 @@ const EventModal: FC<EventModalProps> = ({ onClose, event }) => {
             setSubmitting(false);
         }
     };
+
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center px-4">

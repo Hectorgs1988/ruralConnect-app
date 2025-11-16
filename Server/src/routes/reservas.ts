@@ -53,8 +53,8 @@ reservasRouter.get("/", async (req, res, next) => {
 reservasRouter.post('/', requireAuth, async (req, res, next) => {
     try {
         const body = createReservaSchema.parse(req.body);
-        const user = (req as any).user;          // puesto por requireAuth
-        const userId: string = user.sub;         // <-- este es tu usuario real
+        const user = (req as any).user;          
+        const userId: string = user.sub;        
 
         // solapes (igual que antes)
         const solape = await prisma.reserva.findFirst({
