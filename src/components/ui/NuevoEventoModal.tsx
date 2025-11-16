@@ -92,23 +92,36 @@ const NuevoEventoModal: FC<NuevoEventoModalProps> = ({ onClose, onCreated }) => 
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center px-4">
-            <div className="bg-[#FAFAF0] rounded-xl p-6 md:p-8 w-full max-w-2xl relative shadow-lg">
+        <div
+            className="rc-modal-overlay"
+            onClick={handleCancel}
+        >
+            <div
+                className="rc-modal-panel max-w-2xl"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <button
                     type="button"
                     onClick={handleCancel}
-                    className="absolute top-4 right-6 text-gray-500 hover:text-black text-xl font-semibold"
+                    className="absolute top-4 right-4 text-muted hover:text-dark text-xl font-semibold"
+                    aria-label="Cerrar"
                 >
                     ✕
                 </button>
 
-                <h2 className="text-2xl font-bold mb-1">Crear nuevo evento</h2>
-                <p className="text-sm text-gray-600 mb-6">
-                    Introduce los datos del nuevo evento
-                </p>
+                <div className="mb-6">
+                    <h2 className="rc-modal-title">Crear nuevo evento</h2>
+                    <p className="rc-modal-subtitle">
+                        Introduce los datos del nuevo evento
+                    </p>
+                </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
+                    {error && (
+                        <p className="text-sm text-error mb-2">
+                            {error}
+                        </p>
+                    )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -164,7 +177,7 @@ const NuevoEventoModal: FC<NuevoEventoModalProps> = ({ onClose, onCreated }) => 
                     <div>
                         <label className="block text-sm font-medium mb-1">Estado *</label>
                         <select
-                            className="w-full px-3 py-2 rounded-md bg-[#FAFAF0] border border-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                            className="w-full px-3 py-2 rounded-md bg-surfaceMuted border border-borderSoft focus:outline-none focus:ring-2 focus:ring-primary/60 text-sm"
                             value={estado}
                             onChange={(e) => setEstado(e.target.value)}
                         >
@@ -176,18 +189,18 @@ const NuevoEventoModal: FC<NuevoEventoModalProps> = ({ onClose, onCreated }) => 
                         </select>
                     </div>
 
-                    <div className="flex flex-col md:flex-row gap-3 justify-end pt-2">
+                    <div className="rc-modal-footer">
                         <Button
                             type="button"
                             onClick={handleCancel}
-                            className="w-full md:w-auto bg-white border border-gray-300 text-black hover:bg-gray-50"
+                            className="w-full md:w-auto rc-btn-secondary"
                             disabled={submitting}
                         >
                             Cancelar
                         </Button>
                         <Button
                             type="submit"
-                            className="w-full md:w-auto"
+                            className="w-full md:w-auto rc-btn-primary"
                             disabled={submitting}
                         >
                             {submitting ? "Guardando..." : "Guardar evento"}

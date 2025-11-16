@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type JSX } from "react";
 import { useNavigate } from "react-router-dom";
-import { Utensils, Dumbbell, Dribbble, BadgePercent, Landmark } from "lucide-react";
+import { Utensils, Dumbbell, BadgePercent, Landmark } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import NavMenu from "@/components/NavMenu";
@@ -13,7 +13,7 @@ const iconByTipo: Record<string, JSX.Element> = {
     cocina: <Utensils size={28} />,
     horno: <Utensils size={28} />,
     gimnasio: <Dumbbell size={28} />,
-    padel: <Dribbble size={28} />,
+    padel: <Dumbbell size={28} />,
     tenis: <BadgePercent size={28} />,
     polideportivo: <Landmark size={28} />,
 };

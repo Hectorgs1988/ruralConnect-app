@@ -16,17 +16,18 @@ const ReservationCard: FC<ReservationCardProps> = ({
     onClick,
 }) => {
     return (
-        <div onClick={onClick} 
-        className="bg-white p-4 rounded-lg shadow flex flex-col gap-2 h-full"
-        role={onClick ? "button" : undefined}
-        tabIndex={onClick ? 0 : -1}
+        <div
+            onClick={onClick}
+            className="rc-card p-4 flex flex-col gap-2 h-full transition-transform hover:-translate-y-0.5 hover:shadow-soft"
+            role={onClick ? "button" : undefined}
+            tabIndex={onClick ? 0 : -1}
         >
-            <div className="flex items-center gap-2 text-xl font-semibold">
+            <div className="flex items-center gap-2 text-xl font-semibold text-dark">
                 {icon}
                 {title}
             </div>
-            <div className="text-sm text-gray-700">👥 {capacity}</div>
-            <div className="text-sm text-gray-600">{description}</div>
+            <div className="text-sm text-muted">👥 {capacity}</div>
+            <div className="text-sm text-muted">{description}</div>
         </div>
     );
 };

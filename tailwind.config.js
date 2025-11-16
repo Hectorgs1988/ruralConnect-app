@@ -17,6 +17,7 @@ export default {
         borderSoft: '#F3E8C9',     // Bordes sutiles
         dark: '#222222',           // Texto principal
         error: '#E74C3C',          // Errores
+        success: '#22C55E',        // Éxito / confirmaciones
       },
       fontFamily: {
         sans: ['Inter', 'Helvetica', 'Arial', 'sans-serif'],

@@ -318,7 +318,7 @@ export default function CrearReserva() {
                             </p>
                         )}
                         {error && <p className="text-error text-sm mb-1">{error}</p>}
-                        {ok && <p className="text-sm text-green-700 mb-1">{ok}</p>}
+                        {ok && <p className="text-sm text-success mb-1">{ok}</p>}
 
                         <Button
                             type="submit"

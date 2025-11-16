@@ -56,39 +56,66 @@ const EventModal: FC<EventModalProps> = ({ onClose, event }) => {
 
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center px-4">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md relative shadow-lg">
+        <div
+            className="rc-modal-overlay"
+            onClick={onClose}
+        >
+            <div
+                className="rc-modal-panel max-w-md"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <button
                     onClick={onClose}
-                    className="absolute top-3 right-4 text-gray-500 hover:text-black text-xl"
+                    className="absolute top-4 right-4 text-muted hover:text-dark text-xl font-semibold"
+                    aria-label="Cerrar"
                 >
                     ✕
                 </button>
 
-                <h2 className="text-lg font-bold mb-2">{event.title}</h2>
-                <p className="text-sm text-gray-600 mb-1">{event.date}</p>
-                <p className="text-sm text-gray-600 mb-4">{event.location}</p>
+                <div className="mb-4">
+                    <h2 className="rc-modal-title">{event.title}</h2>
+                    <p className="rc-modal-subtitle">{event.date} · {event.location}</p>
+                </div>
 
                 <form className="space-y-3" onSubmit={handleSubmit}>
-                    {error && <p className="text-sm text-red-600 mb-1">{error}</p>}
+                    {error && (
+                        <p className="text-sm text-error mb-1">
+                            {error}
+                        </p>
+                    )}
 
-                    <label className="text-sm text-gray-700 block mb-1">Nombre</label>
+                    <label className="text-sm text-dark block mb-1">Nombre</label>
                     <Input
                         placeholder="nombre"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                     />
 
-                    <label className="text-sm text-gray-700 block mb-1">Número de asistentes</label>
+                    <label className="text-sm text-dark block mb-1">Número de asistentes</label>
                     <Input
                         type="number"
                         min={1}
                         value={peopleCount.toString()}
                         onChange={(e) => setPeopleCount(Number(e.target.value))}
                     />
-                    <Button type="submit" className="w-full" disabled={submitting}>
-                        {submitting ? "Apuntando..." : "Apuntarme"}
-                    </Button>
+
+                    <div className="rc-modal-footer">
+                        <Button
+                            type="button"
+                            onClick={onClose}
+                            className="w-full md:w-auto rc-btn-secondary"
+                            disabled={submitting}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            type="submit"
+                            className="w-full md:w-auto rc-btn-primary"
+                            disabled={submitting}
+                        >
+                            {submitting ? "Apuntando..." : "Apuntarme"}
+                        </Button>
+                    </div>
                 </form>
             </div>
         </div>
