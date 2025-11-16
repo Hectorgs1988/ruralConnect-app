@@ -2,6 +2,7 @@ import type { FC } from "react";
 import { useState } from "react";
 import Button from "./button";
 import { useAuth } from "@/context/AuthContext";
+import { deleteUser } from "@/api/users";
 
 interface EliminarSocioModalProps {
     socio: {
@@ -27,18 +28,7 @@ const EliminarSocioModal: FC<EliminarSocioModalProps> = ({ socio, onClose, onDel
 
         try {
             setSubmitting(true);
-
-            const res = await fetch(`http://localhost:4000/api/users/${socio.id}`, {
-                method: "DELETE",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-
-            if (!res.ok) {
-                const text = await res.text().catch(() => "");
-                throw new Error(text || `Error ${res.status} al eliminar el socio`);
-            }
+            await deleteUser(socio.id, token);
 
             if (onDeleted) onDeleted();
             onClose();

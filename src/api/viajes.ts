@@ -1,88 +1,119 @@
 import type { Viaje } from "@/types/Travel";
+import { getErrorMessage } from "./client";
 
-export async function listViajes(params?: { from?: string; to?: string; desde?: string }) {
-    const q = new URLSearchParams();
-    if (params?.from) q.set("from", params.from);
-    if (params?.to) q.set("to", params.to);
-    if (params?.desde) q.set("desde", params.desde);
-    const res = await fetch(`/api/viajes${q.toString() ? `?${q}` : ""}`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+export interface ListViajesParams {
+    from?: string;
+    to?: string;
+    desde?: string;
+}
+
+export async function listViajes(
+    params: ListViajesParams = {},
+    token?: string
+): Promise<Viaje[]> {
+    const searchParams = new URLSearchParams();
+    if (params.from) searchParams.set("from", params.from);
+    if (params.to) searchParams.set("to", params.to);
+    if (params.desde) searchParams.set("desde", params.desde);
+
+    const query = searchParams.toString();
+
+    const headers: Record<string, string> = {};
+    if (token) {
+        headers.Authorization = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`/api/viajes${query ? `?${query}` : ""}` , {
+        headers,
+    });
+
+    if (!res.ok) {
+        throw new Error(
+            await getErrorMessage(res, `Error ${res.status} al cargar los viajes`)
+        );
+    }
+
     return (await res.json()) as Viaje[];
 }
 
-export async function createViaje(body: {
+export interface CreateViajeInput {
     from: string;
     to: string;
-    fecha: string;   // ISO
+    fecha: string; // ISO
     plazas: number;
     notas?: string;
-}) {
-    let token: string | null = null;
-    const raw = localStorage.getItem("auth");
-    if (raw) {
-        try {
-            const parsed = JSON.parse(raw);
-            token = typeof parsed?.token === "string" ? parsed.token : null;
-        } catch { }
-    }
+}
 
+export async function createViaje(
+    input: CreateViajeInput,
+    token: string
+): Promise<Viaje> {
     const res = await fetch("/api/viajes", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify(input),
     });
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+    if (!res.ok) {
+        throw new Error(
+            await getErrorMessage(res, `Error ${res.status} al crear el viaje`)
+        );
+    }
+
     return (await res.json()) as Viaje;
 }
 
-export async function joinViaje(viajeId: string, userId: string) {
-    let token: string | null = null;
-    const raw = localStorage.getItem("auth");
-    if (raw) {
-        try {
-            const parsed = JSON.parse(raw);
-            token = typeof parsed?.token === "string" ? parsed.token : null;
-        } catch { }
-    }
-
+export async function joinViaje(
+    viajeId: string,
+    userId: string,
+    token: string
+): Promise<void> {
     const res = await fetch(`/api/viajes/${viajeId}/unirse`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({userId}),
+        body: JSON.stringify({ userId }),
     });
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
-    return await res.json();
-}
-
-export async function leaveViaje(viajeId: string, userId: string) {
-    let token: string | null = null;
-    const raw = localStorage.getItem("auth");
-    if (raw) {
-        try {
-            const parsed = JSON.parse(raw);
-            token = typeof parsed?.token === "string" ? parsed.token : null;
-        } catch { }
+    if (res.status === 409) {
+        throw new Error(
+            await getErrorMessage(
+                res,
+                "No hay plazas disponibles o ya estás unido a este viaje"
+            )
+        );
     }
 
+    if (!res.ok) {
+        throw new Error(
+            await getErrorMessage(res, `Error ${res.status} al unirte al viaje`)
+        );
+    }
+}
+
+export async function leaveViaje(
+    viajeId: string,
+    userId: string,
+    token: string
+): Promise<void> {
     const res = await fetch(`/api/viajes/${viajeId}/unirse`, {
         method: "DELETE",
         headers: {
             "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({userId}),
+        body: JSON.stringify({ userId }),
     });
 
     if (!res.ok && res.status !== 204) {
-        throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+        throw new Error(
+            await getErrorMessage(res, `Error ${res.status} al salir del viaje`)
+        );
     }
 }
 

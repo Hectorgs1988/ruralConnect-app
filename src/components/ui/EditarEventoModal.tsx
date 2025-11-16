@@ -4,6 +4,7 @@ import Button from "./button";
 import Input from "./input";
 import Textarea from "./TextArea";
 import { useAuth } from "@/context/AuthContext";
+import { updateEvento } from "@/api/eventos";
 
 interface EditarEventoModalProps {
     evento: {
@@ -87,19 +88,7 @@ const EditarEventoModal: FC<EditarEventoModalProps> = ({ evento, onClose, onUpda
 
         try {
             setSubmitting(true);
-            const res = await fetch(`http://localhost:4000/api/eventos/${evento.id}`, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify(body),
-            });
-
-            if (!res.ok) {
-                const text = await res.text().catch(() => "");
-                throw new Error(text || `Error ${res.status} al actualizar el evento`);
-            }
+            await updateEvento(evento.id, body, token);
 
             if (onUpdated) onUpdated();
             onClose();
@@ -109,6 +98,7 @@ const EditarEventoModal: FC<EditarEventoModalProps> = ({ evento, onClose, onUpda
             setSubmitting(false);
         }
     };
+
 
     const handleCancel = () => {
         if (!submitting) {

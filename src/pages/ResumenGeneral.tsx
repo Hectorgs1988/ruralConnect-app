@@ -5,32 +5,7 @@ import Footer from "@/components/Footer";
 import Button from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
-
-
-type UltimoEvento = {
-    id: string;
-    titulo: string;
-    fecha: string;
-    estado: "BORRADOR" | "PUBLICADO" | "CANCELADO";
-};
-
-type UltimoSocio = {
-    id: string;
-    name: string;
-    email: string;
-    role: "ADMIN" | "SOCIO";
-};
-
-type ResumenStats = {
-    sociosTotales: number;
-    sociosActivos: number;
-    eventosPublicados: number;
-    viajesCompartidos: number;
-    reservasTotales: number;
-    espaciosDisponibles: number;
-    ultimosEventos: UltimoEvento[];
-    ultimosSocios: UltimoSocio[];
-};
+import { getResumenDashboard, type ResumenStats } from "@/api/dashboard";
 
 
 const ResumenGeneral: FC = () => {
@@ -53,18 +28,7 @@ const ResumenGeneral: FC = () => {
                 setLoading(true);
                 setError(null);
 
-                const res = await fetch("http://localhost:4000/api/dashboard/resumen", {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-
-                if (!res.ok) {
-                    const text = await res.text().catch(() => "");
-                    throw new Error(text || `Error ${res.status} al cargar el resumen`);
-                }
-
-                const data: ResumenStats = await res.json();
+                const data = await getResumenDashboard(token);
                 setStats(data);
             } catch (err: any) {
                 setError(err?.message ?? "Error al cargar el resumen general");

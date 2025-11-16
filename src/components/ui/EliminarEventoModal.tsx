@@ -2,6 +2,7 @@ import type { FC } from "react";
 import { useState } from "react";
 import Button from "./button";
 import { useAuth } from "@/context/AuthContext";
+import { deleteEvento } from "@/api/eventos";
 
 interface EliminarEventoModalProps {
     evento: {
@@ -27,18 +28,7 @@ const EliminarEventoModal: FC<EliminarEventoModalProps> = ({ evento, onClose, on
 
         try {
             setSubmitting(true);
-
-            const res = await fetch(`http://localhost:4000/api/eventos/${evento.id}`, {
-                method: "DELETE",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-
-            if (!res.ok) {
-                const text = await res.text().catch(() => "");
-                throw new Error(text || `Error ${res.status} al eliminar el evento`);
-            }
+            await deleteEvento(evento.id, token);
 
             if (onDeleted) onDeleted();
             onClose();
@@ -48,6 +38,7 @@ const EliminarEventoModal: FC<EliminarEventoModalProps> = ({ evento, onClose, on
             setSubmitting(false);
         }
     };
+
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center px-4">

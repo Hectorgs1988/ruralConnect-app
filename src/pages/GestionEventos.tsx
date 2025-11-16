@@ -8,6 +8,7 @@ import NuevoEventoModal from "@/components/ui/NuevoEventoModal";
 import EditarEventoModal from "@/components/ui/EditarEventoModal";
 import EliminarEventoModal from "@/components/ui/EliminarEventoModal";
 import { useAuth } from "@/context/AuthContext";
+import { listEventos } from "@/api/eventos";
 
 
 type Evento = {
@@ -46,28 +47,7 @@ const GestionEventos: FC = () => {
                 setLoading(true);
                 setError(null);
 
-                const res = await fetch("http://localhost:4000/api/eventos", {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-
-                if (!res.ok) {
-                    const text = await res.text().catch(() => "");
-                    throw new Error(text || `Error ${res.status} al cargar los eventos`);
-                }
-
-                type ApiEvento = {
-                    id: string;
-                    titulo: string;
-                    fecha: string;
-                    lugar?: string | null;
-                    aforo?: number | null;
-                    estado: "BORRADOR" | "PUBLICADO" | "CANCELADO";
-                    descripcion?: string | null;
-                };
-
-                const data: ApiEvento[] = await res.json();
+                const data = await listEventos({}, token);
 
                 const mapped: Evento[] = data.map((e) => ({
                     id: e.id,

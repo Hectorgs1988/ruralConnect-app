@@ -7,6 +7,8 @@ import Button from "@/components/ui/button";
 import DayTimeline from "@/components/ui/DayTimeline";
 import type { Espacio } from "@/types/Espacio";
 import { useAuth } from "@/context/AuthContext";
+import { createReserva, listReservas } from "@/api/reservas";
+import type { ApiReserva as Reserva } from "@/api/reservas";
 
 type LocationState = { espacio: Espacio };
 
@@ -46,13 +48,6 @@ function toIsoLocal(dateStr: string, timeStr: string) {
     return new Date(`${dateStr}T${timeStr}`).toISOString();
 }
 
-type Reserva = {
-    id: string;
-    usuarioId: string;
-    espacioId: string;
-    inicio: string; // ISO
-    fin: string; // ISO
-};
 
 export default function CrearReserva() {
     const navigate = useNavigate();
@@ -86,12 +81,12 @@ export default function CrearReserva() {
     async function reloadReservasDia(fechaStr: string, espacioId: string) {
         const desde = toIsoLocal(fechaStr, "00:00");
         const hasta = toIsoLocal(fechaStr, "23:59");
-        const q = new URLSearchParams({ espacioId, desde, hasta }).toString();
-        const r = await fetch(`/api/reservas?${q}`, {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const data: Reserva[] = await r.json();
+
+        const data = await listReservas(
+            { espacioId, desde, hasta },
+            token ?? undefined
+        );
+
         setReservasDia(data);
     }
 
@@ -185,25 +180,14 @@ export default function CrearReserva() {
 
         setLoading(true);
         try {
-            const res = await fetch("/api/reservas", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
+            await createReserva(
+                {
                     espacioId: espacio.id,
                     inicio: inicioIso,
                     fin: finIso,
-                    // motivo: se puede añadir más adelante
-                }),
-            });
-
-            if (res.status === 409) {
-                const j = await res.json();
-                throw new Error(j?.error ?? "Horario no disponible");
-            }
-            if (!res.ok) throw new Error(`Error ${res.status}: ${await res.text()}`);
+                },
+                token
+            );
 
             setOk("¡Reserva creada!");
             // refrescar disponibilidad al instante
