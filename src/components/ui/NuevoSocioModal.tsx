@@ -73,24 +73,35 @@ const NuevoSocioModal: FC<NuevoSocioModalProps> = ({ onClose, onCreated }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center px-4">
-            <div className="bg-[#FAFAF0] rounded-xl p-6 md:p-8 w-full max-w-2xl relative shadow-lg">
+        <div
+            className="rc-modal-overlay"
+            onClick={onClose}
+        >
+            <div
+                className="rc-modal-panel max-w-2xl"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <button
                     type="button"
                     onClick={onClose}
-                    className="absolute top-4 right-6 text-gray-500 hover:text-black text-xl font-semibold"
+                    className="absolute top-4 right-4 text-muted hover:text-dark text-xl font-semibold"
+                    aria-label="Cerrar"
                 >
                     ✕
                 </button>
 
-                <h2 className="text-2xl font-bold mb-1">Añadir nuevo socio</h2>
-                <p className="text-sm text-gray-600 mb-6">
-                    Introduce los datos del nuevo socio de la peña
-                </p>
+                <div className="mb-6">
+                    <h2 className="rc-modal-title">Añadir nuevo socio</h2>
+                    <p className="rc-modal-subtitle">
+                        Introduce los datos del nuevo socio de la peña
+                    </p>
+                </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {error && (
-                        <p className="text-sm text-red-600 mb-2">{error}</p>
+                        <p className="text-sm text-error mb-2">
+                            {error}
+                        </p>
                     )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -140,9 +151,23 @@ const NuevoSocioModal: FC<NuevoSocioModalProps> = ({ onClose, onCreated }) => {
                         />
                     </div>
 
-                    <Button type="submit" className="w-full mt-4" disabled={submitting}>
-                        {submitting ? "Creando socio..." : "Añadir Socio"}
-                    </Button>
+                    <div className="rc-modal-footer">
+                        <Button
+                            type="button"
+                            onClick={onClose}
+                            className="w-full md:w-auto rc-btn-secondary"
+                            disabled={submitting}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            type="submit"
+                            className="w-full md:w-auto rc-btn-primary"
+                            disabled={submitting}
+                        >
+                            {submitting ? "Creando socio..." : "Añadir Socio"}
+                        </Button>
+                    </div>
                 </form>
             </div>
         </div>

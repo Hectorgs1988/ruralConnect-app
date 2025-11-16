@@ -8,6 +8,7 @@ interface TextareaProps {
     name?: string;
     id?: string;
     rows?: number;
+    className?: string;
 }
 
 const Textarea: React.FC<TextareaProps> = ({
@@ -18,6 +19,7 @@ const Textarea: React.FC<TextareaProps> = ({
     name,
     id,
     rows = 3,
+    className,
 }) => {
     return (
         <div className="w-full mb-4">
@@ -28,10 +30,9 @@ const Textarea: React.FC<TextareaProps> = ({
                 name={name}
                 id={id}
                 rows={rows}
-                className={`w-full px-4 py-2 rounded-md bg-[#FAFAF0] border ${error ? 'border-red-500' : 'border-gray-300'
-                    } focus:outline-none focus:ring-2 focus:ring-yellow-400 resize-none`}
+                className={`w-full px-4 py-2 rounded-md bg-surfaceMuted border ${error ? 'border-error' : 'border-borderSoft'} focus:outline-none focus:ring-2 focus:ring-primary/60 resize-none text-sm ${className ?? ''}`}
             />
-            {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
+            {error && <p className="text-sm text-error mt-1">{error}</p>}
         </div>
     );
 };

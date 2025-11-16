@@ -41,28 +41,43 @@ const EliminarEventoModal: FC<EliminarEventoModalProps> = ({ evento, onClose, on
 
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center px-4">
-            <div className="bg-[#FAFAF0] rounded-xl p-6 md:p-8 w-full max-w-lg relative shadow-lg">
+        <div
+            className="rc-modal-overlay"
+            onClick={onClose}
+        >
+            <div
+                className="rc-modal-panel max-w-lg"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <button
                     type="button"
                     onClick={onClose}
-                    className="absolute top-4 right-6 text-gray-500 hover:text-black text-xl font-semibold"
+                    className="absolute top-4 right-4 text-muted hover:text-dark text-xl font-semibold"
+                    aria-label="Cerrar"
                 >
-                    X
+                    ✕
                 </button>
 
-                <h2 className="text-2xl font-bold mb-2">
-                    Eliminar evento <span className="font-semibold">[{evento.titulo}]</span>
-                </h2>
-                <p className="text-sm text-gray-700 mb-6">Deseas eliminar este evento?</p>
+                <div className="mb-4">
+                    <h2 className="rc-modal-title">
+                        Eliminar evento <span className="font-semibold">[{evento.titulo}]</span>
+                    </h2>
+                    <p className="rc-modal-subtitle">
+                        Deseas eliminar este evento?
+                    </p>
+                </div>
 
-                {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+                {error && (
+                    <p className="text-sm text-error mb-4">
+                        {error}
+                    </p>
+                )}
 
-                <div className="flex flex-col md:flex-row gap-3 justify-end">
+                <div className="rc-modal-footer">
                     <Button
                         type="button"
                         onClick={onClose}
-                        className="w-full md:w-auto bg-white border border-gray-300 text-black hover:bg-gray-50"
+                        className="w-full md:w-auto rc-btn-secondary"
                         disabled={submitting}
                     >
                         Cancelar
@@ -70,7 +85,7 @@ const EliminarEventoModal: FC<EliminarEventoModalProps> = ({ evento, onClose, on
                     <Button
                         type="button"
                         onClick={handleDelete}
-                        className="w-full md:w-auto"
+                        className="w-full md:w-auto rc-btn-primary"
                         disabled={submitting}
                     >
                         {submitting ? "Eliminando..." : "Eliminar"}

@@ -29,8 +29,8 @@ const DayTimeline: FC<Props> = ({ occupied, selected, step = 30 }) => {
                         const left = `${(m / (24 * 60)) * 100}%`;
                         return (
                             <div key={i} className="absolute top-0" style={{ left }}>
-                                <div className="w-px h-3 bg-gray-300" />
-                                <div className="text-[10px] text-gray-500 -translate-x-1/2 mt-1">{HH(m)}:00</div>
+                                <div className="w-px h-3 bg-borderSoft" />
+                                <div className="text-[10px] text-muted -translate-x-1/2 mt-1">{HH(m)}:00</div>
                             </div>
                         );
                     })}
@@ -38,13 +38,13 @@ const DayTimeline: FC<Props> = ({ occupied, selected, step = 30 }) => {
             </div>
 
             {/* barra principal */}
-            <div className="w-full rounded overflow-hidden border border-gray-200">
+            <div className="w-full rounded overflow-hidden border border-borderSoft">
                 <div className="flex">
                     {slots.map((m) => {
                         const sel = selected && within(m, selected);
                         const busy = occupied.some(iv => within(m, iv));
                         // 👇 prioridad: seleccionado > ocupado > libre
-                        const bg = sel ? "bg-yellow-300" : busy ? "bg-red-300" : "bg-green-100";
+                        const bg = sel ? "bg-primary/80" : busy ? "bg-error/60" : "bg-success/40";
                         return (
                             <div
                                 key={m}
@@ -56,10 +56,10 @@ const DayTimeline: FC<Props> = ({ occupied, selected, step = 30 }) => {
                 </div>
             </div>
 
-            <div className="flex gap-4 mt-2 text-xs text-gray-600">
-                <span className="inline-flex items-center gap-1"><span className="w-3 h-3 bg-red-300 inline-block rounded-sm" /> Ocupado</span>
-                <span className="inline-flex items-center gap-1"><span className="w-3 h-3 bg-yellow-300 inline-block rounded-sm" /> Selección</span>
-                <span className="inline-flex items-center gap-1"><span className="w-3 h-3 bg-green-100 inline-block rounded-sm" /> Libre</span>
+            <div className="flex gap-4 mt-2 text-xs text-muted">
+                <span className="inline-flex items-center gap-1"><span className="w-3 h-3 bg-error/60 inline-block rounded-sm" /> Ocupado</span>
+                <span className="inline-flex items-center gap-1"><span className="w-3 h-3 bg-primary/80 inline-block rounded-sm" /> Selección</span>
+                <span className="inline-flex items-center gap-1"><span className="w-3 h-3 bg-success/40 inline-block rounded-sm" /> Libre</span>
             </div>
         </div>
     );

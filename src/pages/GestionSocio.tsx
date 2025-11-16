@@ -79,30 +79,32 @@ const GestionSocio: FC = () => {
     });
 
     return (
-        <div className="min-h-screen flex flex-col bg-background text-black">
+        <div className="rc-page">
             <Header />
             <NavMenu />
 
-            <main className="flex-1 px-4 md:px-10 mt-6 mb-10">
-                <h1 className="text-center text-2xl md:text-3xl font-bold mb-2">
-                    Gestion de socios
+            <main className="flex-1 rc-shell py-10 space-y-8 mb-10">
+                <h1 className="rc-hero-title">
+                    Gestión de socios
                 </h1>
-                <p className="text-center text-sm md:text-base text-muted-foreground mb-8">
-                    Anadir o modificar socios de la asociacion
+                <p className="rc-hero-subtitle">
+                    Añadir o modificar socios de la asociación
                 </p>
 
-                <div className="bg-white rounded-xl p-4 md:p-6 shadow w-full max-w-6xl mx-auto">
+                <div className="rc-card-section w-full">
                     <div className="flex flex-col gap-4 mb-4 md:mb-6">
-                        <h2 className="text-lg font-semibold">Gestion de socios</h2>
+                        <h2 className="text-base md:text-lg font-semibold text-dark flex items-center gap-2">
+                            👥 Gestión de socios
+                        </h2>
                         <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
-                            <div className="flex-1 flex items-center bg-[#FAFAF0] border border-gray-300 rounded-md px-3 py-2">
-                                <span className="mr-2 text-gray-500">🔍</span>
+                            <div className="flex-1 flex items-center bg-surfaceMuted border border-borderSoft rounded-full px-4 py-2">
+                                <span className="mr-2 text-muted">🔍</span>
                                 <input
                                     type="text"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     placeholder="Buscar por nombre, apellidos o email..."
-                                    className="w-full bg-transparent outline-none text-sm"
+                                    className="w-full bg-transparent outline-none text-sm text-dark placeholder:text-muted"
                                 />
                             </div>
                             <Button
@@ -117,16 +119,16 @@ const GestionSocio: FC = () => {
                     </div>
 
                     {error && (
-                        <p className="text-sm text-red-600 mb-3">{error}</p>
+                        <p className="text-sm text-error mb-3">{error}</p>
                     )}
                     {loading && !error && (
-                        <p className="text-sm text-gray-500 mb-3">Cargando socios...</p>
+                        <p className="text-sm text-muted mb-3">Cargando socios...</p>
                     )}
 
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
                             <thead>
-                                <tr className="border-b border-gray-200 text-xs uppercase text-gray-500">
+                                <tr className="border-b border-borderSoft text-[11px] uppercase tracking-wide text-muted">
                                     <th className="py-2 px-3">Nombre</th>
                                     <th className="py-2 px-3">Email</th>
                                     <th className="py-2 px-3">Telefono</th>
@@ -139,7 +141,7 @@ const GestionSocio: FC = () => {
                                 {sociosFiltrados.map((socio) => (
                                     <tr
                                         key={socio.id}
-                                        className="border-b border-gray-100 last:border-0"
+                                        className="border-b border-borderSoft/60 last:border-0"
                                     >
                                         <td className="py-2 px-3 whitespace-nowrap">{socio.nombre}</td>
                                         <td className="py-2 px-3 whitespace-nowrap">{socio.email}</td>
@@ -149,14 +151,14 @@ const GestionSocio: FC = () => {
                                         <td className="py-2 px-3 whitespace-nowrap">
                                             <button
                                                 type="button"
-                                                className="text-xs text-blue-600 hover:underline mr-2"
+                                                className="text-xs text-dark hover:text-primaryStrong mr-2"
                                                 onClick={() => setEditingSocio(socio)}
                                             >
                                                 Editar
                                             </button>
                                             <button
                                                 type="button"
-                                                className="text-xs text-red-600 hover:underline"
+                                                className="text-xs text-error hover:underline"
                                                 onClick={() => setDeletingSocio(socio)}
                                             >
                                                 Eliminar
@@ -168,7 +170,7 @@ const GestionSocio: FC = () => {
                                     <tr>
                                         <td
                                             colSpan={6}
-                                            className="py-4 text-center text-gray-500 text-sm"
+                                            className="py-4 text-center text-muted text-sm"
                                         >
                                             No se han encontrado socios con ese criterio de busqueda.
                                         </td>

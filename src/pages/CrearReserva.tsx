@@ -202,31 +202,31 @@ export default function CrearReserva() {
     const noHayHueco = !inicioOptions.length || !finOptions.length;
 
     return (
-        <div className="min-h-screen bg-background text-black flex flex-col">
+        <div className="rc-page">
             <Header />
             <NavMenu />
 
-            <main className="flex-grow container mx-auto px-4 py-8">
+            <main className="flex-1 rc-shell py-10 space-y-8">
                 <Button
                     type="button"
                     onClick={() => navigate(-1)}
-                    className="mb-4 text-sm px-3 py-1 rounded"
+                    className="mb-4 text-sm px-3 py-1 rounded-full border border-borderSoft bg-surface hover:bg-surfaceMuted transition-colors"
                 >
                     ← Volver a espacios
                 </Button>
 
-                <h2 className="text-3xl font-bold text-center mb-6">Reserva de espacios</h2>
+                <h2 className="rc-hero-title">Reserva de espacios</h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Info espacio + timeline */}
-                    <div className="bg-white rounded-xl shadow p-5 border border-gray-200">
+                    <section className="rc-card-section">
                         <h3 className="text-xl font-semibold mb-2">{espacio.nombre}</h3>
                         {espacio.aforo != null && (
-                            <p className="text-sm text-gray-600 mb-2">
+                            <p className="text-sm text-muted mb-2">
                                 👥 {espacio.aforo} personas
                             </p>
                         )}
-                        <p className="text-sm text-gray-700">
+                        <p className="text-sm text-muted">
                             Tipo: <b>{espacio.tipo}</b>
                         </p>
 
@@ -242,77 +242,89 @@ export default function CrearReserva() {
                                 step={30}
                             />
                             {loadingSlots && (
-                                <p className="text-sm text-gray-600 mt-2">
+                                <p className="text-sm text-muted mt-2">
                                     Actualizando disponibilidad…
                                 </p>
                             )}
                         </div>
-                    </div>
+                    </section>
 
                     {/* Formulario */}
-                    <form
-                        onSubmit={onSubmit}
-                        className="bg-white rounded-xl shadow p-5 border border-gray-200"
-                    >
-                        <h3 className="text-lg font-semibold mb-4">Realizar reserva</h3>
+                    <form onSubmit={onSubmit} className="rc-card-section space-y-4">
+                        <div>
+                            <h3 className="text-lg font-semibold mb-1">Realizar reserva</h3>
+                            <p className="text-xs text-muted">
+                                Elige fecha y horario. Las reservas son de al menos 60 minutos.
+                            </p>
+                        </div>
 
-                        <label className="block text-sm mb-1">Fecha</label>
-                        <input
-                            type="date"
-                            value={fecha}
-                            onChange={(e) => setFecha(e.target.value)}
-                            className="w-full mb-3 rounded border border-gray-300 bg-[#FAFAF0] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                            required
-                        />
+                        <div>
+                            <label className="block text-sm mb-1">Fecha</label>
+                            <input
+                                type="date"
+                                value={fecha}
+                                onChange={(e) => setFecha(e.target.value)}
+                                className="w-full rounded-full border border-borderSoft bg-surfaceMuted px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/60 mb-2"
+                                required
+                            />
+                        </div>
 
-                        <label className="block text-sm mb-1">Horario</label>
-                        <div className="grid grid-cols-2 gap-3 mb-3">
-                            <select
-                                value={inicio}
-                                onChange={(e) => setInicio(e.target.value)}
-                                className="rounded border border-gray-300 bg-[#FAFAF0] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                                disabled={loadingSlots || !fecha}
-                            >
-                                {inicioOptions.map((t) => (
-                                    <option key={t} value={t}>
-                                        {t}
-                                    </option>
-                                ))}
-                            </select>
+                        <div>
+                            <label className="block text-sm mb-1">Horario</label>
+                            <div className="grid grid-cols-2 gap-3">
+                                <select
+                                    value={inicio}
+                                    onChange={(e) => setInicio(e.target.value)}
+                                    className="rounded-full border border-borderSoft bg-surfaceMuted px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/60"
+                                    disabled={loadingSlots || !fecha}
+                                >
+                                    {inicioOptions.map((t) => (
+                                        <option key={t} value={t}>
+                                            {t}
+                                        </option>
+                                    ))}
+                                </select>
 
-                            <select
-                                value={fin}
-                                onChange={(e) => setFin(e.target.value)}
-                                className="rounded border border-gray-300 bg-[#FAFAF0] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                                disabled={loadingSlots || !fecha || !inicioOptions.length}
-                            >
-                                {finOptions.map((t) => (
-                                    <option key={t} value={t}>
-                                        {t}
-                                    </option>
-                                ))}
-                            </select>
+                                <select
+                                    value={fin}
+                                    onChange={(e) => setFin(e.target.value)}
+                                    className="rounded-full border border-borderSoft bg-surfaceMuted px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/60"
+                                    disabled={loadingSlots || !fecha || !inicioOptions.length}
+                                >
+                                    {finOptions.map((t) => (
+                                        <option key={t} value={t}>
+                                            {t}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
 
                         {/* Motivo (UI) */}
-                        <label className="block text-sm mb-1">Motivo (opcional)</label>
-                        <textarea
-                            rows={3}
-                            value={motivo}
-                            onChange={(e) => setMotivo(e.target.value)}
-                            placeholder="Describe motivo/personas aproximadas"
-                            className="w-full mb-4 rounded border border-gray-300 bg-[#FAFAF0] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                        />
+                        <div>
+                            <label className="block text-sm mb-1">Motivo (opcional)</label>
+                            <textarea
+                                rows={3}
+                                value={motivo}
+                                onChange={(e) => setMotivo(e.target.value)}
+                                placeholder="Describe motivo/personas aproximadas"
+                                className="w-full rounded-2xl border border-borderSoft bg-surfaceMuted px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/60"
+                            />
+                        </div>
 
                         {noHayHueco && fecha && !loadingSlots && (
-                            <p className="text-sm text-red-600 mb-2">
+                            <p className="text-sm text-error mb-1">
                                 No hay huecos de al menos 60 min en esa fecha.
                             </p>
                         )}
-                        {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
-                        {ok && <p className="text-green-700 text-sm mb-2">{ok}</p>}
+                        {error && <p className="text-error text-sm mb-1">{error}</p>}
+                        {ok && <p className="text-sm text-success mb-1">{ok}</p>}
 
-                        <Button type="submit" disabled={loading || noHayHueco} className="w-full">
+                        <Button
+                            type="submit"
+                            disabled={loading || noHayHueco}
+                            className="w-full rc-btn-primary mt-2"
+                        >
                             {loading ? "Guardando…" : "Confirmar reserva"}
                         </Button>
                     </form>

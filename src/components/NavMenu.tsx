@@ -24,11 +24,12 @@ const NavMenu = () => {
     };
 
     return (
-        <nav className="w-full px-4 py-2 bg-white border-b border-yellow-400 relative">
-            {/* DESKTOP: saludo + menú + botón logout */}
+        <nav className="w-full bg-surface/80 border-b border-borderSoft backdrop-blur">
+            <div className="rc-shell py-2 relative">
+                {/* DESKTOP: saludo + menú + botón logout */}
             <div className="hidden md:flex items-center justify-between">
                 {/* Saludo izquierda */}
-                <div className="text-sm text-gray-700">
+                <div className="text-sm text-muted">
                     {user && (
                         <>
                             Hola, <span className="font-semibold">{user.name}</span>
@@ -42,7 +43,7 @@ const NavMenu = () => {
                         <Link
                             key={item.to}
                             to={item.to}
-                            className="px-4 py-2 rounded-md hover:bg-yellow-100"
+                            className="px-4 py-2 rounded-full text-sm text-muted hover:text-dark hover:bg-primarySoft"
                         >
                             {item.label}
                         </Link>
@@ -51,7 +52,7 @@ const NavMenu = () => {
                     {user?.role === "ADMIN" && (
                         <Link
                             to="/PanelAdmin"
-                            className="px-4 py-2 rounded-md hover:bg-yellow-100 font-semibold"
+                            className="px-4 py-2 rounded-full text-sm font-semibold text-dark bg-primary/80 hover:bg-primaryStrong"
                         >
                             Admin
                         </Link>
@@ -63,7 +64,7 @@ const NavMenu = () => {
                     {user && (
                         <button
                             onClick={handleLogout}
-                            className="text-xs md:text-sm px-3 py-1 rounded-full border border-yellow-400 text-yellow-700 hover:bg-yellow-100"
+                            className="text-xs md:text-sm px-3 py-1 rounded-full border border-borderSoft text-muted hover:bg-surfaceMuted"
                         >
                             Cerrar sesión
                         </button>
@@ -73,7 +74,7 @@ const NavMenu = () => {
 
             {/* MOBILE: saludo + icono menú */}
             <div className="flex justify-between items-center md:hidden">
-                <div className="text-xs text-gray-700">
+                <div className="text-xs text-muted">
                     {user && (
                         <>
                             Hola, <span className="font-semibold">{user.name}</span>
@@ -81,21 +82,21 @@ const NavMenu = () => {
                     )}
                 </div>
 
-                <button onClick={toggleMenu} className="text-black">
+                <button onClick={toggleMenu} className="text-dark">
                     {isOpen ? <X size={24} /> : <Menu size={24} />}
                 </button>
             </div>
 
             {/* Menú móvil desplegable */}
             {isOpen && (
-                <div className="md:hidden absolute top-12 left-0 w-full bg-white shadow-md z-10">
+                <div className="md:hidden absolute top-11 left-0 w-full bg-surface shadow-soft border border-borderSoft rounded-2xl z-10">
                     <div className="flex flex-col space-y-2 p-4">
                         {navItems.map((item) => (
                             <Link
                                 key={item.to}
                                 to={item.to}
                                 onClick={closeMenu}
-                                className="py-2 px-4 rounded hover:bg-yellow-100"
+                                className="py-2 px-4 rounded-full text-sm text-muted hover:text-dark hover:bg-primarySoft"
                             >
                                 {item.label}
                             </Link>
@@ -105,7 +106,7 @@ const NavMenu = () => {
                             <Link
                                 to="/PanelAdmin"
                                 onClick={closeMenu}
-                                className="py-2 px-4 rounded hover:bg-yellow-100 font-semibold"
+                                className="py-2 px-4 rounded-full text-sm font-semibold text-dark bg-primary/80 hover:bg-primaryStrong"
                             >
                                 Admin
                             </Link>
@@ -117,7 +118,7 @@ const NavMenu = () => {
                                     handleLogout();
                                     closeMenu();
                                 }}
-                                className="mt-2 py-2 px-4 rounded hover:bg-yellow-100 text-red-600 text-left"
+                                className="mt-2 py-2 px-4 rounded-full text-sm text-error hover:bg-surfaceMuted text-left"
                             >
                                 Cerrar sesión
                             </button>
@@ -125,6 +126,7 @@ const NavMenu = () => {
                     </div>
                 </div>
             )}
+        </div>
         </nav>
     );
 };

@@ -57,33 +57,41 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center px-4">
-            <div className="bg-white w-full max-w-lg rounded-xl shadow-xl relative p-6">
+        <div
+            className="rc-modal-overlay"
+            onClick={onClose}
+        >
+            <div
+                className="rc-modal-panel max-w-lg"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <button
-                    className="absolute top-3 right-4 text-gray-500 hover:text-black text-xl"
+                    className="absolute top-4 right-4 text-muted hover:text-dark text-xl font-semibold"
                     onClick={onClose}
                     aria-label="Cerrar modal"
                 >
                     ✕
                 </button>
 
-                <h2 className="text-xl font-semibold mb-1">Ofrecer nuevo viaje</h2>
-                <p className="text-sm text-gray-600 mb-5">
-                    Publica tu viaje para que otros socios puedan unirse
-                </p>
+                <div className="mb-4">
+                    <h2 className="rc-modal-title">Ofrecer nuevo viaje</h2>
+                    <p className="rc-modal-subtitle">
+                        Publica tu viaje para que otros socios puedan unirse
+                    </p>
+                </div>
 
                 <form className="space-y-4" onSubmit={handleSubmit}>
-                    <div className="flex gap-4">
-                        <div className="w-1/2">
-                            <label className="text-sm text-gray-700 block mb-1">Origen</label>
+                    <div className="flex flex-col md:flex-row gap-4">
+                        <div className="md:w-1/2">
+                            <label className="text-sm text-dark block mb-1">Origen</label>
                             <Input
                                 placeholder="Ej: Burgos"
                                 value={origen}
                                 onChange={(e) => setOrigen(e.target.value)}
                             />
                         </div>
-                        <div className="w-1/2">
-                            <label className="text-sm text-gray-700 block mb-1">Destino</label>
+                        <div className="md:w-1/2">
+                            <label className="text-sm text-dark block mb-1">Destino</label>
                             <Input
                                 placeholder="Ej: Susinos"
                                 value={destino}
@@ -92,17 +100,17 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit }) => {
                         </div>
                     </div>
 
-                    <div className="flex gap-4">
-                        <div className="w-1/2">
-                            <label className="text-sm text-gray-700 block mb-1">Fecha</label>
+                    <div className="flex flex-col md:flex-row gap-4">
+                        <div className="md:w-1/2">
+                            <label className="text-sm text-dark block mb-1">Fecha</label>
                             <Input
                                 type="date"
                                 value={fecha}
                                 onChange={(e) => setFecha(e.target.value)}
                             />
                         </div>
-                        <div className="w-1/2">
-                            <label className="text-sm text-gray-700 block mb-1">Hora</label>
+                        <div className="md:w-1/2">
+                            <label className="text-sm text-dark block mb-1">Hora</label>
                             <Input
                                 type="time"
                                 value={hora}
@@ -112,7 +120,7 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit }) => {
                     </div>
 
                     <div>
-                        <label className="text-sm text-gray-700 block mb-1">Plazas disponibles</label>
+                        <label className="text-sm text-dark block mb-1">Plazas disponibles</label>
                         <Input
                             type="number"
                             min={1}
@@ -123,19 +131,38 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit }) => {
                     </div>
 
                     <div>
-                        <label className="text-sm text-gray-700 block mb-1">Descripción del viaje</label>
+                        <label className="text-sm text-dark block mb-1">Descripción del viaje</label>
                         <Textarea
+                            className="bg-surfaceMuted border border-borderSoft rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/60"
                             placeholder="Información adicional sobre el viaje..."
                             value={descripcion}
                             onChange={(e) => setDescripcion(e.target.value)}
                         />
                     </div>
 
-                    {error && <p className="text-red-600 text-sm">{error}</p>}
+                    {error && (
+                        <p className="text-error text-sm">
+                            {error}
+                        </p>
+                    )}
 
-                    <Button type="submit" className="w-full" disabled={sending}>
-                        {sending ? "Publicando…" : "Publicar viaje"}
-                    </Button>
+                    <div className="rc-modal-footer">
+                        <Button
+                            type="button"
+                            onClick={onClose}
+                            className="w-full md:w-auto rc-btn-secondary"
+                            disabled={sending}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            type="submit"
+                            className="w-full md:w-auto rc-btn-primary"
+                            disabled={sending}
+                        >
+                            {sending ? "Publicando…" : "Publicar viaje"}
+                        </Button>
+                    </div>
                 </form>
             </div>
         </div>
