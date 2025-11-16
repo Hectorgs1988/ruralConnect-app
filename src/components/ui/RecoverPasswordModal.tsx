@@ -14,34 +14,57 @@ const RecoverPasswordModal = ({ onClose }: RecoverPasswordModalProps) => {
     onClose();
 };
 
-return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-    <div className="bg-white rounded-lg p-6 w-full max-w-md relative">
-        <button
-        className="absolute top-2 right-2 text-gray-600"
-        onClick={onClose}
+    return (
+        <div
+            className="rc-modal-overlay"
+            onClick={onClose}
         >
-        ✕
-        </button>
+            <div
+                className="rc-modal-panel max-w-md"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <button
+                    className="absolute top-4 right-4 text-muted hover:text-dark text-xl font-semibold"
+                    onClick={onClose}
+                    aria-label="Cerrar modal"
+                >
+                    ✕
+                </button>
 
-        <h2 className="text-xl font-bold mb-4 text-center">
-            Recuperar contraseña
-        </h2>
+                <div className="mb-4 text-center">
+                    <h2 className="rc-modal-title">Recuperar contraseña</h2>
+                    <p className="rc-modal-subtitle">
+                        Introduce tu usuario para recuperar el acceso.
+                    </p>
+                </div>
 
-        <label htmlFor="username" className="text-sm font-medium">
-            Usuario
-        </label>
-        <Input
-            id="username"
-            placeholder="Introduce tu usuario"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-        />
+                <label htmlFor="username" className="text-sm font-medium">
+                    Usuario
+                </label>
+                <Input
+                    id="username"
+                    placeholder="Introduce tu usuario"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                />
 
-        <Button onClick={handleRecover} className="mt-4 w-full">
-            Recuperar contraseña
-        </Button>
-        </div>
+                <div className="rc-modal-footer">
+                    <Button
+                        type="button"
+                        onClick={onClose}
+                        className="w-full md:w-auto rc-btn-secondary"
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        type="button"
+                        onClick={handleRecover}
+                        className="w-full md:w-auto rc-btn-primary"
+                    >
+                        Recuperar contraseña
+                    </Button>
+                </div>
+            </div>
         </div>
     );
 };

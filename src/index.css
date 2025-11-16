@@ -4,6 +4,70 @@
 
 @layer base {
   body {
-    @apply font-sans bg-background text-black;
+    @apply font-sans bg-background text-dark;
+  }
+}
+
+@layer utilities {
+  .text-muted-foreground {
+    @apply text-muted;
+  }
+}
+
+@layer components {
+  .rc-page {
+    @apply min-h-screen flex flex-col bg-gradient-to-b from-background to-primarySoft text-dark;
+  }
+
+  .rc-shell {
+    @apply w-full max-w-6xl mx-auto px-4 md:px-8;
+  }
+
+  .rc-hero-title {
+    @apply text-center text-3xl md:text-4xl font-semibold tracking-tight text-dark;
+  }
+
+  .rc-hero-subtitle {
+    @apply text-center text-sm md:text-base text-muted mt-2 mb-8;
+  }
+
+  .rc-card {
+    @apply bg-surface rounded-2xl shadow-soft border border-borderSoft;
+  }
+
+  .rc-card-section {
+    @apply rc-card p-6 md:p-8;
+  }
+
+  .rc-btn-primary {
+    @apply inline-flex items-center justify-center rounded-full bg-primary text-dark px-5 py-2 text-sm font-semibold shadow-sm hover:bg-primaryStrong transition-colors;
+  }
+
+  .rc-pill {
+    @apply inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-1 text-xs font-medium text-muted shadow-sm;
+  }
+
+  .rc-modal-overlay {
+    @apply fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4;
+  }
+
+  .rc-modal-panel {
+    @apply rc-card w-full max-w-lg md:max-w-xl p-6 md:p-8 relative;
+  }
+
+  .rc-modal-title {
+    @apply text-lg md:text-xl font-semibold text-dark;
+  }
+
+  .rc-modal-subtitle {
+    @apply text-sm text-muted mt-1 mb-4;
+  }
+
+  .rc-modal-footer {
+    @apply mt-6 flex flex-col md:flex-row gap-3 justify-end;
+  }
+
+  .rc-btn-secondary {
+    @apply inline-flex items-center justify-center rounded-full bg-surfaceMuted text-dark px-5 py-2 text-sm font-medium border border-borderSoft hover:bg-surface transition-colors;
   }
 }

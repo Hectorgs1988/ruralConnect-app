@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type JSX } from "react";
 import { useNavigate } from "react-router-dom";
-import { Utensils, Dumbbell, Dribbble, BadgePercent, Landmark } from "lucide-react";
+import { Utensils, Dumbbell, BadgePercent, Landmark } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import NavMenu from "@/components/NavMenu";
@@ -13,7 +13,7 @@ const iconByTipo: Record<string, JSX.Element> = {
     cocina: <Utensils size={28} />,
     horno: <Utensils size={28} />,
     gimnasio: <Dumbbell size={28} />,
-    padel: <Dribbble size={28} />,
+    padel: <Dumbbell size={28} />,
     tenis: <BadgePercent size={28} />,
     polideportivo: <Landmark size={28} />,
 };
@@ -57,9 +57,9 @@ const ReservasEspacio = () => {
     };
 
     const content = useMemo(() => {
-        if (loading) return <p className="text-center text-gray-600">Cargando espacios…</p>;
-        if (error) return <p className="text-center text-red-600">Error: {error}</p>;
-        if (!espacios.length) return <p className="text-center text-gray-600">No hay espacios aún.</p>;
+        if (loading) return <p className="text-center text-muted">Cargando espacios…</p>;
+        if (error) return <p className="text-center text-error font-medium">Error: {error}</p>;
+        if (!espacios.length) return <p className="text-center text-muted">No hay espacios aún.</p>;
 
         return (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
@@ -86,15 +86,27 @@ const ReservasEspacio = () => {
     }, [espacios, loading, error]);
 
     return (
-        <div className="min-h-screen bg-background text-black flex flex-col">
+        <div className="rc-page">
             <Header />
             <NavMenu />
-            <main className="flex-grow container mx-auto px-4 py-8">
-                <h2 className="text-3xl font-bold text-center mb-2">Reserva de espacios</h2>
-                <p className="text-center text-gray-700 mb-8">
+            <main className="flex-1 rc-shell py-10 space-y-8">
+                <h2 className="rc-hero-title">Reserva de espacios</h2>
+                <p className="rc-hero-subtitle">
                     Reserva los espacios comunes de la asociación para tus eventos y actividades
                 </p>
-                {content}
+
+                <section className="rc-card-section">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-base font-semibold text-dark flex items-center gap-2">
+                            <span className="text-xl">📍</span>
+                            Espacios disponibles
+                        </h3>
+                        <p className="text-xs text-muted">
+                            Selecciona un espacio para ver horarios y crear una reserva.
+                        </p>
+                    </div>
+                    {content}
+                </section>
             </main>
             <Footer />
         </div>
