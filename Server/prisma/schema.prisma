@@ -1,0 +1,147 @@
+// server/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  SOCIO
+}
+
+enum EstadoReserva {
+  PENDIENTE
+  CONFIRMADA
+  CANCELADA
+}
+
+enum EstadoViaje {
+  ABIERTO
+  COMPLETO
+  CANCELADO
+}
+
+enum EstadoEvento {
+  BORRADOR
+  PUBLICADO
+  CANCELADO
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  phone     String?
+  role      Role     @default(SOCIO)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  Reservas          Reserva[]
+  Viajes            Viaje[]             @relation("Conductor")
+  Pasajes           PasajeroViaje[]
+  InscripcionEvento InscripcionEvento[]
+}
+
+model Espacio {
+  id          String    @id @default(cuid())
+  nombre      String    @unique
+  tipo        String
+  aforo       Int?
+  descripcion String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+  Reservas    Reserva[]
+
+  @@index([nombre])
+}
+
+model Reserva {
+  id        String    @id @default(cuid())
+  usuarioId String
+  espacioId String
+  inicio    DateTime  @map("fecha")
+  fin       DateTime?
+
+  estado    EstadoReserva @default(CONFIRMADA)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @default(now()) @updatedAt
+
+  User    User    @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  Espacio Espacio @relation(fields: [espacioId], references: [id], onDelete: Cascade)
+
+  @@index([espacioId, inicio])
+  @@index([espacioId, fin])
+  @@index([usuarioId, inicio])
+}
+
+model Viaje {
+  id          String      @id @default(cuid())
+  conductorId String
+  origen      String      @map("from")
+  destino     String      @map("to")
+  fecha       DateTime
+  plazas      Int
+  notas       String?
+  estado      EstadoViaje @default(ABIERTO)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @default(now()) @updatedAt
+
+  Conductor User            @relation("Conductor", fields: [conductorId], references: [id], onDelete: Cascade)
+  Pasajeros PasajeroViaje[]
+
+  @@index([fecha])
+  @@index([conductorId, fecha])
+}
+
+model PasajeroViaje {
+  id        String   @id @default(cuid())
+  viajeId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  Viaje Viaje @relation(fields: [viajeId], references: [id], onDelete: Cascade)
+  User  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([viajeId, userId])
+  @@index([userId])
+}
+
+model Evento {
+  id          String       @id @default(cuid())
+  titulo      String
+  descripcion String?
+  fecha       DateTime
+  lugar       String?
+  aforo       Int?
+  estado      EstadoEvento @default(PUBLICADO)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  Inscripciones InscripcionEvento[]
+
+  @@index([fecha])
+  @@index([estado, fecha])
+}
+
+model InscripcionEvento {
+  id         String   @id @default(cuid())
+  eventId    String
+  userId     String
+  asistentes Int      @default(1) // por si reservas >1
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  Evento Evento @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  User   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([userId])
+}
