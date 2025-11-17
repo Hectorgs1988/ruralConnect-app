@@ -9,7 +9,7 @@ const AsociacionMosquitos = () => {
             <NavMenu />
 
             <main className="flex-grow container mx-auto px-4 py-8">
-                <h2 className="text-3xl font-bold text-center mb-2">Peña "Los Mosquitos"</h2>
+                <h2 className="text-3xl font-bold text-center mb-2">Conoce Rural Connect</h2>
                 <p className="text-center text-gray-700 mb-8">
                     Historia e información sobre nuestra peña
                 </p>
