@@ -7,7 +7,7 @@ const navItems = [
     { to: "/inicio", label: "Inicio" },
     { to: "/ReservarEspacio", label: "Reservar Espacio" },
     { to: "/CompartirCoche", label: "Compartir Coche" },
-    { to: "/AsociacionMosquitos", label: "Asociacion Los Mosquitos" },
+    { to: "/AsociacionMosquitos", label: "Descubre Rural Connect" },
 ];
 
 const NavMenu = () => {
@@ -19,8 +19,8 @@ const NavMenu = () => {
     const closeMenu = () => setIsOpen(false);
 
     const handleLogout = () => {
-        logout();        // limpia contexto + localStorage
-        navigate("/");   // vuelve a la Home (pantalla "ACCEDER")
+        logout();      
+        navigate("/");  
     };
 
     return (
