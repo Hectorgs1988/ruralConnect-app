@@ -20,6 +20,8 @@ const router = createBrowserRouter([
     { path: "/", element: <Home /> },
     { path: "/login", element: <Login /> },
     { path: "/RecuperarContrasena", element: <RecuperarContrasena /> },
+    // alias usado en el email de recuperación
+    { path: "/reset-password", element: <RecuperarContrasena /> },
 
     // protegidas (cualquier usuario logeado)
     {path: "/inicio", element: (<PrivateRoute><Inicio /></PrivateRoute>),},

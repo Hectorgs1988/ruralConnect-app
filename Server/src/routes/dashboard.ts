@@ -60,3 +60,16 @@ dashboardRouter.get("/resumen", requireAuth, requireAdmin, async (_req, res, nex
     }
 });
 
+import { sendTestEmail } from "../services/email.js";
+
+// POST /api/dashboard/test-email (solo ADMIN) - para probar SendGrid
+dashboardRouter.post("/test-email", requireAuth, requireAdmin, async (req, res, next) => {
+    try {
+        const to = req.body?.to as string | undefined;
+        await sendTestEmail(to);
+        res.json({ ok: true });
+    } catch (e) {
+        next(e);
+    }
+});
+

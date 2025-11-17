@@ -1,18 +1,26 @@
 import { useState } from 'react';
 import Button from '@/components/ui/button';
 import Input from '@/components/ui/input';
+import { forgotPassword } from '@/api/auth';
 
 type RecoverPasswordModalProps = {
     onClose: () => void;
 };
 
 const RecoverPasswordModal = ({ onClose }: RecoverPasswordModalProps) => {
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
 
-    const handleRecover = () => {
-    alert(`Se ha enviado un correo de recuperación a: ${username}`);
-    onClose();
-};
+    const handleRecover = async () => {
+        if (!email.trim()) return;
+        try {
+            await forgotPassword(email.trim());
+            alert('Si el correo existe, recibirás un correo de recuperación.');
+            onClose();
+        } catch (e) {
+            console.error(e);
+            alert('Ha ocurrido un error al solicitar la recuperación de contraseña.');
+        }
+    };
 
     return (
         <div
@@ -34,18 +42,18 @@ const RecoverPasswordModal = ({ onClose }: RecoverPasswordModalProps) => {
                 <div className="mb-4 text-center">
                     <h2 className="rc-modal-title">Recuperar contraseña</h2>
                     <p className="rc-modal-subtitle">
-                        Introduce tu usuario para recuperar el acceso.
+                        Introduce tu correo electrónico para recuperar el acceso.
                     </p>
                 </div>
 
-                <label htmlFor="username" className="text-sm font-medium">
-                    Usuario
+                <label htmlFor="email" className="text-sm font-medium">
+                    Correo electrónico
                 </label>
                 <Input
-                    id="username"
-                    placeholder="Introduce tu usuario"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    id="email"
+                    placeholder="tu-correo@ejemplo.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                 />
 
                 <div className="rc-modal-footer">

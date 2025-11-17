@@ -50,7 +50,7 @@ const Inicio: FC = () => {
             <main className="flex-1 rc-shell py-10 space-y-10">
                 
                 <h1 className="rc-hero-title">
-                    Bienvenido a Rural Connect
+                    Bienvenido/a a Rural Connect
                 </h1>
                 <p className="rc-hero-subtitle">
                     Reserva espacios, consulta todas las actividades de la peña,
@@ -74,9 +74,9 @@ const Inicio: FC = () => {
                     />
                     <ActionCard
                         icon="🏡"
-                        title="La asociación"
-                        description="Descubre la asociación Los mosquitos"
-                        buttonText="Los mosquitos"
+                        title="Rural Connect"
+                        description="Descubre Rural Connect"
+                        buttonText="Descubre Rural Connect"
                         href="/AsociacionMosquitos"
                     />
                 </div>

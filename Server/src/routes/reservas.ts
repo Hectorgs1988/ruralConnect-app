@@ -2,7 +2,8 @@
 import { Router } from "express";
 import { prisma } from "../db/prisma.js";
 import { createReservaSchema, listReservasQuerySchema, } from "../schemas/reservas.js";
-import { requireAuth } from '../middlewares/auth';
+import { requireAuth } from "../middlewares/auth.js";
+import { sendReservationConfirmationEmail } from "../services/email.js";
 
 export const reservasRouter = Router();
 
@@ -53,8 +54,8 @@ reservasRouter.get("/", async (req, res, next) => {
 reservasRouter.post('/', requireAuth, async (req, res, next) => {
     try {
         const body = createReservaSchema.parse(req.body);
-        const user = (req as any).user;          
-        const userId: string = user.sub;        
+        const user = (req as any).user;
+        const userId: string = user.sub;
 
         // solapes (igual que antes)
         const solape = await prisma.reserva.findFirst({
@@ -63,14 +64,14 @@ reservasRouter.post('/', requireAuth, async (req, res, next) => {
                 AND: [
                     { inicio: { lt: body.fin } },
                     { fin: { gt: body.inicio } },
-                ]
-            }
+                ],
+            },
         });
         if (solape) return res.status(409).json({ error: 'Horario no disponible' });
 
         const r = await prisma.reserva.create({
             data: {
-                usuarioId: userId,          // <-- tomado del JWT
+                usuarioId: userId, // <-- tomado del JWT
                 espacioId: body.espacioId,
                 inicio: body.inicio,
                 fin: body.fin,
@@ -78,8 +79,35 @@ reservasRouter.post('/', requireAuth, async (req, res, next) => {
             },
         });
 
+        // Intentar enviar email de confirmación (sin romper la respuesta si falla)
+        if (user?.email) {
+            try {
+                const espacio = await prisma.espacio.findUnique({
+                    where: { id: body.espacioId },
+                    select: { nombre: true },
+                });
+
+                if (espacio) {
+                    await sendReservationConfirmationEmail({
+                        to: user.email,
+                        name: user.name,
+                        espacioNombre: espacio.nombre,
+                        inicio: r.inicio,
+                        fin: r.fin,
+                    });
+                }
+            } catch (err) {
+                console.error(
+                    "Error enviando email de confirmación de reserva:",
+                    err,
+                );
+            }
+        }
+
         res.status(201).json(r);
-    } catch (e) { next(e); }
+    } catch (e) {
+        next(e);
+    }
 });
 
 
