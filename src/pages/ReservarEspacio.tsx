@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Utensils, Dumbbell, BadgePercent, Landmark } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import NavMenu from "@/components/NavMenu";
 import ReservationCard from "@/components/ui/ReservationCard";
 import type { Espacio } from "@/types/Espacio";
 import { listEspacios } from "@/api/espacios";
@@ -88,7 +87,6 @@ const ReservasEspacio = () => {
     return (
         <div className="rc-page">
             <Header />
-            <NavMenu />
             <main className="flex-1 rc-shell py-10 space-y-8">
                 <h2 className="rc-hero-title">Reserva de espacios</h2>
                 <p className="rc-hero-subtitle">

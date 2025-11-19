@@ -37,7 +37,7 @@ export default function Home() {
                 <div className="w-full max-w-sm px-4 mb-20">
                     <Button
                         onClick={handleAccess}
-                        className="w-full rounded-xl py-5 text-xl font-semibold bg-yellow-400 text-black shadow-md hover:bg-yellow-300 transition"
+                        className="w-full rounded-xl py-5 text-xl font-semibold"
                     >
                         ACCEDER
                     </Button>

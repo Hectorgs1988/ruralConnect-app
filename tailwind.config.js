@@ -7,15 +7,15 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#FFD940',        // Amarillo principal
+        primary: '#fce500',        // Amarillo principal (trigo)
         primaryStrong: '#F4C400',  // Hover / énfasis
-        primarySoft: '#FFF5C2',    // Fondos suaves
-        background: '#FFFBEA',     // Fondo general suave
+        primarySoft: '#FFF5C2',    // Fondos suaves cercanos al amarillo
+        background: '#f5f2e9',     // Fondo general (beige campos)
         surface: '#FFFFFF',        // Tarjetas / paneles
-        surfaceMuted: '#FFFDF5',   // Variación más suave
+        surfaceMuted: '#f5f2e9',   // Fondos suaves / bloques secundarios
         muted: '#6B7280',          // Texto secundario
         borderSoft: '#F3E8C9',     // Bordes sutiles
-        dark: '#222222',           // Texto principal
+        dark: '#1b1b1b',           // Texto principal / negro rural
         error: '#E74C3C',          // Errores
         success: '#22C55E',        // Éxito / confirmaciones
       },

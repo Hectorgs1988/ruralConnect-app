@@ -5,6 +5,9 @@ import Input from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import RecoverPasswordModal from "@/components/ui/RecoverPasswordModal";
 import { useAuth } from "@/context/AuthContext";
+const bgHero = new URL("../assets/Campos.jpg", import.meta.url).href;
+const logoRC = new URL("../assets/RuralConnect.png", import.meta.url).href;
+
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -27,42 +30,69 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-background px-4">
-      <img src="src/assets/RuralConnect.png" alt="Logo" className="mb-1 w-44 h-44" />
-      <h1 className="text-2xl font-semibold text-center mb-4">
-        Bienvenido a Rural Connect <br />
-      </h1>
+    <div className="relative min-h-dvh overflow-hidden">
+      {/* Fondo de campos */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${bgHero})` }}
+        aria-hidden="true"
+      />
+      {/* Capa blanca suavizada */}
+      <div
+        className="absolute inset-0 bg-white/65 backdrop-blur-[2px]"
+        aria-hidden="true"
+      />
 
-      <form onSubmit={handleLogin} className="bg-white p-6 rounded-lg shadow-md w-full max-w-sm">
-        <Input
-          type="text"
-          placeholder="Usuario"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-        <Input
-          type="password"
-          placeholder="Contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+      {/* Contenido */}
+      <div className="relative z-10 flex min-h-dvh flex-col items-center justify-center px-4">
+        <div className="w-full max-w-md bg-surface/95 border border-borderSoft rounded-2xl shadow-soft px-6 py-6 space-y-4">
+          <div className="flex justify-center">
+            <img
+              src={logoRC}
+              alt="Rural Connect Burgos"
+              className="w-[360px] max-w-[80vw] mb-2 select-none"
+              draggable={false}
+            />
+          </div>
 
-        {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
+          <h1 className="text-xl font-semibold text-center text-dark">
+            Bienvenido/a a Rural Connect
+          </h1>
 
-        <Button type="submit" className="w-full">Login</Button>
+          <form onSubmit={handleLogin} className="space-y-2">
+            <Input
+              type="text"
+              placeholder="Usuario"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+            <Input
+              type="password"
+              placeholder="Contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
 
-        <button
-          type="button"
-          onClick={() => setShowRecoverModal(true)}
-          className="text-center mt-3 text-gray-600 cursor-pointer hover:underline"
-        >
-          ¿Olvidaste tu contraseña?
-        </button>
-      </form>
+            {error && <p className="text-error text-sm">{error}</p>}
 
-      {showRecoverModal && (
-        <RecoverPasswordModal onClose={() => setShowRecoverModal(false)} />
-      )}
+            <Button type="submit" className="w-full mt-1">
+              Login
+            </Button>
+
+            <button
+              type="button"
+              onClick={() => setShowRecoverModal(true)}
+              className="block w-full text-center mt-3 text-muted hover:underline"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+          </form>
+        </div>
+
+        {showRecoverModal && (
+          <RecoverPasswordModal onClose={() => setShowRecoverModal(false)} />
+        )}
+      </div>
     </div>
   );
 }

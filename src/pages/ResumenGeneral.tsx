@@ -1,6 +1,5 @@
 import { useEffect, useState, type FC } from "react";
 import Header from "@/components/Header";
-import NavMenu from "@/components/NavMenu";
 import Footer from "@/components/Footer";
 import Button from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
@@ -44,9 +43,15 @@ const ResumenGeneral: FC = () => {
     return (
         <div className="rc-page">
             <Header />
-            <NavMenu />
 
             <main className="flex-1 rc-shell py-10 space-y-8">
+                <Button
+                    type="button"
+                    onClick={() => navigate("/PanelAdmin")}
+                    className="mb-4 text-sm px-3 py-1 rounded-full border border-borderSoft bg-surface hover:bg-surfaceMuted transition-colors"
+                >
+                    ← Volver al panel de administración
+                </Button>
                 <h1 className="rc-hero-title">Resumen general de la asociación</h1>
                 <p className="rc-hero-subtitle">
                     Visión global de actividades, socios y estadísticas
