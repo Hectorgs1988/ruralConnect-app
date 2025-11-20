@@ -41,13 +41,15 @@ const Header: FC = () => {
                             />
                         </Link>
 
-                        <div className="text-sm text-muted">
+                        <div className="flex-1 ml-3 text-xs text-muted">
                             {user && firstName && (
                                 <>
-                                    Hola, <span className="font-semibold">{firstName}</span>
+                                    <span className="text-base font-semibold">Hola,</span>{" "}
+                                    <span className="text-base font-bold">{firstName}</span>
                                 </>
                             )}
                         </div>
+
                     </div>
 
                     {/* Menú centro */}
@@ -56,7 +58,7 @@ const Header: FC = () => {
                             <Link
                                 key={item.to}
                                 to={item.to}
-                                className="px-4 py-2 rounded-full text-sm text-muted hover:text-dark hover:bg-primarySoft"
+                                className="px-4 py-2 rounded-full text-base font-bold text-muted hover:text-dark hover:bg-primarySoft"
                             >
                                 {item.label}
                             </Link>
@@ -65,7 +67,7 @@ const Header: FC = () => {
                         {user?.role === "ADMIN" && (
                             <Link
                                 to="/PanelAdmin"
-                                className="px-4 py-2 rounded-full text-sm font-semibold text-dark bg-primary/80 hover:bg-primaryStrong"
+                                className="px-4 py-2 rounded-full text-base font-bold text-dark bg-primary/80 hover:bg-primaryStrong"
                             >
                                 Admin
                             </Link>
@@ -77,7 +79,7 @@ const Header: FC = () => {
                         {user && (
                             <button
                                 onClick={handleLogout}
-                                className="text-xs md:text-sm px-3 py-1 rounded-full border border-borderSoft text-muted hover:bg-surfaceMuted"
+                                className="text-xs md:text-base font-bold px-3 py-1 rounded-full border border-borderSoft text-muted hover:bg-surfaceMuted"
                             >
                                 Cerrar sesión
                             </button>
@@ -98,10 +100,12 @@ const Header: FC = () => {
                     <div className="flex-1 ml-3 text-xs text-muted">
                         {user && firstName && (
                             <>
-                                Hola, <span className="font-semibold">{firstName}</span>
+                                <span className="text-base font-semibold">Hola,</span>{" "}
+                                <span className="text-base font-bold">{firstName}</span>
                             </>
                         )}
                     </div>
+
 
                     <button onClick={toggleMenu} className="text-dark">
                         {isOpen ? <X size={24} /> : <Menu size={24} />}
@@ -117,7 +121,7 @@ const Header: FC = () => {
                                     key={item.to}
                                     to={item.to}
                                     onClick={closeMenu}
-                                    className="py-2 px-4 rounded-full text-sm text-muted hover:text-dark hover:bg-primarySoft"
+                                    className="py-2 px-4 rounded-full text-base font-bold text-muted hover:text-dark hover:bg-primarySoft"
                                 >
                                     {item.label}
                                 </Link>
@@ -139,7 +143,7 @@ const Header: FC = () => {
                                         handleLogout();
                                         closeMenu();
                                     }}
-                                    className="mt-2 py-2 px-4 rounded-full text-sm text-error hover:bg-surfaceMuted text-left"
+                                    className="mt-2 py-2 px-4 rounded-full text-base font-bold text-error hover:bg-surfaceMuted text-left"
                                 >
                                     Cerrar sesión
                                 </button>
