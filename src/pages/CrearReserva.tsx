@@ -163,12 +163,8 @@ export default function CrearReserva() {
         setError(null);
         setOk(null);
 
-        if (!fecha) {
-            setError("Selecciona una fecha");
-            return;
-        }
-        if (!inicio || !fin) {
-            setError("Selecciona hora de inicio y fin");
+        if (!fecha || !inicio || !fin) {
+            setError("Faltan datos por rellenar (fecha y horario).");
             return;
         }
 
@@ -211,7 +207,7 @@ export default function CrearReserva() {
     }
 
     const noHayHueco = !!fecha && !loadingSlots && !inicioOptions.length;
-    const submitDisabled = loading || !fecha || !inicio || !fin || noHayHueco;
+    const submitDisabled = loading || noHayHueco;
 
     return (
         <div className="rc-page">
