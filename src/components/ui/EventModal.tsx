@@ -18,10 +18,13 @@ interface EventModalProps {
 
 const EventModal: FC<EventModalProps> = ({ onClose, event }) => {
     const [name, setName] = useState("");
-    const [peopleCount, setPeopleCount] = useState(1);
+    const [peopleCount, setPeopleCount] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [confirmStep, setConfirmStep] = useState(false);
     const { token } = useAuth();
+
+    const parsedPeopleCount = Number(peopleCount || "0");
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -37,15 +40,30 @@ const EventModal: FC<EventModalProps> = ({ onClose, event }) => {
             return;
         }
 
-        if (!peopleCount || peopleCount < 1) {
+        const trimmedName = name.trim();
+        const countStr = peopleCount.trim();
+
+        if (!trimmedName || !countStr) {
+            setError("Rellena tu nombre y el número de asistentes.");
+            setConfirmStep(false);
+            return;
+        }
+
+        const count = Number(countStr);
+        if (!Number.isFinite(count) || count < 1) {
             setError("El número de asistentes debe ser al menos 1.");
+            setConfirmStep(false);
+            return;
+        }
+
+        if (!confirmStep) {
+            setConfirmStep(true);
             return;
         }
 
         try {
             setSubmitting(true);
-            await joinEvento(event.id, { asistentes: peopleCount }, token);
-
+            await joinEvento(event.id, { asistentes: count }, token);
             onClose();
         } catch (err: any) {
             setError(err?.message ?? "Error al apuntarte al evento");
@@ -54,18 +72,22 @@ const EventModal: FC<EventModalProps> = ({ onClose, event }) => {
         }
     };
 
+    const handleClose = () => {
+        if (submitting) return;
+        onClose();
+    };
 
     return (
         <div
             className="rc-modal-overlay"
-            onClick={onClose}
+            onClick={handleClose}
         >
             <div
                 className="rc-modal-panel max-w-md"
                 onClick={(e) => e.stopPropagation()}
             >
                 <button
-                    onClick={onClose}
+                    onClick={handleClose}
                     className="absolute top-4 right-4 text-muted hover:text-dark text-xl font-semibold"
                     aria-label="Cerrar"
                 >
@@ -86,23 +108,40 @@ const EventModal: FC<EventModalProps> = ({ onClose, event }) => {
 
                     <label className="text-sm text-dark block mb-1">Nombre</label>
                     <Input
-                        placeholder="nombre"
+                        placeholder="Tu nombre"
                         value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        onChange={(e) => {
+                            setName(e.target.value);
+                            setConfirmStep(false);
+                        }}
                     />
 
                     <label className="text-sm text-dark block mb-1">Número de asistentes</label>
                     <Input
                         type="number"
                         min={1}
-                        value={peopleCount.toString()}
-                        onChange={(e) => setPeopleCount(Number(e.target.value))}
+                        placeholder="Número de asistentes"
+                        value={peopleCount}
+                        onChange={(e) => {
+                            setPeopleCount(e.target.value);
+                            setConfirmStep(false);
+                        }}
                     />
+
+                    {confirmStep && !error && (
+                        <p className="text-sm text-dark">
+                            Confirma que quieres apuntarte al evento con{" "}
+                            <span className="font-semibold">
+                                {parsedPeopleCount} asistente{parsedPeopleCount > 1 ? "s" : ""}
+                            </span>
+                            .
+                        </p>
+                    )}
 
                     <div className="rc-modal-footer">
                         <Button
                             type="button"
-                            onClick={onClose}
+                            onClick={handleClose}
                             className="w-full md:w-auto rc-btn-secondary"
                             disabled={submitting}
                         >
@@ -113,7 +152,11 @@ const EventModal: FC<EventModalProps> = ({ onClose, event }) => {
                             className="w-full md:w-auto rc-btn-primary"
                             disabled={submitting}
                         >
-                            {submitting ? "Apuntando..." : "Apuntarme"}
+                            {submitting
+                                ? "Apuntando..."
+                                : confirmStep
+                                    ? "Confirmar asistencia"
+                                    : "Apuntarme"}
                         </Button>
                     </div>
                 </form>

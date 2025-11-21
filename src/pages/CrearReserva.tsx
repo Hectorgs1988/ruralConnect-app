@@ -2,7 +2,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import NavMenu from "@/components/NavMenu";
 import Button from "@/components/ui/button";
 import DayTimeline from "@/components/ui/DayTimeline";
 import type { Espacio } from "@/types/Espacio";
@@ -15,7 +14,6 @@ type LocationState = { espacio: Espacio };
 const STEP_MIN = 30;
 const MIN_DURATION = 60;
 
-// --- helpers HH:MM ---
 const toMinutes = (hhmm: string) => {
     const [h, m] = hhmm.split(":").map(Number);
     return h * 60 + m;
@@ -48,13 +46,11 @@ function toIsoLocal(dateStr: string, timeStr: string) {
     return new Date(`${dateStr}T${timeStr}`).toISOString();
 }
 
-
 export default function CrearReserva() {
     const navigate = useNavigate();
     const { state } = useLocation() as { state?: LocationState };
-    const { token } = useAuth(); // 👈 token del contexto
+    const { token } = useAuth();
 
-    // Redirige si llegan sin espacio en el state
     useEffect(() => {
         if (!state?.espacio) navigate("/ReservarEspacio", { replace: true });
     }, [state, navigate]);
@@ -62,22 +58,21 @@ export default function CrearReserva() {
 
     const espacio: Espacio = state.espacio;
 
-    // Fecha por defecto: hoy (YYYY-MM-DD)
-    const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
+    const [fecha, setFecha] = useState("");
 
-    const [inicio, setInicio] = useState("20:30");
-    const [fin, setFin] = useState("21:30");
-    const [motivo, setMotivo] = useState(""); // mantenemos "motivo" en UI (no se guarda aún)
+    const [inicio, setInicio] = useState("");
+    const [fin, setFin] = useState("");
+    const [motivo, setMotivo] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [ok, setOk] = useState<string | null>(null);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
 
     const [reservasDia, setReservasDia] = useState<Reserva[]>([]);
     const [loadingSlots, setLoadingSlots] = useState(false);
 
     const timeOptions = useMemo(() => buildTimeOptions(), []);
 
-    // --- carga / refresco de reservas del día ---
     async function reloadReservasDia(fechaStr: string, espacioId: string) {
         const desde = toIsoLocal(fechaStr, "00:00");
         const hasta = toIsoLocal(fechaStr, "23:59");
@@ -96,9 +91,8 @@ export default function CrearReserva() {
         reloadReservasDia(fecha, espacio.id)
             .catch((e) => setError(e.message ?? "Error cargando disponibilidad"))
             .finally(() => setLoadingSlots(false));
-    }, [fecha, espacio.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [fecha, espacio.id]);
 
-    // transformar reservas en intervalos (minutos del día) y fusionar solapes
     const intervals = useMemo(() => {
         const list = reservasDia
             .map((r) => ({ s: new Date(r.inicio), e: new Date(r.fin) }))
@@ -118,7 +112,6 @@ export default function CrearReserva() {
         return merged;
     }, [reservasDia]);
 
-    // inicios válidos: quepa >= 60' hasta la siguiente reserva o fin de día
     const inicioOptions = useMemo(() => {
         const opts: string[] = [];
         for (const t of timeOptions) {
@@ -133,7 +126,6 @@ export default function CrearReserva() {
         return opts;
     }, [timeOptions, intervals]);
 
-    // fines válidos: ≥ inicio + 60' y antes del siguiente bloque
     const finOptions = useMemo(() => {
         const minEnd = addMinutes(inicio, MIN_DURATION);
         if (!minEnd) return [];
@@ -146,39 +138,54 @@ export default function CrearReserva() {
         });
     }, [inicio, timeOptions, intervals]);
 
-    // Ajustes automáticos si las opciones válidas cambian
     useEffect(() => {
+        if (!inicio) return;
         if (!inicioOptions.includes(inicio)) {
             if (inicioOptions.length) setInicio(inicioOptions[0]);
+            else setInicio("");
         }
-    }, [inicioOptions]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [inicio, inicioOptions]);
 
     useEffect(() => {
+        if (!inicio) {
+            setFin("");
+            return;
+        }
         const minEnd = addMinutes(inicio, MIN_DURATION);
         if (!minEnd) return setFin("");
         if (!finOptions.includes(fin)) {
             setFin(finOptions[0] ?? "");
         }
-    }, [inicio, finOptions]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [inicio, finOptions, fin]);
 
     async function onSubmit(e: React.FormEvent) {
         e.preventDefault();
         setError(null);
         setOk(null);
 
-        if (!fecha) return setError("Selecciona una fecha");
-        if (!inicio || !fin) return setError("Selecciona hora de inicio y fin");
+        if (!fecha || !inicio || !fin) {
+            setError("Faltan datos por rellenar (fecha y horario).");
+            return;
+        }
 
-        // si no hay token → no debería dejar reservar
         if (!token) {
             setError("Debes iniciar sesión para realizar una reserva.");
             return;
         }
 
+        setShowConfirmModal(true);
+    }
+
+    async function confirmarReserva() {
+        if (!fecha || !inicio || !fin || !token) return;
+
         const inicioIso = toIsoLocal(fecha, inicio);
         const finIso = toIsoLocal(fecha, fin);
 
         setLoading(true);
+        setError(null);
+        setOk(null);
+
         try {
             await createReserva(
                 {
@@ -190,7 +197,7 @@ export default function CrearReserva() {
             );
 
             setOk("¡Reserva creada!");
-            // refrescar disponibilidad al instante
+            setShowConfirmModal(false);
             await reloadReservasDia(fecha, espacio.id);
         } catch (err: any) {
             setError(err?.message ?? "Error creando la reserva");
@@ -199,13 +206,12 @@ export default function CrearReserva() {
         }
     }
 
-    const noHayHueco = !inicioOptions.length || !finOptions.length;
+    const noHayHueco = !!fecha && !loadingSlots && !inicioOptions.length;
+    const submitDisabled = loading || noHayHueco;
 
     return (
         <div className="rc-page">
             <Header />
-            <NavMenu />
-
             <main className="flex-1 rc-shell py-10 space-y-8">
                 <Button
                     type="button"
@@ -218,7 +224,6 @@ export default function CrearReserva() {
                 <h2 className="rc-hero-title">Reserva de espacios</h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Info espacio + timeline */}
                     <section className="rc-card-section">
                         <h3 className="text-xl font-semibold mb-2">{espacio.nombre}</h3>
                         {espacio.aforo != null && (
@@ -276,8 +281,9 @@ export default function CrearReserva() {
                                     value={inicio}
                                     onChange={(e) => setInicio(e.target.value)}
                                     className="rounded-full border border-borderSoft bg-surfaceMuted px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/60"
-                                    disabled={loadingSlots || !fecha}
+                                    disabled={loadingSlots || !fecha || !inicioOptions.length}
                                 >
+                                    <option value="">Selecciona inicio</option>
                                     {inicioOptions.map((t) => (
                                         <option key={t} value={t}>
                                             {t}
@@ -289,8 +295,9 @@ export default function CrearReserva() {
                                     value={fin}
                                     onChange={(e) => setFin(e.target.value)}
                                     className="rounded-full border border-borderSoft bg-surfaceMuted px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/60"
-                                    disabled={loadingSlots || !fecha || !inicioOptions.length}
+                                    disabled={loadingSlots || !fecha || !inicio}
                                 >
+                                    <option value="">Selecciona fin</option>
                                     {finOptions.map((t) => (
                                         <option key={t} value={t}>
                                             {t}
@@ -300,7 +307,6 @@ export default function CrearReserva() {
                             </div>
                         </div>
 
-                        {/* Motivo (UI) */}
                         <div>
                             <label className="block text-sm mb-1">Motivo (opcional)</label>
                             <textarea
@@ -322,15 +328,65 @@ export default function CrearReserva() {
 
                         <Button
                             type="submit"
-                            disabled={loading || noHayHueco}
+                            disabled={submitDisabled}
                             className="w-full rc-btn-primary mt-2"
                         >
                             {loading ? "Guardando…" : "Confirmar reserva"}
                         </Button>
                     </form>
                 </div>
-            </main>
 
+            {showConfirmModal && (
+                <div
+                    className="rc-modal-overlay"
+                    onClick={() => !loading && setShowConfirmModal(false)}
+                >
+                    <div
+                        className="rc-modal-panel max-w-md"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            type="button"
+                            onClick={() => !loading && setShowConfirmModal(false)}
+                            className="absolute top-4 right-4 text-muted hover:text-dark text-xl font-semibold"
+                            aria-label="Cerrar"
+                        >
+                            ✕
+                        </button>
+
+                        <div className="mb-6">
+                            <h2 className="rc-modal-title">Confirmar reserva</h2>
+                            <p className="rc-modal-subtitle">
+                                ¿Confirmas la reserva de{" "}
+                                <span className="font-semibold">{espacio.nombre}</span> el{" "}
+                                <span className="font-semibold">{fecha}</span> de{" "}
+                                <span className="font-semibold">{inicio}</span> a{" "}
+                                <span className="font-semibold">{fin}</span>?
+                            </p>
+                        </div>
+
+                        <div className="rc-modal-footer">
+                            <Button
+                                type="button"
+                                onClick={() => !loading && setShowConfirmModal(false)}
+                                className="w-full md:w-auto rc-btn-secondary"
+                                disabled={loading}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button
+                                type="button"
+                                onClick={confirmarReserva}
+                                className="w-full md:w-auto rc-btn-primary"
+                                disabled={loading}
+                            >
+                                {loading ? "Guardando…" : "Confirmar reserva"}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            </main>
             <Footer />
         </div>
     );
