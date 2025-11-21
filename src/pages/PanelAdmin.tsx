@@ -1,6 +1,5 @@
 import type { FC } from "react";
 import Header from "@/components/Header";
-import NavMenu from "@/components/NavMenu";
 import ActionCard from "@/components/ui/ActionCard";
 import Footer from "@/components/Footer";
 
@@ -9,7 +8,6 @@ const PanelAdmin: FC = () => {
     return (
         <div className="rc-page">
             <Header />
-            <NavMenu />
 
             <main className="flex-1 rc-shell py-10 space-y-8">
                 <h1 className="rc-hero-title">

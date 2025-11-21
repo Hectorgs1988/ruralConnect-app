@@ -1,7 +1,7 @@
 import type { FC } from "react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
-import NavMenu from "@/components/NavMenu";
 import Footer from "@/components/Footer";
 import Button from "@/components/ui/button";
 import NuevoEventoModal from "@/components/ui/NuevoEventoModal";
@@ -25,6 +25,7 @@ type Evento = {
 
 const GestionEventos: FC = () => {
     const { token } = useAuth();
+    const navigate = useNavigate();
 
     const [search, setSearch] = useState("");
     const [showNuevoEventoModal, setShowNuevoEventoModal] = useState(false);
@@ -85,9 +86,15 @@ const GestionEventos: FC = () => {
     return (
         <div className="rc-page">
             <Header />
-            <NavMenu />
 
             <main className="flex-1 rc-shell py-10 space-y-8 mb-10">
+                <Button
+                    type="button"
+                    onClick={() => navigate("/PanelAdmin")}
+                    className="mb-4 text-sm px-3 py-1 rounded-full border border-borderSoft bg-surface hover:bg-surfaceMuted transition-colors"
+                >
+                    ← Volver al panel de administración
+                </Button>
                 <h1 className="rc-hero-title">
                     Gestión de eventos
                 </h1>

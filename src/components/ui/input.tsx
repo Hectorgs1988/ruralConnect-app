@@ -23,14 +23,14 @@ const Input: React.FC<InputProps> = ({
                 value={value}
                 onChange={onChange}
                 className={clsx(
-                    "w-full px-4 py-2 rounded-md bg-[#FAFAF0] border",
-                    error ? "border-red-500" : "border-gray-300",
-                    "focus:outline-none focus:ring-2 focus:ring-yellow-400",
+                    "w-full px-4 py-2 rounded-md bg-surfaceMuted border text-sm",
+                    error ? "border-error" : "border-borderSoft",
+                    "focus:outline-none focus:ring-2 focus:ring-primary/60",
                     className
                 )}
                 {...rest} // 👈 aplica min, max, name, id, etc.
             />
-            {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
+            {error && <p className="text-sm text-error mt-1">{error}</p>}
         </div>
     );
 };

@@ -1,6 +1,5 @@
 import { useEffect, useState, type FC } from "react";
 import Header from "@/components/Header";
-import NavMenu from "@/components/NavMenu";
 import ActionCard from "@/components/ui/ActionCard";
 import EventCard from "@/components/ui/EventCard";
 import Footer from "@/components/Footer";
@@ -45,10 +44,9 @@ const Inicio: FC = () => {
     return (
         <div className="rc-page">
             <Header />
-            <NavMenu />
 
             <main className="flex-1 rc-shell py-10 space-y-10">
-                
+
                 <h1 className="rc-hero-title">
                     Bienvenido/a a Rural Connect
                 </h1>
