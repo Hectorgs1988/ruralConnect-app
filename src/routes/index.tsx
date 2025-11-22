@@ -13,6 +13,7 @@ import GestionSocio from '../pages/GestionSocio'
 import GestionEventos from '../pages/GestionEventos'
 import ResumenGeneral from '../pages/ResumenGeneral'
 import AsociacionMosquitos from '../pages/AsociacionMosquitos'
+import GestionEspacios from '../pages/GestionEspacios'
 import PrivateRoute, { RoleGuard } from "@/components/guards/PrivateRoute";
 
 const router = createBrowserRouter([
@@ -35,6 +36,7 @@ const router = createBrowserRouter([
     {path: "/GestionSocio",element: (<RoleGuard role="ADMIN"><GestionSocio /></RoleGuard>),},
     {path: "/GestionEventos",element: (<RoleGuard role="ADMIN"><GestionEventos /></RoleGuard>),},
     {path: "/ResumenGeneral",element: (<RoleGuard role="ADMIN"><ResumenGeneral /></RoleGuard>),},
+    {path: "/GestionEspacios",element: (<RoleGuard role="ADMIN"><GestionEspacios /></RoleGuard>),},
 
     // puedes dejar pública o también protegerla
     { path: "/AsociacionMosquitos", element: <AsociacionMosquitos /> },
