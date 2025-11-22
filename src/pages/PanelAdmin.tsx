@@ -34,11 +34,19 @@ const PanelAdmin: FC = () => {
                     />
                     <ActionCard
                         icon="📊"
+                        title="Gestión de espacios"
+                        description="Añadir o modificar espacios"
+                        buttonText="Acceder"
+                        href="/GestionEspacios"
+                    />
+                    <ActionCard
+                        icon="📊"
                         title="Resumen general"
-                        description="Datos generales de la asociación"
+                        description="Datos generales de la peña"
                         buttonText="Acceder"
                         href="/ResumenGeneral"
                     />
+
                 </div>
             </main>
 
