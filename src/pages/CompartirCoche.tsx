@@ -120,6 +120,11 @@ export default function CompartirCoche() {
         time: string;
         plazas: number;
         description?: string;
+        tipo: "IDA" | "IDA_VUELTA";
+        fromVuelta?: string;
+        toVuelta?: string;
+        dateVuelta?: string;
+        timeVuelta?: string;
     }) {
         if (!token) {
             alert("Debes iniciar sesión para ofrecer un viaje.");
@@ -127,16 +132,61 @@ export default function CompartirCoche() {
         }
 
         try {
-            await createViaje(
-                {
-                    from: payload.from,
-                    to: payload.to,
-                    fecha: toIsoLocal(payload.date, payload.time),
-                    plazas: payload.plazas,
-                    notas: payload.description,
-                },
-                token
-            );
+            if (payload.tipo === "IDA_VUELTA") {
+                const isoIda = toIsoLocal(payload.date, payload.time);
+
+                // Viaje de ida
+                await createViaje(
+                    {
+                        from: payload.from,
+                        to: payload.to,
+                        fecha: isoIda,
+                        plazas: payload.plazas,
+                        notas: payload.description,
+                    },
+                    token
+                );
+
+                // Validación extra por seguridad (no debería fallar si el modal valida bien)
+                if (
+                    !payload.fromVuelta ||
+                    !payload.toVuelta ||
+                    !payload.dateVuelta ||
+                    !payload.timeVuelta
+                ) {
+                    throw new Error("Faltan datos del viaje de vuelta");
+                }
+
+                const isoVuelta = toIsoLocal(
+                    payload.dateVuelta,
+                    payload.timeVuelta
+                );
+
+                // Viaje de vuelta
+                await createViaje(
+                    {
+                        from: payload.fromVuelta,
+                        to: payload.toVuelta,
+                        fecha: isoVuelta,
+                        plazas: payload.plazas,
+                        notas: payload.description,
+                    },
+                    token
+                );
+            } else {
+                // Solo ida: comportamiento actual
+                await createViaje(
+                    {
+                        from: payload.from,
+                        to: payload.to,
+                        fecha: toIsoLocal(payload.date, payload.time),
+                        plazas: payload.plazas,
+                        notas: payload.description,
+                    },
+                    token
+                );
+            }
+
             setShowModal(false);
             await cargar();
         } catch (e: any) {
