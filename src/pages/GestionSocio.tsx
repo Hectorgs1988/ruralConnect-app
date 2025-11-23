@@ -30,6 +30,7 @@ const GestionSocio: FC = () => {
     const [editingSocio, setEditingSocio] = useState<Socio | null>(null);
     const [deletingSocio, setDeletingSocio] = useState<Socio | null>(null);
     const [socios, setSocios] = useState<Socio[]>([]);
+    const [totalSocios, setTotalSocios] = useState<number | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [reloadFlag, setReloadFlag] = useState(0);
@@ -58,6 +59,7 @@ const GestionSocio: FC = () => {
                 }));
 
                 setSocios(mapped);
+                setTotalSocios(data.total);
             } catch (err: any) {
                 setError(err?.message ?? "Error al cargar los socios");
                 setSocios([]);
@@ -99,9 +101,16 @@ const GestionSocio: FC = () => {
 
                 <div className="rc-card-section w-full">
                     <div className="flex flex-col gap-4 mb-4 md:mb-6">
-                        <h2 className="text-base md:text-lg font-semibold text-dark flex items-center gap-2">
-                            👥 Gestión de socios
-                        </h2>
+                        <div className="flex items-center justify-between gap-4 flex-wrap">
+                            <h2 className="text-base md:text-lg font-semibold text-dark flex items-center gap-2">
+                                👥 Gestión de socios
+                            </h2>
+                            {typeof totalSocios === "number" && (
+                                <p className="text-sm text-muted">
+                                    Total socios activos: <span className="font-semibold">{totalSocios}</span>
+                                </p>
+                            )}
+                        </div>
                         <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
                             <div className="flex-1 flex items-center bg-surfaceMuted border border-borderSoft rounded-full px-4 py-2">
                                 <span className="mr-2 text-muted">🔍</span>
