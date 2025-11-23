@@ -57,9 +57,7 @@ export default function CrearReserva() {
     if (!state?.espacio) return null;
 
     const espacio: Espacio = state.espacio;
-
     const [fecha, setFecha] = useState("");
-
     const [inicio, setInicio] = useState("");
     const [fin, setFin] = useState("");
     const [motivo, setMotivo] = useState("");
@@ -67,10 +65,8 @@ export default function CrearReserva() {
     const [error, setError] = useState<string | null>(null);
     const [ok, setOk] = useState<string | null>(null);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
-
     const [reservasDia, setReservasDia] = useState<Reserva[]>([]);
     const [loadingSlots, setLoadingSlots] = useState(false);
-
     const timeOptions = useMemo(() => buildTimeOptions(), []);
 
     async function reloadReservasDia(fechaStr: string, espacioId: string) {
@@ -228,7 +224,7 @@ export default function CrearReserva() {
                         <h3 className="text-xl font-semibold mb-2">{espacio.nombre}</h3>
                         {espacio.aforo != null && (
                             <p className="text-sm text-muted mb-2">
-                                👥 {espacio.aforo} personas
+                                Capacidad:{espacio.aforo} personas
                             </p>
                         )}
                         <p className="text-sm text-muted">

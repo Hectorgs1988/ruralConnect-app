@@ -8,6 +8,8 @@ import NuevoSocioModal from "@/components/ui/NuevoSocioModal";
 import EditarSocioModal from "@/components/ui/EditarSocioModal";
 import EliminarSocioModal from "@/components/ui/EliminarSocioModal";
 import { useAuth } from "@/context/AuthContext";
+import ImportarSociosModal from "@/components/ui/ImportarSociosModal";
+
 import { listUsers } from "@/api/users";
 
 
@@ -32,6 +34,9 @@ const GestionSocio: FC = () => {
     const [socios, setSocios] = useState<Socio[]>([]);
     const [totalSocios, setTotalSocios] = useState<number | null>(null);
     const [loading, setLoading] = useState(false);
+    const [exporting, setExporting] = useState(false);
+    const [showImportarSociosModal, setShowImportarSociosModal] = useState(false);
+
     const [error, setError] = useState<string | null>(null);
     const [reloadFlag, setReloadFlag] = useState(0);
 
@@ -71,6 +76,43 @@ const GestionSocio: FC = () => {
         void fetchSocios();
     }, [token, reloadFlag]);
 
+    const handleExportCsv = async () => {
+        if (!token) {
+            setError("Debes iniciar sesión como admin.");
+            return;
+        }
+
+        try {
+            setExporting(true);
+            setError(null);
+
+            const res = await fetch("/api/users/export", {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!res.ok) {
+                setError(`Error ${res.status} al exportar los socios`);
+                return;
+            }
+
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "socios.csv";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (err: any) {
+            setError(err?.message ?? "Error al exportar los socios");
+        } finally {
+            setExporting(false);
+        }
+    };
+
     const sociosFiltrados = socios.filter((socio) => {
         const term = search.toLowerCase();
         if (!term) return true;
@@ -103,7 +145,7 @@ const GestionSocio: FC = () => {
                     <div className="flex flex-col gap-4 mb-4 md:mb-6">
                         <div className="flex items-center justify-between gap-4 flex-wrap">
                             <h2 className="text-base md:text-lg font-semibold text-dark flex items-center gap-2">
-                                👥 Gestión de socios
+                                Gestión de socios
                             </h2>
                             {typeof totalSocios === "number" && (
                                 <p className="text-sm text-muted">
@@ -113,7 +155,6 @@ const GestionSocio: FC = () => {
                         </div>
                         <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
                             <div className="flex-1 flex items-center bg-surfaceMuted border border-borderSoft rounded-full px-4 py-2">
-                                <span className="mr-2 text-muted">🔍</span>
                                 <input
                                     type="text"
                                     value={search}
@@ -122,14 +163,31 @@ const GestionSocio: FC = () => {
                                     className="w-full bg-transparent outline-none text-sm text-dark placeholder:text-muted"
                                 />
                             </div>
-                            <Button
-                                type="button"
-                                className="self-end md:self-auto flex items-center justify-center gap-2"
-                                onClick={() => setShowNuevoSocioModal(true)}
-                            >
-                                <span className="text-lg">+</span>
-                                <span>Nuevo socio</span>
-                            </Button>
+                            <div className="flex gap-2 justify-end">
+                                <Button
+                                    type="button"
+                                    className="flex items-center justify-center gap-2"
+                                    onClick={handleExportCsv}
+                                    disabled={exporting}
+                                >
+                                    <span>{exporting ? "Exportando..." : "Exportar CSV"}</span>
+                                </Button>
+                                <Button
+                                    type="button"
+                                    className="flex items-center justify-center gap-2"
+                                    onClick={() => setShowImportarSociosModal(true)}
+                                >
+                                    <span>Importar CSV</span>
+                                </Button>
+                                <Button
+                                    type="button"
+                                    className="flex items-center justify-center gap-2"
+                                    onClick={() => setShowNuevoSocioModal(true)}
+                                >
+                                    <span className="text-lg">+</span>
+                                    <span>Nuevo socio</span>
+                                </Button>
+                            </div>
                         </div>
                     </div>
 
@@ -211,6 +269,13 @@ const GestionSocio: FC = () => {
                     socio={editingSocio}
                     onClose={() => setEditingSocio(null)}
                     onUpdated={() => setReloadFlag((v) => v + 1)}
+                />
+            )}
+
+            {showImportarSociosModal && (
+                <ImportarSociosModal
+                    onClose={() => setShowImportarSociosModal(false)}
+                    onImported={() => setReloadFlag((v) => v + 1)}
                 />
             )}
 

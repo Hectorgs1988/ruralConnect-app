@@ -8,6 +8,8 @@ import {
     createAdminSchema,
     updateUserSchema,
 } from '../schemas/users.js';
+import { importUserCsvRowSchema } from "../schemas/users-import.js";
+
 
 export const usersRouter = Router();
 
@@ -28,6 +30,15 @@ const USER_SELECT = {
 const requireAdmin = requireRole('ADMIN');
 
 const toEmail = (v: string) => v.trim().toLowerCase();
+
+const escapeCsvField = (value: unknown): string => {
+    const s = value == null ? "" : String(value);
+    if (s.includes('"') || s.includes(",") || s.includes("\n") || s.includes("\r")) {
+        return `"${s.replace(/"/g, '""')}"`;
+    }
+    return s;
+};
+
 
 // --- GET /api/usuarios  ------------------------------------------------------
 // ?q=texto&role=ADMIN|SOCIO&active=true|false&page=1&size=10
@@ -75,6 +86,40 @@ usersRouter.get('/', requireAuth, requireAdmin, async (req, res, next) => {
             size,
             pages: Math.ceil(total / size),
         });
+    } catch (e) {
+        next(e);
+    }
+});
+
+// --- GET /api/users/export  (exportar todos los socios a CSV) ----------------
+usersRouter.get('/export', requireAuth, requireAdmin, async (_req, res, next) => {
+    try {
+        const users = await prisma.user.findMany({
+            orderBy: [{ createdAt: 'asc' }],
+            select: USER_SELECT,
+        });
+
+        const header = ['email', 'name', 'phone', 'role', 'isActive', 'createdAt'];
+        const lines: string[] = [];
+        lines.push(header.join(','));
+
+        for (const u of users) {
+            const row = [
+                escapeCsvField(u.email),
+                escapeCsvField(u.name),
+                escapeCsvField(u.phone ?? ''),
+                escapeCsvField(u.role),
+                escapeCsvField(u.isActive ? 'true' : 'false'),
+                escapeCsvField(u.createdAt.toISOString()),
+            ];
+            lines.push(row.join(','));
+        }
+
+        const csv = lines.join('\n');
+
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', 'attachment; filename="socios.csv"');
+        res.send(csv);
     } catch (e) {
         next(e);
     }
@@ -196,6 +241,105 @@ usersRouter.patch('/:id', requireAuth, requireAdmin, async (req, res, next) => {
         });
 
         res.json(updated);
+    } catch (e) {
+        next(e);
+    }
+});
+
+// --- POST /api/users/import-csv  (importar socios desde CSV) -------------------
+usersRouter.post('/import-csv', requireAuth, requireAdmin, async (req, res, next) => {
+    try {
+        const chunks: Buffer[] = [];
+
+        await new Promise<void>((resolve, reject) => {
+            req.on('data', (chunk: Buffer) => {
+                chunks.push(chunk);
+            });
+            req.on('end', () => resolve());
+            req.on('error', (err) => reject(err));
+        });
+
+        const raw = Buffer.concat(chunks).toString('utf-8');
+        const lines = raw.split(/\r?\n/).filter((l) => l.trim().length > 0);
+
+        if (lines.length === 0) {
+            return res.status(400).json({ error: 'CSV vacío' });
+        }
+
+        // Asumimos primera línea como cabecera
+        const header = lines[0].split(',').map((h) => h.trim());
+        const requiredCols = ['email', 'name', 'phone', 'role'];
+        for (const col of requiredCols) {
+            if (!header.includes(col)) {
+                return res.status(400).json({ error: `Falta la columna obligatoria: ${col}` });
+            }
+        }
+
+        const idxEmail = header.indexOf('email');
+        const idxName = header.indexOf('name');
+        const idxPhone = header.indexOf('phone');
+        const idxRole = header.indexOf('role');
+
+        let created = 0;
+        let updated = 0;
+        const errors: { line: number; message: string }[] = [];
+
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i];
+            if (!line.trim()) continue;
+
+            const cols = line.split(',');
+            const rawRow = {
+                email: cols[idxEmail]?.trim() ?? '',
+                name: cols[idxName]?.trim() ?? '',
+                phone: cols[idxPhone]?.trim() || undefined,
+                role: (cols[idxRole]?.trim().toUpperCase() as 'ADMIN' | 'SOCIO' | undefined) ?? 'SOCIO',
+            };
+
+            let row;
+            try {
+                row = importUserCsvRowSchema.parse(rawRow);
+            } catch (e: any) {
+                errors.push({ line: i + 1, message: e?.message ?? 'Fila no válida' });
+                continue;
+            }
+
+            const email = toEmail(row.email);
+
+            try {
+                const existing = await prisma.user.findUnique({ where: { email } });
+                if (!existing) {
+                    const password = await bcrypt.hash('socio123', SALT_ROUNDS);
+                    await prisma.user.create({
+                        data: {
+                            email,
+                            name: row.name,
+                            phone: row.phone ?? null,
+                            password,
+                            role: row.role,
+                            isActive: true,
+                        },
+                    });
+                    created++;
+                } else {
+                    await prisma.user.update({
+                        where: { id: existing.id },
+                        data: {
+                            name: row.name,
+                            phone: row.phone ?? null,
+                            role: row.role,
+                            // si estaba borrado (isActive=false), lo reactivamos al importar
+                            isActive: true,
+                        },
+                    });
+                    updated++;
+                }
+            } catch (e: any) {
+                errors.push({ line: i + 1, message: e?.message ?? 'Error al guardar el usuario' });
+            }
+        }
+
+        res.json({ created, updated, errors });
     } catch (e) {
         next(e);
     }

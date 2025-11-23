@@ -26,7 +26,7 @@ const ReservationCard: FC<ReservationCardProps> = ({
                 {icon}
                 {title}
             </div>
-            <div className="text-sm text-muted">👥 {capacity}</div>
+            <div className="text-sm text-muted">Capacidad: {capacity}</div>
             <div className="text-sm text-muted">{description}</div>
         </div>
     );
