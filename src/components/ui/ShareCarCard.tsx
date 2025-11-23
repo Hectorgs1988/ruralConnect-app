@@ -36,7 +36,7 @@ const ShareCarCard: FC<ShareCarCardProps> = ({
     return (
         <div className="rc-card p-4 w-full max-w-sm">
             <h3 className="font-bold text-lg flex items-center gap-2 text-dark">
-                🚗 {name}
+                {name}
             </h3>
 
             <p className="text-sm text-muted">{car}</p>
@@ -84,7 +84,7 @@ const ShareCarCard: FC<ShareCarCardProps> = ({
                         className="text-xs md:text-sm px-4 py-1 rounded-full border border-borderSoft text-muted hover:bg-surfaceMuted"
                         onClick={onLeave}
                     >
-                        Salir
+                        Anular viaje
                     </Button>
                 )}
             </div>

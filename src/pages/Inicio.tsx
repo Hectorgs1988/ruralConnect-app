@@ -5,6 +5,7 @@ import EventCard from "@/components/ui/EventCard";
 import Footer from "@/components/Footer";
 import EventModal from "@/components/ui/EventModal";
 import { listEventos, type ApiEvento } from "@/api/eventos";
+import { HousePlus, CarFront, Home, CalendarClock } from "lucide-react";
 
 
 const Inicio: FC = () => {
@@ -57,21 +58,21 @@ const Inicio: FC = () => {
 
                 <div className="grid gap-6 md:grid-cols-3 mb-10">
                     <ActionCard
-                        icon="🏟️"
+                        icon={<HousePlus size={36} className="text-black/90" />}
                         title="Reservar Espacio"
                         description="Comedor, pistas deportivas..."
                         buttonText="Ver Espacios Disponibles"
                         href="/ReservarEspacio"
                     />
                     <ActionCard
-                        icon="🚗"
+                        icon={<CarFront size={36} className="text-black/90" />}
                         title="Compartir coche"
                         description="Viajes pueblo - ciudad y viceversa"
                         buttonText="Ver Viajes Disponibles"
                         href="/CompartirCoche"
                     />
                     <ActionCard
-                        icon="🏡"
+                        icon={<Home size={36} className="text-black/90" />}
                         title="Rural Connect"
                         description="Descubre Rural Connect"
                         buttonText="Descubre Rural Connect"
@@ -81,7 +82,8 @@ const Inicio: FC = () => {
 
                 <div className="rc-card-section">
                     <h2 className="flex items-center text-lg font-semibold mb-4">
-                        <span className="mr-2 text-xl">⏰</span> Próximos eventos
+                        <CalendarClock size={36} strokeWidth={2}className="mr-2" />
+                        Próximos eventos
                     </h2>
 
                     {loading && <p>Cargando eventos...</p>}

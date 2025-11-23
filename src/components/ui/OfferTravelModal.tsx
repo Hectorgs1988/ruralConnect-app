@@ -6,10 +6,15 @@ import Textarea from "./TextArea";
 interface OfferTravelPayload {
     from: string;
     to: string;
-    date: string;       
-    time: string;      
+    date: string;
+    time: string;
     plazas: number;
     description?: string;
+    tipo: "IDA" | "IDA_VUELTA";
+    fromVuelta?: string;
+    toVuelta?: string;
+    dateVuelta?: string;
+    timeVuelta?: string;
 }
 
 interface OfferTravelModalProps {
@@ -22,19 +27,35 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit }) => {
     const [destino, setDestino] = useState("");
     const [fecha, setFecha] = useState("");
     const [hora, setHora] = useState("");
+    const [origenVuelta, setOrigenVuelta] = useState("");
+    const [destinoVuelta, setDestinoVuelta] = useState("");
+    const [fechaVuelta, setFechaVuelta] = useState("");
+    const [horaVuelta, setHoraVuelta] = useState("");
     const [plazas, setPlazas] = useState<string>("");
     const [descripcion, setDescripcion] = useState("");
     const [sending, setSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [tipoViaje, setTipoViaje] = useState<"IDA" | "IDA_VUELTA">("IDA");
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
 
-        // validaciones mínimas
+        // validaciones mínimas para la ida
         if (!origen || !destino || !fecha || !hora) {
             return setError("Rellena origen, destino, fecha y hora.");
         }
+
+        // Si es ida y vuelta, también necesitamos todos los datos de la vuelta
+        if (
+            tipoViaje === "IDA_VUELTA" &&
+            (!origenVuelta || !destinoVuelta || !fechaVuelta || !horaVuelta)
+        ) {
+            return setError(
+                "Rellena también origen, destino, fecha y hora de la vuelta."
+            );
+        }
+
         const plazasNum = Number(plazas);
         if (!plazas || Number.isNaN(plazasNum) || plazasNum < 1) {
             return setError("Indica un número de plazas válido (≥ 1).");
@@ -49,6 +70,11 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit }) => {
                 time: hora,
                 plazas: plazasNum,
                 description: descripcion || undefined,
+                tipo: tipoViaje,
+                fromVuelta: tipoViaje === "IDA_VUELTA" ? origenVuelta : undefined,
+                toVuelta: tipoViaje === "IDA_VUELTA" ? destinoVuelta : undefined,
+                dateVuelta: tipoViaje === "IDA_VUELTA" ? fechaVuelta : undefined,
+                timeVuelta: tipoViaje === "IDA_VUELTA" ? horaVuelta : undefined,
             });
             onClose();
         } finally {
@@ -129,6 +155,84 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit }) => {
                             onChange={(e) => setPlazas(e.target.value)}
                         />
                     </div>
+
+                    <div>
+                        <label className="text-sm text-dark block mb-1">Tipo de viaje</label>
+                        <div className="flex gap-4 text-sm">
+                            <label className="inline-flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name="tipoViaje"
+                                    value="IDA"
+                                    checked={tipoViaje === "IDA"}
+                                    onChange={() => setTipoViaje("IDA")}
+                                />
+                                <span>Solo ida</span>
+                            </label>
+                            <label className="inline-flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name="tipoViaje"
+                                    value="IDA_VUELTA"
+                                    checked={tipoViaje === "IDA_VUELTA"}
+                                    onChange={() => setTipoViaje("IDA_VUELTA")}
+                                />
+                                <span>Ida y vuelta</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    {tipoViaje === "IDA_VUELTA" && (
+                        <div className="mt-4 space-y-4">
+                            <p className="text-sm font-medium text-dark">
+                                Datos del viaje de vuelta
+                            </p>
+                            <div className="flex flex-col md:flex-row gap-4">
+                                <div className="md:w-1/2">
+                                    <label className="text-sm text-dark block mb-1">
+                                        Origen (vuelta)
+                                    </label>
+                                    <Input
+                                        placeholder="Ej: Susinos"
+                                        value={origenVuelta}
+                                        onChange={(e) => setOrigenVuelta(e.target.value)}
+                                    />
+                                </div>
+                                <div className="md:w-1/2">
+                                    <label className="text-sm text-dark block mb-1">
+                                        Destino (vuelta)
+                                    </label>
+                                    <Input
+                                        placeholder="Ej: Burgos"
+                                        value={destinoVuelta}
+                                        onChange={(e) => setDestinoVuelta(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex flex-col md:flex-row gap-4">
+                                <div className="md:w-1/2">
+                                    <label className="text-sm text-dark block mb-1">
+                                        Fecha (vuelta)
+                                    </label>
+                                    <Input
+                                        type="date"
+                                        value={fechaVuelta}
+                                        onChange={(e) => setFechaVuelta(e.target.value)}
+                                    />
+                                </div>
+                                <div className="md:w-1/2">
+                                    <label className="text-sm text-dark block mb-1">
+                                        Hora (vuelta)
+                                    </label>
+                                    <Input
+                                        type="time"
+                                        value={horaVuelta}
+                                        onChange={(e) => setHoraVuelta(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     <div>
                         <label className="text-sm text-dark block mb-1">Descripción del viaje</label>
