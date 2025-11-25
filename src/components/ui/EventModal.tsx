@@ -88,18 +88,18 @@ const EventModal: FC<EventModalProps> = ({ onClose, event }) => {
             >
                 <button
                     onClick={handleClose}
-                    className="absolute top-4 right-4 text-muted hover:text-dark text-xl font-semibold"
+                    className="absolute top-3 right-3 md:top-4 md:right-4 text-muted hover:text-dark text-xl font-semibold z-10"
                     aria-label="Cerrar"
                 >
                     ✕
                 </button>
 
-                <div className="mb-4">
+                <div className="mb-4 pr-8">
                     <h2 className="rc-modal-title">{event.title}</h2>
                     <p className="rc-modal-subtitle">{event.date} · {event.location}</p>
                 </div>
 
-                <form className="space-y-3" onSubmit={handleSubmit}>
+                <form className="space-y-3 md:space-y-4" onSubmit={handleSubmit}>
                     {error && (
                         <p className="text-sm text-error mb-1">
                             {error}
@@ -142,14 +142,14 @@ const EventModal: FC<EventModalProps> = ({ onClose, event }) => {
                         <Button
                             type="button"
                             onClick={handleClose}
-                            className="w-full md:w-auto rc-btn-secondary"
+                            className="flex-1 sm:flex-initial rc-btn-secondary"
                             disabled={submitting}
                         >
                             Cancelar
                         </Button>
                         <Button
                             type="submit"
-                            className="w-full md:w-auto rc-btn-primary"
+                            className="flex-1 sm:flex-initial rc-btn-primary"
                             disabled={submitting}
                         >
                             {submitting

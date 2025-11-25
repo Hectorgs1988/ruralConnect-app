@@ -58,7 +58,7 @@ const ImportarSociosModal: FC<ImportarSociosModalProps> = ({ onClose, onImported
       if (data.errors && data.errors.length > 0) {
         setSummary(
           (prev) =>
-            (prev ?? "") + `. Filas con error: ${data.errors.length}. Consulta la consola para más detalles.`,
+            (prev ?? "") + `. Filas con error: ${data.errors?.length ?? 0}. Consulta la consola para más detalles.`,
         );
         console.warn("Errores al importar CSV de socios", data.errors);
       }
@@ -80,22 +80,22 @@ const ImportarSociosModal: FC<ImportarSociosModalProps> = ({ onClose, onImported
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 text-muted hover:text-dark text-xl font-semibold"
+          className="absolute top-3 right-3 md:top-4 md:right-4 text-muted hover:text-dark text-xl font-semibold z-10"
           aria-label="Cerrar"
         >
           ✕
         </button>
 
-        <div className="mb-6">
+        <div className="mb-4 md:mb-6 pr-8">
           <h2 className="rc-modal-title">Importar socios desde CSV</h2>
-          <p className="rc-modal-subtitle text-sm">
+          <p className="rc-modal-subtitle text-xs md:text-sm">
             El archivo debe tener cabecera con las columnas: <strong>email, name, phone, role</strong>.
             &nbsp;Los usuarios nuevos se crean con contraseña por defecto <code>socio123</code>
             &nbsp;y los existentes se actualizan.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
           {error && <p className="text-sm text-error mb-2">{error}</p>}
           {summary && <p className="text-sm text-success mb-2">{summary}</p>}
 
@@ -112,14 +112,14 @@ const ImportarSociosModal: FC<ImportarSociosModalProps> = ({ onClose, onImported
             <Button
               type="button"
               onClick={onClose}
-              className="w-full md:w-auto rc-btn-secondary"
+              className="flex-1 sm:flex-initial rc-btn-secondary"
               disabled={submitting}
             >
               Cancelar
             </Button>
             <Button
               type="submit"
-              className="w-full md:w-auto rc-btn-primary"
+              className="flex-1 sm:flex-initial rc-btn-primary"
               disabled={submitting}
             >
               {submitting ? "Importando..." : "Importar"}

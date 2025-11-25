@@ -1,4 +1,3 @@
-// server/prisma/schema.prisma
 
 generator client {
   provider = "prisma-client-js"
@@ -33,6 +32,12 @@ enum EstadoEvento {
   CANCELADO
 }
 
+enum EstadoSolicitudViaje {
+  ABIERTA
+  ACEPTADA
+  CANCELADA
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -47,6 +52,8 @@ model User {
   Reservas          Reserva[]
   Viajes            Viaje[]             @relation("Conductor")
   Pasajes           PasajeroViaje[]
+  SolicitudesCreadas   SolicitudViaje[] @relation("SolicitudesCreadas")
+  SolicitudesAceptadas SolicitudViaje[] @relation("SolicitudesAceptadas")
   InscripcionEvento InscripcionEvento[]
 }
 
@@ -97,6 +104,8 @@ model Viaje {
   Conductor User            @relation("Conductor", fields: [conductorId], references: [id], onDelete: Cascade)
   Pasajeros PasajeroViaje[]
 
+  Solicitud SolicitudViaje? @relation("SolicitudToViaje")
+
   @@index([fecha])
   @@index([conductorId, fecha])
 }
@@ -113,6 +122,35 @@ model PasajeroViaje {
   @@unique([viajeId, userId])
   @@index([userId])
 }
+
+model SolicitudViaje {
+  id             String   @id @default(cuid())
+  solicitanteId  String
+  origen         String
+  destino        String
+  fecha          DateTime
+  horaDesde      String
+  horaHasta      String
+  notas          String?
+  estado         EstadoSolicitudViaje @default(ABIERTA)
+
+  aceptadaPorId  String?
+  viajeId        String?  @unique
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+
+  Solicitante   User   @relation("SolicitudesCreadas", fields: [solicitanteId], references: [id], onDelete: Cascade)
+  AceptadaPor   User?  @relation("SolicitudesAceptadas", fields: [aceptadaPorId], references: [id])
+
+  Viaje         Viaje? @relation("SolicitudToViaje", fields: [viajeId], references: [id])
+
+  @@index([fecha])
+  @@index([solicitanteId])
+  @@index([estado])
+}
+
+
 
 model Evento {
   id          String       @id @default(cuid())
@@ -135,7 +173,7 @@ model InscripcionEvento {
   id         String   @id @default(cuid())
   eventId    String
   userId     String
-  asistentes Int      @default(1) // por si reservas >1
+  asistentes Int      @default(1)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

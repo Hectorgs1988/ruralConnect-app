@@ -5,9 +5,13 @@ import Button from "@/components/ui/button";
 import ShareCarCard from "@/components/ui/ShareCarCard";
 import OfferTravelModal from "@/components/ui/OfferTravelModal";
 import ConfirmJoinTravelModal from "@/components/ui/ConfirmJoinTravelModal";
+import ConfirmCancelTravelModal from "@/components/ui/ConfirmCancelTravelModal";
+import RequestTravelModal from "@/components/ui/RequestTravelModal";
 
 import type { Travel, Viaje } from "@/types/Travel";
-import { listViajes, createViaje, joinViaje, leaveViaje } from "@/api/viajes";
+import type { SolicitudViaje, SolicitudViajeCreateInput } from "@/types/SolicitudViaje";
+import { listViajes, createViaje, joinViaje, leaveViaje, cancelViaje } from "@/api/viajes";
+import { listSolicitudesViaje, createSolicitudViaje, ofrecerDesdeSolicitud, cancelarSolicitudViaje } from "@/api/solicitudesViaje";
 import { useAuth } from "@/context/AuthContext";
 
 function isoToDateTimeParts(iso: string) {
@@ -64,11 +68,21 @@ export default function CompartirCoche() {
     const { user, token } = useAuth();
     const currentUserId = user?.id ?? "";
 
+    // viajes
     const [showModal, setShowModal] = useState(false);
     const [travels, setTravels] = useState<Travel[]>([]);
     const [loading, setLoading] = useState(true);
     const [err, setErr] = useState<string | null>(null);
     const [travelToJoin, setTravelJoin] = useState<Travel | null>(null);
+    const [travelToCancel, setTravelToCancel] = useState<Travel | null>(null);
+
+    // solicitudes
+    const [solicitudes, setSolicitudes] = useState<SolicitudViaje[]>([]);
+    const [loadingSolicitudes, setLoadingSolicitudes] = useState(true);
+    const [errSolicitudes, setErrSolicitudes] = useState<string | null>(null);
+    const [showRequestModal, setShowRequestModal] = useState(false);
+    const [selectedSolicitud, setSelectedSolicitud] =
+        useState<SolicitudViaje | null>(null);
 
     // filtros
     const [from, setFrom] = useState("");
@@ -76,7 +90,11 @@ export default function CompartirCoche() {
     const [desde, setDesde] = useState("");
     const hayFiltros = useMemo(() => !!(from || to || desde), [from, to, desde]);
 
-    async function cargar(overrides?: { from?: string; to?: string; desde?: string | null }) {
+    async function cargar(overrides?: {
+        from?: string;
+        to?: string;
+        desde?: string | null;
+    }) {
         try {
             setLoading(true);
             setErr(null);
@@ -101,7 +119,10 @@ export default function CompartirCoche() {
                 desde: desdeIso,
             });
 
-            setTravels(data.map((v) => mapViajeToTravelCard(v, currentUserId)));
+            // Filtrar viajes cancelados
+            const viajesActivos = data.filter((v) => v.estado !== "CANCELADO");
+
+            setTravels(viajesActivos.map((v) => mapViajeToTravelCard(v, currentUserId)));
         } catch (e: any) {
             setErr(e.message ?? "Error cargando viajes");
         } finally {
@@ -109,9 +130,51 @@ export default function CompartirCoche() {
         }
     }
 
+    async function cargarSolicitudes() {
+        if (!token) {
+            setSolicitudes([]);
+            setLoadingSolicitudes(false);
+            return;
+        }
+
+        try {
+            setLoadingSolicitudes(true);
+            setErrSolicitudes(null);
+            const data = await listSolicitudesViaje(token);
+            const ahora = new Date();
+
+            // Filtrar:
+            // 1. Mostrar solo ABIERTAS para otros usuarios, pero todas para el solicitante
+            // 2. Excluir solicitudes con viaje cancelado
+            // 3. Excluir solicitudes con fecha pasada
+            const filtered = data.filter((s) => {
+                // Filtro 1: Estado
+                const estadoOk = s.estado === "ABIERTA" || s.solicitanteId === currentUserId;
+                if (!estadoOk) return false;
+
+                // Filtro 2: Viaje no cancelado
+                if (s.Viaje && s.Viaje.estado === "CANCELADO") return false;
+
+                // Filtro 3: Fecha no pasada
+                const fechaSolicitud = new Date(s.fecha);
+                if (fechaSolicitud < ahora) return false;
+
+                return true;
+            });
+
+            setSolicitudes(filtered);
+        } catch (e: any) {
+            setErrSolicitudes(e.message ?? "Error cargando solicitudes");
+        } finally {
+            setLoadingSolicitudes(false);
+        }
+    }
+
     useEffect(() => {
         cargar();
-    }, [currentUserId]);
+        cargarSolicitudes();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentUserId, token]);
 
     async function handleAddTravel(payload: {
         from: string;
@@ -147,7 +210,6 @@ export default function CompartirCoche() {
                     token
                 );
 
-                // Validación extra por seguridad (no debería fallar si el modal valida bien)
                 if (
                     !payload.fromVuelta ||
                     !payload.toVuelta ||
@@ -157,10 +219,7 @@ export default function CompartirCoche() {
                     throw new Error("Faltan datos del viaje de vuelta");
                 }
 
-                const isoVuelta = toIsoLocal(
-                    payload.dateVuelta,
-                    payload.timeVuelta
-                );
+                const isoVuelta = toIsoLocal(payload.dateVuelta, payload.timeVuelta);
 
                 // Viaje de vuelta
                 await createViaje(
@@ -174,7 +233,6 @@ export default function CompartirCoche() {
                     token
                 );
             } else {
-                // Solo ida: comportamiento actual
                 await createViaje(
                     {
                         from: payload.from,
@@ -191,6 +249,74 @@ export default function CompartirCoche() {
             await cargar();
         } catch (e: any) {
             alert(e.message ?? "No se pudo crear el viaje");
+        }
+    }
+
+    async function handleCreateSolicitud(data: SolicitudViajeCreateInput) {
+        if (!token) {
+            alert("Debes iniciar sesión para solicitar un viaje.");
+            return;
+        }
+
+        try {
+            await createSolicitudViaje(data, token);
+            setShowRequestModal(false);
+            await cargarSolicitudes();
+        } catch (e: any) {
+            alert(e.message ?? "No se pudo crear la solicitud");
+        }
+    }
+
+    async function handleCancelarSolicitud(id: string) {
+        if (!token) return;
+
+        try {
+            await cancelarSolicitudViaje(id, token);
+            await cargarSolicitudes();
+        } catch (e: any) {
+            alert(e.message ?? "No se pudo cancelar la solicitud");
+        }
+    }
+
+    async function handleOfrecerDesdeSolicitud(payload: {
+        from: string;
+        to: string;
+        date: string;
+        time: string;
+        plazas: number;
+        description?: string;
+        tipo: "IDA" | "IDA_VUELTA";
+        fromVuelta?: string;
+        toVuelta?: string;
+        dateVuelta?: string;
+        timeVuelta?: string;
+    }) {
+        if (!token || !selectedSolicitud) return;
+
+        try {
+            // Para aceptar solicitud, solo permitimos ida
+            if (payload.tipo === "IDA_VUELTA") {
+                alert("Para aceptar una solicitud, ofrece solo un viaje de ida.");
+                return;
+            }
+
+            await ofrecerDesdeSolicitud(
+                selectedSolicitud.id,
+                {
+                    from: payload.from,
+                    to: payload.to,
+                    fecha: toIsoLocal(payload.date, payload.time),
+                    plazas: payload.plazas,
+                    notas: payload.description,
+                },
+                token
+            );
+
+            setSelectedSolicitud(null);
+            await cargar();
+            await cargarSolicitudes();
+        } catch (e: any) {
+            alert(e.message ?? "No se pudo ofrecer el viaje desde la solicitud");
         }
     }
 
@@ -225,6 +351,27 @@ export default function CompartirCoche() {
         }
     }
 
+    function onCancelTrip(travel: Travel) {
+        if (!token) {
+            alert("Inicia sesión para cancelar el viaje");
+            return;
+        }
+        setTravelToCancel(travel);
+    }
+
+    async function confirmCancelTrip() {
+        if (!travelToCancel || !token) return;
+
+        try {
+            const result = await cancelViaje(travelToCancel.id, token);
+            setTravelToCancel(null);
+            alert(`Viaje cancelado. Se ha notificado a ${result.pasajerosNotificados} pasajero(s).`);
+            await cargar();
+        } catch (e: any) {
+            alert(e.message ?? "No se pudo cancelar el viaje");
+        }
+    }
+
     const buscar = () =>
         cargar({
             from,
@@ -243,97 +390,267 @@ export default function CompartirCoche() {
         <div className="rc-page">
             <Header />
 
-            <main className="flex-1 rc-shell py-10 space-y-8">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-                    <div>
-                        <h2 className="text-2xl md:text-3xl font-semibold text-dark flex items-center gap-2">
-                            <span className="text-2xl"></span>
-                            Compartir coche
-                        </h2>
-                        <p className="text-sm text-muted mt-1">
-                            Encuentra o ofrece viajes para compartir desplazamientos con otros socios.
-                        </p>
+            <main className="flex-1 rc-shell py-6 md:py-10">
+                {/* Header compacto con filtros integrados */}
+                <div className="mb-6">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+                        <div>
+                            <h2 className="text-2xl md:text-3xl font-semibold text-dark">
+                                Compartir coche
+                            </h2>
+                            <p className="text-sm text-muted mt-1">
+                                Encuentra o ofrece viajes para compartir desplazamientos con otros socios.
+                            </p>
+                        </div>
+                        <Button
+                            type="button"
+                            onClick={() => setShowModal(true)}
+                            className="rc-btn-primary whitespace-nowrap"
+                        >
+                            + Ofrecer viaje
+                        </Button>
                     </div>
-                    <Button type="button" onClick={() => setShowModal(true)} className="rc-btn-primary">
-                        + Ofrecer viaje
-                    </Button>
-                </div>
 
-                {/* Filtros */}
-                <section className="rc-card-section">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-base font-semibold text-dark">Filtrar viajes</h3>
-                        {hayFiltros && (
-                            <button
-                                type="button"
-                                onClick={limpiar}
-                                className="text-xs text-muted hover:underline"
-                            >
-                                Limpiar filtros
-                            </button>
-                        )}
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                        <input
-                            className="border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
-                            placeholder="Origen"
-                            value={from}
-                            onChange={(e) => setFrom(e.target.value)}
-                        />
-                        <input
-                            className="border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
-                            placeholder="Destino"
-                            value={to}
-                            onChange={(e) => setTo(e.target.value)}
-                        />
-                        <input
-                            className="border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
-                            placeholder="dd/mmd/aaaa"
-                            type="date"
-                            value={desde}
-                            onChange={(e) => setDesde(e.target.value)}
-                        />
-                        <div className="flex gap-2">
-                            <Button onClick={buscar} className="flex-1 rc-btn-primary">
-                                Buscar
-                            </Button>
+                    {/* Filtros en línea */}
+                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-borderSoft">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                            <input
+                                className="border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
+                                placeholder="Origen"
+                                value={from}
+                                onChange={(e) => setFrom(e.target.value)}
+                            />
+                            <input
+                                className="border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
+                                placeholder="Destino"
+                                value={to}
+                                onChange={(e) => setTo(e.target.value)}
+                            />
+                            <input
+                                className="border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
+                                placeholder="dd/mm/aaaa"
+                                type="date"
+                                value={desde}
+                                onChange={(e) => setDesde(e.target.value)}
+                            />
+                            <div className="flex gap-2">
+                                <Button onClick={buscar} className="flex-1 rc-btn-primary">
+                                    Buscar
+                                </Button>
+                                {hayFiltros && (
+                                    <button
+                                        type="button"
+                                        onClick={limpiar}
+                                        className="px-3 text-sm text-muted hover:text-dark"
+                                        title="Limpiar filtros"
+                                    >
+                                        ✕
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
+                </div>
+
+                {/* Solicitudes de viaje - Scroll horizontal en desktop */}
+                <section className="mb-8">
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 className="text-lg font-semibold text-dark">
+                                Solicitudes de viaje
+                            </h3>
+                            <p className="text-xs text-muted mt-0.5">
+                                Usuarios que buscan un viaje. Puedes ofrecer llevarlo.
+                            </p>
+                        </div>
+                        <Button
+                            type="button"
+                            onClick={() => setShowRequestModal(true)}
+                            className="rc-btn-primary text-sm whitespace-nowrap"
+                        >
+                            + Solicitar viaje
+                        </Button>
+                    </div>
+
+                    {loadingSolicitudes && <p className="text-muted text-sm">Cargando solicitudes…</p>}
+                    {errSolicitudes && (
+                        <p className="text-error font-medium text-sm">{errSolicitudes}</p>
+                    )}
+
+                    {!loadingSolicitudes && !solicitudes.length && (
+                        <div className="bg-surfaceMuted/50 rounded-2xl p-8 text-center">
+                            <p className="text-muted">No hay solicitudes todavía.</p>
+                        </div>
+                    )}
+
+                    {!loadingSolicitudes && solicitudes.length > 0 && (
+                        <div className="overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0">
+                            <div className="flex gap-4 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                {solicitudes.map((s) => {
+                                    const isMine = s.solicitanteId === currentUserId;
+                                    const isAceptada = s.estado === "ACEPTADA";
+                                    const fechaStr = new Date(s.fecha).toLocaleDateString();
+                                    const solicitanteName = s.Solicitante?.name ?? "Socio";
+                                    const aceptadaPorName = s.AceptadaPor?.name ?? "Conductor";
+
+                                    return (
+                                        <div
+                                            key={s.id}
+                                            className={`bg-white rounded-2xl p-4 shadow-sm border flex flex-col justify-between min-w-[280px] md:min-w-0 ${
+                                                isMine
+                                                    ? "border-primary/30 bg-primary/5"
+                                                    : "border-borderSoft"
+                                            } ${isAceptada ? "border-green-300 bg-green-50" : ""}`}
+                                        >
+                                            <div className="space-y-1">
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <p className="font-semibold text-dark">
+                                                        {s.origen} → {s.destino}
+                                                    </p>
+                                                    {isMine && !isAceptada && (
+                                                        <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full whitespace-nowrap">
+                                                            Tu solicitud
+                                                        </span>
+                                                    )}
+                                                    {isAceptada && (
+                                                        <span className="text-xs bg-green-600 text-white px-2 py-0.5 rounded-full whitespace-nowrap">
+                                                            ✓ Aceptada
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="text-sm text-muted">
+                                                    {fechaStr} · {s.horaDesde}–{s.horaHasta}
+                                                </p>
+                                                {!isMine && !isAceptada && (
+                                                    <p className="text-xs text-muted">
+                                                        Solicitado por: {solicitanteName}
+                                                    </p>
+                                                )}
+                                                {s.notas && (
+                                                    <p className="text-sm text-dark mt-2">{s.notas}</p>
+                                                )}
+                                                {isAceptada && isMine && (
+                                                    <div className="mt-2 p-2 bg-white rounded border border-green-200">
+                                                        <p className="text-xs text-green-700 font-medium">
+                                                            ✓ {aceptadaPorName} aceptó tu solicitud
+                                                        </p>
+                                                        <p className="text-xs text-muted mt-1">
+                                                            Ya estás añadido al viaje
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="mt-4 flex justify-end gap-2">
+                                                {isMine && !isAceptada ? (
+                                                    <Button
+                                                        variant="secondary"
+                                                        className="text-sm"
+                                                        onClick={() => handleCancelarSolicitud(s.id)}
+                                                    >
+                                                        Cancelar
+                                                    </Button>
+                                                ) : !isMine && !isAceptada ? (
+                                                    <Button
+                                                        className="text-sm"
+                                                        onClick={() => setSelectedSolicitud(s)}
+                                                    >
+                                                        Ofrecer viaje
+                                                    </Button>
+                                                ) : null}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
                 </section>
 
-                {loading && <p className="text-muted">Cargando…</p>}
-                {err && <p className="text-error font-medium">{err}</p>}
-
-                <section className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
-                        {travels.map((t) => (
-                            <ShareCarCard
-                                key={t.id}
-                                {...t}
-                                onJoin={() => setTravelJoin(t)}
-                                onLeave={() => onLeave(t)}
-                            />
-                        ))}
+                {/* Viajes ofrecidos - Grid normal */}
+                <section>
+                    <div className="mb-4">
+                        <h3 className="text-lg font-semibold text-dark">
+                            Viajes ofrecidos
+                        </h3>
+                        <p className="text-xs text-muted mt-0.5">
+                            Viajes disponibles para unirte como pasajero
+                        </p>
                     </div>
+
+                    {loading && <p className="text-muted text-sm">Cargando…</p>}
+                    {err && <p className="text-error font-medium text-sm">{err}</p>}
+
                     {!loading && !travels.length && (
-                        <p className="text-muted">No hay viajes disponibles por ahora.</p>
+                        <div className="bg-surfaceMuted/50 rounded-2xl p-8 text-center">
+                            <p className="text-muted">No hay viajes disponibles por ahora.</p>
+                        </div>
+                    )}
+
+                    {!loading && travels.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {travels.map((t) => (
+                                <ShareCarCard
+                                    key={t.id}
+                                    {...t}
+                                    onJoin={() => setTravelJoin(t)}
+                                    onLeave={() => onLeave(t)}
+                                    onCancel={t.isDriver ? () => onCancelTrip(t) : undefined}
+                                />
+                            ))}
+                        </div>
                     )}
                 </section>
             </main>
 
             <Footer />
 
+            {/* Modal ofrecer viaje normal */}
             {showModal && (
                 <OfferTravelModal
                     onClose={() => setShowModal(false)}
                     onSubmit={handleAddTravel}
                 />
             )}
+
+            {/* Modal confirmar unirse */}
             {travelToJoin && (
                 <ConfirmJoinTravelModal
                     travel={travelToJoin}
                     onClose={() => setTravelJoin(null)}
                     onConfirm={ConfirmJoin}
+                />
+            )}
+
+            {/* Modal solicitar viaje */}
+            {showRequestModal && (
+                <RequestTravelModal
+                    onClose={() => setShowRequestModal(false)}
+                    onSubmit={handleCreateSolicitud}
+                />
+            )}
+
+            {/* Modal ofrecer viaje desde solicitud (prefilled) */}
+            {selectedSolicitud && (
+                <OfferTravelModal
+                    onClose={() => setSelectedSolicitud(null)}
+                    onSubmit={handleOfrecerDesdeSolicitud}
+                    initialTravel={{
+                        from: selectedSolicitud.origen,
+                        to: selectedSolicitud.destino,
+                        date: selectedSolicitud.fecha, // ISO
+                        seats: 1,
+                        notes: selectedSolicitud.notas ?? "",
+                    }}
+                />
+            )}
+
+            {/* Modal confirmar cancelación de viaje */}
+            {travelToCancel && (
+                <ConfirmCancelTravelModal
+                    travel={travelToCancel}
+                    onClose={() => setTravelToCancel(null)}
+                    onConfirm={confirmCancelTrip}
                 />
             )}
         </div>

@@ -396,3 +396,60 @@ Rural Connect`,
     await sgMail.send(msg as any);
 }
 
+export interface TripCancelledPassengerEmail {
+    to: string;
+    name?: string | null;
+    origen: string;
+    destino: string;
+    fecha: Date;
+    conductorNombre?: string | null;
+}
+
+export async function sendTripCancelledPassengerEmail({
+    to,
+    name,
+    origen,
+    destino,
+    fecha,
+    conductorNombre,
+}: TripCancelledPassengerEmail) {
+    if (!apiKey) {
+        console.error("No se puede enviar email de viaje cancelado: falta SENDGRID_API_KEY");
+        return;
+    }
+
+    const displayName = name || "";
+    const greeting = displayName ? `Hola ${displayName},` : "Hola,";
+
+    const fechaStr = fecha.toLocaleString("es-ES", {
+        dateStyle: "short",
+        timeStyle: "short",
+    });
+
+    const conductorText = conductorNombre || "El conductor";
+
+    const msg = {
+        to,
+        from: FROM,
+        subject: `Viaje cancelado · ${origen} → ${destino}`,
+        text: `${greeting} lamentamos informarte que ${conductorText} ha cancelado el viaje ${origen} → ${destino} del ${fechaStr}.
+
+Si necesitas realizar este trayecto, puedes buscar otros viajes disponibles en Rural Connect o crear una solicitud de viaje.
+
+Disculpa las molestias.
+
+Rural Connect`,
+        html: `
+        <h1>Viaje cancelado</h1>
+        <p>${greeting}</p>
+        <p>Lamentamos informarte que <strong>${conductorText}</strong> ha cancelado el viaje <strong>${origen} → ${destino}</strong>.</p>
+        <p><strong>Fecha y hora:</strong> ${fechaStr}</p>
+        <p>Si necesitas realizar este trayecto, puedes buscar otros viajes disponibles en Rural Connect o crear una solicitud de viaje.</p>
+        <p>Disculpa las molestias.</p>
+        <p>Rural Connect</p>
+    `,
+    };
+
+    await sgMail.send(msg as any);
+}
+
