@@ -27,14 +27,13 @@ const EventCard: FC<EventCardProps> = ({
     return (
         <div
             onClick={onClick}
-            className={`rc-card p-4 mb-3 cursor-pointer transition-transform hover:-translate-y-0.5 hover:shadow-soft ${
-                isJoined ? "border-2 border-primary" : ""
-            }`}
+            className={`rc-card p-4 mb-3 cursor-pointer transition-transform hover:-translate-y-0.5 hover:shadow-soft ${isJoined ? "border-2 border-primary" : ""
+                }`}
         >
             <div className="flex items-start justify-between mb-1">
                 <h4 className="text-base font-semibold text-dark">{title}</h4>
                 {isJoined && (
-                    <span className="rc-pill text-xs bg-primary text-white">
+                    <span className="rc-pill text-xs bg-primary text-dark font-semibold">
                         Inscrito
                     </span>
                 )}

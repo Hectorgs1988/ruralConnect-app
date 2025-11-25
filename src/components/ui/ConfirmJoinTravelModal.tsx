@@ -20,6 +20,10 @@ const ConfirmJoinTravelModal: FC<ConfirmJoinTravelModalProps> = ({
         >
             <div
                 className="rc-modal-panel"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="confirm-join-travel-title"
+                aria-describedby="confirm-join-travel-description"
                 onClick={(e) => e.stopPropagation()}
             >
                 <button
@@ -35,10 +39,13 @@ const ConfirmJoinTravelModal: FC<ConfirmJoinTravelModalProps> = ({
                     <div className="rc-pill">
                         🚗 Confirmar viaje
                     </div>
-                    <h2 className="rc-modal-title">
+                    <h2 id="confirm-join-travel-title" className="rc-modal-title">
                         Confirmar reserva de viaje
                     </h2>
-                    <p className="rc-modal-subtitle">
+                    <p
+                        id="confirm-join-travel-description"
+                        className="rc-modal-subtitle"
+                    >
                         ¿Deseas unirte a este viaje?
                     </p>
                 </div>

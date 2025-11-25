@@ -119,6 +119,10 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
         >
             <div
                 className="rc-modal-panel max-w-lg"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="offer-travel-modal-title"
+                aria-describedby="offer-travel-modal-description"
                 onClick={(e) => e.stopPropagation()}
             >
                 <button
@@ -130,10 +134,13 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
                 </button>
 
                 <div className="mb-4 pr-8">
-                    <h2 className="rc-modal-title">
+                    <h2 id="offer-travel-modal-title" className="rc-modal-title">
                         {initialTravel ? "Aceptar solicitud de viaje" : "Ofrecer nuevo viaje"}
                     </h2>
-                    <p className="rc-modal-subtitle">
+                    <p
+                        id="offer-travel-modal-description"
+                        className="rc-modal-subtitle"
+                    >
                         {initialTravel
                             ? "Confirma los detalles del viaje para aceptar la solicitud"
                             : "Publica tu viaje para que otros socios puedan unirse"}

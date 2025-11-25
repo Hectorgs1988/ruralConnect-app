@@ -70,22 +70,22 @@ export default function CrearReserva() {
     const [misReservas, setMisReservas] = useState<Reserva[]>([]);
     const [loadingMisReservas, setLoadingMisReservas] = useState(false);
     const [cancelandoId, setCancelandoId] = useState<string | null>(null);
-	const [reservaParaCancelar, setReservaParaCancelar] = useState<Reserva | null>(
-		null
-	);
+    const [reservaParaCancelar, setReservaParaCancelar] = useState<Reserva | null>(
+        null
+    );
     const timeOptions = useMemo(() => buildTimeOptions(), []);
 
     async function reloadReservasDia(fechaStr: string, espacioId: string) {
         const desde = toIsoLocal(fechaStr, "00:00");
         const hasta = toIsoLocal(fechaStr, "23:59");
 
-		const data = await listReservas(
-			{ espacioId, desde, hasta },
-			token ?? undefined
-		);
+        const data = await listReservas(
+            { espacioId, desde, hasta },
+            token ?? undefined
+        );
 
-		// Ignorar reservas canceladas para calcular la disponibilidad
-		setReservasDia(data.filter((r) => r.estado !== "CANCELADA"));
+        // Ignorar reservas canceladas para calcular la disponibilidad
+        setReservasDia(data.filter((r) => r.estado !== "CANCELADA"));
     }
 
     async function reloadMisReservas(espacioId: string) {
@@ -236,32 +236,32 @@ export default function CrearReserva() {
         }
     }
 
-	function solicitarCancelarReserva(reserva: Reserva) {
-		if (!token) {
-			setError("Debes iniciar sesión para cancelar una reserva.");
-			return;
-		}
-		setReservaParaCancelar(reserva);
-	}
+    function solicitarCancelarReserva(reserva: Reserva) {
+        if (!token) {
+            setError("Debes iniciar sesión para cancelar una reserva.");
+            return;
+        }
+        setReservaParaCancelar(reserva);
+    }
 
-	async function confirmarCancelarReserva() {
-		if (!reservaParaCancelar || !token) return;
+    async function confirmarCancelarReserva() {
+        if (!reservaParaCancelar || !token) return;
 
-		try {
-			setCancelandoId(reservaParaCancelar.id);
-			setError(null);
-			await updateReserva(reservaParaCancelar.id, { estado: "CANCELADA" }, token);
-			await reloadMisReservas(espacio.id);
-			if (fecha) {
-				await reloadReservasDia(fecha, espacio.id);
-			}
-			setReservaParaCancelar(null);
-		} catch (e: any) {
-			setError(e.message ?? "Error al cancelar la reserva");
-		} finally {
-			setCancelandoId(null);
-		}
-	}
+        try {
+            setCancelandoId(reservaParaCancelar.id);
+            setError(null);
+            await updateReserva(reservaParaCancelar.id, { estado: "CANCELADA" }, token);
+            await reloadMisReservas(espacio.id);
+            if (fecha) {
+                await reloadReservasDia(fecha, espacio.id);
+            }
+            setReservaParaCancelar(null);
+        } catch (e: any) {
+            setError(e.message ?? "Error al cancelar la reserva");
+        } finally {
+            setCancelandoId(null);
+        }
+    }
 
     const noHayHueco = !!fecha && !loadingSlots && !inicioOptions.length;
     const submitDisabled = loading || noHayHueco;
@@ -397,7 +397,8 @@ export default function CrearReserva() {
                     <section className="rc-card-section">
                         <div className="flex items-center justify-between mb-3">
                             <h3 className="text-base font-semibold text-dark">
-                                Tus reservas activas para este espacio
+                                Tu reserva activa para {" "}
+                                <span className="font-semibold">{espacio.nombre}</span>
                             </h3>
                         </div>
 
@@ -435,7 +436,7 @@ export default function CrearReserva() {
                                     return (
                                         <li
                                             key={r.id}
-                                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border border-borderSoft rounded-xl px-3 py-2 bg-surface"
+                                            className="rc-card flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-3 py-2 border-2 border-primary"
                                         >
                                             <div className="text-sm">
                                                 <div className="font-medium text-dark">
@@ -455,7 +456,7 @@ export default function CrearReserva() {
                                                 )}
                                                 <Button
                                                     type="button"
-	                                                    onClick={() => solicitarCancelarReserva(r)}
+                                                    onClick={() => solicitarCancelarReserva(r)}
                                                     className="rc-btn-secondary bg-red-50 text-red-700 hover:bg-red-100"
                                                     disabled={cancelandoId === r.id}
                                                 >
@@ -472,114 +473,114 @@ export default function CrearReserva() {
                     </section>
                 )}
 
-	            {showConfirmModal && (
-                <div
-                    className="rc-modal-overlay"
-                    onClick={() => !loading && setShowConfirmModal(false)}
-                >
+                {showConfirmModal && (
                     <div
-                        className="rc-modal-panel max-w-md"
-                        onClick={(e) => e.stopPropagation()}
+                        className="rc-modal-overlay"
+                        onClick={() => !loading && setShowConfirmModal(false)}
                     >
-                        <button
-                            type="button"
-                            onClick={() => !loading && setShowConfirmModal(false)}
-                            className="absolute top-4 right-4 text-muted hover:text-dark text-xl font-semibold"
-                            aria-label="Cerrar"
+                        <div
+                            className="rc-modal-panel max-w-md"
+                            onClick={(e) => e.stopPropagation()}
                         >
-                            ✕
-                        </button>
-
-                        <div className="mb-6">
-                            <h2 className="rc-modal-title">Confirmar reserva</h2>
-                            <p className="rc-modal-subtitle">
-                                ¿Confirmas la reserva de{" "}
-                                <span className="font-semibold">{espacio.nombre}</span> el{" "}
-                                <span className="font-semibold">{fecha}</span> de{" "}
-                                <span className="font-semibold">{inicio}</span> a{" "}
-                                <span className="font-semibold">{fin}</span>?
-                            </p>
-                        </div>
-
-                        <div className="rc-modal-footer">
-                            <Button
+                            <button
                                 type="button"
                                 onClick={() => !loading && setShowConfirmModal(false)}
-                                className="w-full md:w-auto rc-btn-secondary"
-                                disabled={loading}
+                                className="absolute top-4 right-4 text-muted hover:text-dark text-xl font-semibold"
+                                aria-label="Cerrar"
                             >
-                                Cancelar
-                            </Button>
-                            <Button
-                                type="button"
-                                onClick={confirmarReserva}
-                                className="w-full md:w-auto rc-btn-primary"
-                                disabled={loading}
-                            >
-                                {loading ? "Guardando…" : "Confirmar reserva"}
-                            </Button>
+                                ✕
+                            </button>
+
+                            <div className="mb-6">
+                                <h2 className="rc-modal-title">Confirmar reserva</h2>
+                                <p className="rc-modal-subtitle">
+                                    ¿Confirmas la reserva de{" "}
+                                    <span className="font-semibold">{espacio.nombre}</span> el{" "}
+                                    <span className="font-semibold">{fecha}</span> de{" "}
+                                    <span className="font-semibold">{inicio}</span> a{" "}
+                                    <span className="font-semibold">{fin}</span>?
+                                </p>
+                            </div>
+
+                            <div className="rc-modal-footer">
+                                <Button
+                                    type="button"
+                                    onClick={() => !loading && setShowConfirmModal(false)}
+                                    className="w-full md:w-auto rc-btn-secondary"
+                                    disabled={loading}
+                                >
+                                    Cancelar
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={confirmarReserva}
+                                    className="w-full md:w-auto rc-btn-primary"
+                                    disabled={loading}
+                                >
+                                    {loading ? "Guardando…" : "Confirmar reserva"}
+                                </Button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-	            {reservaParaCancelar && (
-	                <div
-	                    className="rc-modal-overlay"
-	                    onClick={() => cancelandoId === null && setReservaParaCancelar(null)}
-	                >
-	                    <div
-	                        className="rc-modal-panel max-w-md"
-	                        onClick={(e) => e.stopPropagation()}
-	                    >
-	                        <button
-	                            type="button"
-	                            onClick={() =>
-	                                cancelandoId === null && setReservaParaCancelar(null)
-	                            }
-	                            className="absolute top-4 right-4 text-muted hover:text-dark text-xl font-semibold"
-	                            aria-label="Cerrar"
-	                        >
-	                            ✕
-	                        </button>
+                {reservaParaCancelar && (
+                    <div
+                        className="rc-modal-overlay"
+                        onClick={() => cancelandoId === null && setReservaParaCancelar(null)}
+                    >
+                        <div
+                            className="rc-modal-panel max-w-md"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    cancelandoId === null && setReservaParaCancelar(null)
+                                }
+                                className="absolute top-4 right-4 text-muted hover:text-dark text-xl font-semibold"
+                                aria-label="Cerrar"
+                            >
+                                ✕
+                            </button>
 
-	                        <div className="mb-6">
-	                            <h2 className="rc-modal-title">Cancelar reserva</h2>
-	                            <p className="rc-modal-subtitle">
-	                                ¿Seguro que quieres cancelar tu reserva de
-	                                {" "}
-	                                <span className="font-semibold">
-	                                    {espacio.nombre}
-	                                </span>
-	                                ?
-	                            </p>
-	                        </div>
+                            <div className="mb-6">
+                                <h2 className="rc-modal-title">Cancelar reserva</h2>
+                                <p className="rc-modal-subtitle">
+                                    ¿Seguro que quieres cancelar tu reserva de
+                                    {" "}
+                                    <span className="font-semibold">
+                                        {espacio.nombre}
+                                    </span>
+                                    ?
+                                </p>
+                            </div>
 
-	                        <div className="rc-modal-footer">
-	                            <Button
-	                                type="button"
-	                                onClick={() =>
-	                                    cancelandoId === null && setReservaParaCancelar(null)
-	                                }
-	                                className="w-full md:w-auto rc-btn-secondary"
-	                                disabled={cancelandoId !== null}
-	                            >
-	                                Mantener reserva
-	                            </Button>
-	                            <Button
-	                                type="button"
-	                                onClick={() => void confirmarCancelarReserva()}
-	                                className="w-full md:w-auto rc-btn-primary bg-red-600 hover:bg-red-700"
-	                                disabled={cancelandoId !== null}
-	                            >
-	                                {cancelandoId !== null
-	                                    ? "Cancelando…"
-	                                    : "Sí, cancelar reserva"}
-	                            </Button>
-	                        </div>
-	                    </div>
-	                </div>
-	            )}
+                            <div className="rc-modal-footer">
+                                <Button
+                                    type="button"
+                                    onClick={() =>
+                                        cancelandoId === null && setReservaParaCancelar(null)
+                                    }
+                                    className="w-full md:w-auto rc-btn-secondary"
+                                    disabled={cancelandoId !== null}
+                                >
+                                    Mantener reserva
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={() => void confirmarCancelarReserva()}
+                                    className="w-full md:w-auto rc-btn-primary bg-red-600 hover:bg-red-700"
+                                    disabled={cancelandoId !== null}
+                                >
+                                    {cancelandoId !== null
+                                        ? "Cancelando…"
+                                        : "Sí, cancelar reserva"}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </main>
             <Footer />
         </div>
