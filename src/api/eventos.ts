@@ -8,7 +8,9 @@ export type ApiEvento = {
     aforo: number | null;
     estado: "BORRADOR" | "PUBLICADO" | "CANCELADO";
     descripcion: string | null;
-    apuntados?: number;
+    apuntados?: number; // Total de personas apuntadas
+    isJoined?: boolean; // Si el usuario está inscrito
+    misAsistentes?: number; // Cuántos asistentes registró el usuario
 };
 
 export interface ListEventosParams {
@@ -160,4 +162,23 @@ export async function leaveEvento(eventId: string, token: string): Promise<void>
             await getErrorMessage(res, `Error ${res.status} al desinscribirte del evento`)
         );
     }
+}
+
+/**
+ * Obtiene los eventos a los que el usuario está inscrito
+ */
+export async function getMyEventos(token: string): Promise<ApiEvento[]> {
+    const res = await fetch(`/api/eventos/mis-eventos`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    if (!res.ok) {
+        throw new Error(
+            await getErrorMessage(res, `Error ${res.status} al cargar tus eventos`)
+        );
+    }
+
+    return (await res.json()) as ApiEvento[];
 }
