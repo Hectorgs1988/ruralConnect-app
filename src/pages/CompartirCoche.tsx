@@ -386,74 +386,72 @@ export default function CompartirCoche() {
         await cargar({ from: "", to: "", desde: null });
     };
 
-    return (
-        <div className="rc-page">
-            <Header />
-
-            <main className="flex-1 rc-shell py-6 md:py-10">
-                {/* Header compacto con filtros integrados */}
-                <div className="mb-6">
-                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
-                        <div>
-                            <h2 className="text-2xl md:text-3xl font-semibold text-dark">
-                                Compartir coche
-                            </h2>
-                            <p className="text-sm text-muted mt-1">
-                                Encuentra o ofrece viajes para compartir desplazamientos con otros socios.
-                            </p>
-                        </div>
-                        <Button
-                            type="button"
-                            onClick={() => setShowModal(true)}
-                            className="rc-btn-primary whitespace-nowrap"
-                        >
-                            + Ofrecer viaje
-                        </Button>
-                    </div>
-
-                    {/* Filtros en línea */}
-                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-borderSoft">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                            <input
-                                className="border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
-                                placeholder="Origen"
-                                value={from}
-                                onChange={(e) => setFrom(e.target.value)}
-                            />
-                            <input
-                                className="border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
-                                placeholder="Destino"
-                                value={to}
-                                onChange={(e) => setTo(e.target.value)}
-                            />
-                            <input
-                                className="border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
-                                placeholder="dd/mm/aaaa"
-                                type="date"
-                                value={desde}
-                                onChange={(e) => setDesde(e.target.value)}
-                            />
-                            <div className="flex gap-2">
-                                <Button onClick={buscar} className="flex-1 rc-btn-primary">
-                                    Buscar
-                                </Button>
-                                {hayFiltros && (
-                                    <button
-                                        type="button"
-                                        onClick={limpiar}
-                                        className="px-3 text-sm text-muted hover:text-dark"
-                                        title="Limpiar filtros"
-                                    >
-                                        ✕
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Solicitudes de viaje - Scroll horizontal en desktop */}
-                <section className="mb-8">
+	    return (
+	        <div className="rc-page">
+	            <Header />
+	
+	            <main className="flex-1 rc-shell py-8 md:py-10 space-y-8 md:space-y-10">
+	                {/* Bloque principal: título + filtros */}
+	                <section className="rc-card-section">
+	                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+	                        <div>
+	                            <h1 className="rc-hero-title text-left md:text-left mb-1">
+	                                Compartir coche
+	                            </h1>
+	                            <p className="rc-hero-subtitle text-left md:text-left max-w-2xl mb-0">
+	                                Encuentra o ofrece viajes para compartir desplazamientos con otros socios.
+	                            </p>
+	                        </div>
+	                        <Button
+	                            type="button"
+	                            onClick={() => setShowModal(true)}
+	                            className="rc-btn-primary whitespace-nowrap"
+	                        >
+	                            + Ofrecer viaje
+	                        </Button>
+	                    </div>
+	
+	                    {/* Filtros en línea */}
+	                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-2">
+	                        <input
+	                            className="border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
+	                            placeholder="Origen"
+	                            value={from}
+	                            onChange={(e) => setFrom(e.target.value)}
+	                        />
+	                        <input
+	                            className="border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
+	                            placeholder="Destino"
+	                            value={to}
+	                            onChange={(e) => setTo(e.target.value)}
+	                        />
+	                        <input
+	                            className="border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
+	                            placeholder="dd/mm/aaaa"
+	                            type="date"
+	                            value={desde}
+	                            onChange={(e) => setDesde(e.target.value)}
+	                        />
+	                        <div className="flex gap-2">
+	                            <Button onClick={buscar} className="flex-1 rc-btn-primary">
+	                                Buscar
+	                            </Button>
+	                            {hayFiltros && (
+	                                <button
+	                                    type="button"
+	                                    onClick={limpiar}
+	                                    className="px-3 text-sm text-muted hover:text-dark"
+	                                    title="Limpiar filtros"
+	                                >
+	                                    ✕
+	                                </button>
+	                            )}
+	                        </div>
+	                    </div>
+	                </section>
+	
+	                {/* Solicitudes de viaje - Scroll horizontal en desktop */}
+	                <section className="rc-card-section">
                     <div className="flex items-center justify-between mb-4">
                         <div>
                             <h3 className="text-lg font-semibold text-dark">
@@ -483,9 +481,8 @@ export default function CompartirCoche() {
                         </div>
                     )}
 
-                    {!loadingSolicitudes && solicitudes.length > 0 && (
-                        <div className="overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0">
-                            <div className="flex gap-4 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+	                    {!loadingSolicitudes && solicitudes.length > 0 && (
+	                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                                 {solicitudes.map((s) => {
                                     const isMine = s.solicitanteId === currentUserId;
                                     const isAceptada = s.estado === "ACEPTADA";
@@ -493,15 +490,15 @@ export default function CompartirCoche() {
                                     const solicitanteName = s.Solicitante?.name ?? "Socio";
                                     const aceptadaPorName = s.AceptadaPor?.name ?? "Conductor";
 
-                                    return (
-                                        <div
-                                            key={s.id}
-                                            className={`bg-white rounded-2xl p-4 shadow-sm border flex flex-col justify-between min-w-[280px] md:min-w-0 ${
-                                                isMine
-                                                    ? "border-primary/30 bg-primary/5"
-                                                    : "border-borderSoft"
-                                            } ${isAceptada ? "border-green-300 bg-green-50" : ""}`}
-                                        >
+	                                    return (
+	                                        <div
+	                                            key={s.id}
+	                                            className={`bg-white rounded-2xl p-4 shadow-sm border flex flex-col justify-between ${
+	                                                isMine
+	                                                    ? "border-primary/30 bg-primary/5"
+	                                                    : "border-borderSoft"
+	                                            } ${isAceptada ? "border-green-300 bg-green-50" : ""}`}
+	                                        >
                                             <div className="space-y-1">
                                                 <div className="flex items-start justify-between gap-2">
                                                     <p className="font-semibold text-dark">
@@ -561,14 +558,13 @@ export default function CompartirCoche() {
                                             </div>
                                         </div>
                                     );
-                                })}
-                            </div>
-                        </div>
-                    )}
-                </section>
-
-                {/* Viajes ofrecidos - Grid normal */}
-                <section>
+	                                })}
+	                        </div>
+	                    )}
+	                </section>
+	
+	                {/* Viajes ofrecidos - Grid normal */}
+	                <section className="rc-card-section">
                     <div className="mb-4">
                         <h3 className="text-lg font-semibold text-dark">
                             Viajes ofrecidos
