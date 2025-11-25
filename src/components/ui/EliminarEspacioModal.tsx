@@ -44,6 +44,10 @@ const EliminarEspacioModal: FC<EliminarEspacioModalProps> = ({
         <div className="rc-modal-overlay" onClick={onClose}>
             <div
                 className="rc-modal-panel max-w-lg"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="delete-space-modal-title"
+                aria-describedby="delete-space-modal-description"
                 onClick={(e) => e.stopPropagation()}
             >
                 <button
@@ -56,11 +60,14 @@ const EliminarEspacioModal: FC<EliminarEspacioModalProps> = ({
                 </button>
 
                 <div className="mb-4">
-                    <h2 className="rc-modal-title">
+                    <h2 id="delete-space-modal-title" className="rc-modal-title">
                         Eliminar espacio
                         <span className="font-semibold"> [{espacio.nombre}]</span>
                     </h2>
-                    <p className="rc-modal-subtitle">
+                    <p
+                        id="delete-space-modal-description"
+                        className="rc-modal-subtitle"
+                    >
                         ¿Deseas eliminar este espacio? Esta acción no se puede deshacer.
                     </p>
                 </div>

@@ -155,6 +155,10 @@ const EventModal: FC<EventModalProps> = ({ onClose, onUpdate, event }) => {
         >
             <div
                 className="rc-modal-panel max-w-md"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="event-modal-title"
+                aria-describedby="event-modal-description"
                 onClick={(e) => e.stopPropagation()}
             >
                 <button
@@ -166,8 +170,13 @@ const EventModal: FC<EventModalProps> = ({ onClose, onUpdate, event }) => {
                 </button>
 
                 <div className="mb-4 pr-8">
-                    <h2 className="rc-modal-title">{event.title}</h2>
-                    <p className="rc-modal-subtitle">{event.date} · {event.location}</p>
+                    <h2 id="event-modal-title" className="rc-modal-title">{event.title}</h2>
+                    <p
+                        id="event-modal-description"
+                        className="rc-modal-subtitle"
+                    >
+                        {event.date} · {event.location}
+                    </p>
                 </div>
 
                 {/* Información de asistencia */}
@@ -182,7 +191,7 @@ const EventModal: FC<EventModalProps> = ({ onClose, onUpdate, event }) => {
                     {isJoined && event.misAsistentes && (
                         <div className="flex items-center justify-between text-sm mt-2 pt-2 border-t border-borderSoft">
                             <span className="text-muted">Tus asistentes:</span>
-                            <span className="font-semibold text-primary">
+                            <span className="font-semibold text-dark">
                                 {event.misAsistentes}
                             </span>
                         </div>
@@ -232,7 +241,7 @@ const EventModal: FC<EventModalProps> = ({ onClose, onUpdate, event }) => {
                                         className="flex-1 sm:flex-initial bg-red-600 hover:bg-red-700 text-white"
                                         disabled={submitting}
                                     >
-                                        {submitting ? "Saliendo..." : "Salirme"}
+                                        {submitting ? "Saliendo..." : "Desapuntarme"}
                                     </Button>
                                 </div>
                             </>

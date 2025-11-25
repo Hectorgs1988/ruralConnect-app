@@ -47,6 +47,10 @@ const EliminarEventoModal: FC<EliminarEventoModalProps> = ({ evento, onClose, on
         >
             <div
                 className="rc-modal-panel max-w-lg"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="delete-event-modal-title"
+                aria-describedby="delete-event-modal-description"
                 onClick={(e) => e.stopPropagation()}
             >
                 <button
@@ -59,10 +63,13 @@ const EliminarEventoModal: FC<EliminarEventoModalProps> = ({ evento, onClose, on
                 </button>
 
                 <div className="mb-4">
-                    <h2 className="rc-modal-title">
+                    <h2 id="delete-event-modal-title" className="rc-modal-title">
                         Eliminar evento <span className="font-semibold">[{evento.titulo}]</span>
                     </h2>
-                    <p className="rc-modal-subtitle">
+                    <p
+                        id="delete-event-modal-description"
+                        className="rc-modal-subtitle"
+                    >
                         Deseas eliminar este evento?
                     </p>
                 </div>

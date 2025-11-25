@@ -100,6 +100,10 @@ const EditarSocioModal: FC<EditarSocioModalProps> = ({ socio, onClose, onUpdated
         >
             <div
                 className="rc-modal-panel max-w-2xl"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="edit-member-modal-title"
+                aria-describedby="edit-member-modal-description"
                 onClick={(e) => e.stopPropagation()}
             >
                 <button
@@ -112,8 +116,13 @@ const EditarSocioModal: FC<EditarSocioModalProps> = ({ socio, onClose, onUpdated
                 </button>
 
                 <div className="mb-4 md:mb-6 pr-8">
-                    <h2 className="rc-modal-title">Editar socio</h2>
-                    <p className="rc-modal-subtitle">Modifica los datos del socio</p>
+                    <h2 id="edit-member-modal-title" className="rc-modal-title">Editar socio</h2>
+                    <p
+                        id="edit-member-modal-description"
+                        className="rc-modal-subtitle"
+                    >
+                        Modifica los datos del socio
+                    </p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">

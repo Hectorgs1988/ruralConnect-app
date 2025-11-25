@@ -58,7 +58,7 @@ const Header: FC = () => {
                             <Link
                                 key={item.to}
                                 to={item.to}
-                                className="px-4 py-2 rounded-full text-base font-bold text-muted hover:text-dark hover:bg-primarySoft"
+                                className="px-4 py-2 rounded-full text-base font-bold text-muted hover:text-dark hover:bg-primarySoft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primaryStrong/70 focus-visible:bg-primarySoft"
                             >
                                 {item.label}
                             </Link>
@@ -67,7 +67,7 @@ const Header: FC = () => {
                         {user?.role === "ADMIN" && (
                             <Link
                                 to="/PanelAdmin"
-                                className="px-4 py-2 rounded-full text-base font-bold text-dark bg-primary/80 hover:bg-primaryStrong"
+                                className="px-4 py-2 rounded-full text-base font-bold text-dark bg-primary/80 hover:bg-primaryStrong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primaryStrong/80"
                             >
                                 Admin
                             </Link>
@@ -79,7 +79,7 @@ const Header: FC = () => {
                         {user && (
                             <button
                                 onClick={handleLogout}
-                                className="text-xs md:text-base font-bold px-3 py-1 rounded-full border border-borderSoft text-muted hover:bg-surfaceMuted"
+                                className="text-xs md:text-base font-bold px-3 py-1 rounded-full border border-borderSoft text-muted hover:bg-surfaceMuted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primaryStrong/70"
                             >
                                 Cerrar sesión
                             </button>

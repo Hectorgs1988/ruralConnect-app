@@ -79,6 +79,10 @@ const NuevoSocioModal: FC<NuevoSocioModalProps> = ({ onClose, onCreated }) => {
         >
             <div
                 className="rc-modal-panel max-w-2xl"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="new-member-modal-title"
+                aria-describedby="new-member-modal-description"
                 onClick={(e) => e.stopPropagation()}
             >
                 <button
@@ -91,8 +95,11 @@ const NuevoSocioModal: FC<NuevoSocioModalProps> = ({ onClose, onCreated }) => {
                 </button>
 
                 <div className="mb-6">
-                    <h2 className="rc-modal-title">Añadir nuevo socio</h2>
-                    <p className="rc-modal-subtitle">
+                    <h2 id="new-member-modal-title" className="rc-modal-title">Añadir nuevo socio</h2>
+                    <p
+                        id="new-member-modal-description"
+                        className="rc-modal-subtitle"
+                    >
                         Introduce los datos del nuevo socio de la peña
                     </p>
                 </div>
