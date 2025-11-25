@@ -19,6 +19,7 @@ type Evento = {
     estado: "BORRADOR" | "PUBLICADO" | "CANCELADO";
     aforo: number | null;
     descripcion: string;
+    apuntados: number;
 };
 
 
@@ -58,6 +59,7 @@ const GestionEventos: FC = () => {
                     estado: e.estado,
                     aforo: e.aforo ?? null,
                     descripcion: e.descripcion ?? "",
+                    apuntados: e.apuntados ?? 0,
                 }));
 
                 setEventos(mapped);
@@ -105,11 +107,10 @@ const GestionEventos: FC = () => {
                 <div className="rc-card-section w-full">
                     <div className="flex flex-col gap-4 mb-4 md:mb-6">
                         <h2 className="text-base md:text-lg font-semibold text-dark flex items-center gap-2">
-                            📅 Gestión de eventos
+                            Gestión de eventos
                         </h2>
                         <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
                             <div className="flex-1 flex items-center bg-surfaceMuted border border-borderSoft rounded-full px-4 py-2">
-                                <span className="mr-2 text-muted">🔍</span>
                                 <input
                                     type="text"
                                     value={search}
@@ -145,6 +146,7 @@ const GestionEventos: FC = () => {
                                     <th className="py-2 px-3">Lugar</th>
                                     <th className="py-2 px-3">Estado</th>
                                     <th className="py-2 px-3">Aforo</th>
+                                    <th className="py-2 px-3">Asistentes</th>
                                     <th className="py-2 px-3">Acciones</th>
                                 </tr>
                             </thead>
@@ -159,6 +161,7 @@ const GestionEventos: FC = () => {
                                         <td className="py-2 px-3 whitespace-nowrap">{evento.lugar}</td>
                                         <td className="py-2 px-3 whitespace-nowrap">{evento.estado}</td>
                                         <td className="py-2 px-3 whitespace-nowrap">{evento.aforo != null ? evento.aforo : "-"}</td>
+                                        <td className="py-2 px-3 whitespace-nowrap">{evento.apuntados}</td>
                                         <td className="py-2 px-3 whitespace-nowrap">
                                             <button
                                                 type="button"

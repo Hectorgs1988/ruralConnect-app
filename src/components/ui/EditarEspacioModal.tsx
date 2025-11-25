@@ -82,17 +82,17 @@ const EditarEspacioModal: FC<EditarEspacioModalProps> = ({ espacio, onClose, onU
                 <button
                     type="button"
                     onClick={onClose}
-                    className="absolute top-4 right-4 text-muted hover:text-dark text-xl font-semibold"
+                    className="absolute top-3 right-3 md:top-4 md:right-4 text-muted hover:text-dark text-xl font-semibold z-10"
                     aria-label="Cerrar"
                 >
                     ✕
                 </button>
-                <div className="mb-6">
+                <div className="mb-4 md:mb-6 pr-8">
                     <h2 className="rc-modal-title">Editar espacio</h2>
                     <p className="rc-modal-subtitle">Modifica los datos del espacio</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
                     {error && (
                         <p className="text-sm text-error mb-2">{error}</p>
                     )}
@@ -141,14 +141,14 @@ const EditarEspacioModal: FC<EditarEspacioModalProps> = ({ espacio, onClose, onU
                         <Button
                             type="button"
                             onClick={onClose}
-                            className="w-full md:w-auto rc-btn-secondary"
+                            className="flex-1 sm:flex-initial rc-btn-secondary"
                             disabled={submitting}
                         >
                             Cancelar
                         </Button>
                         <Button
                             type="submit"
-                            className="w-full md:w-auto rc-btn-primary"
+                            className="flex-1 sm:flex-initial rc-btn-primary"
                             disabled={submitting}
                         >
                             {submitting ? "Guardando cambios..." : "Guardar cambios"}

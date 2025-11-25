@@ -80,6 +80,62 @@ export async function sendReservationConfirmationEmail({
     await sgMail.send(msg as any);
 }
 
+export interface ReservationCancelledEmail {
+	to: string;
+	name?: string | null;
+	espacioNombre: string;
+	inicio: Date;
+	fin?: Date | null;
+}
+
+export async function sendReservationCancelledEmail({
+	to,
+	name,
+	espacioNombre,
+	inicio,
+	fin,
+}: ReservationCancelledEmail) {
+	if (!apiKey) {
+		console.error(
+			"No se puede enviar email de cancelación de reserva: falta SENDGRID_API_KEY",
+		);
+		return;
+	}
+
+	const inicioStr = inicio.toLocaleString("es-ES", {
+		dateStyle: "short",
+		timeStyle: "short",
+	});
+	const finStr = fin
+		? fin.toLocaleString("es-ES", {
+		      dateStyle: "short",
+		      timeStyle: "short",
+	      })
+		: "";
+	const textFin = finStr ? ` a ${finStr}` : "";
+	const htmlFin = finStr ? `<br/><strong>Hasta:</strong> ${finStr}` : "";
+
+	const displayName = name || "";
+	const greeting = displayName ? `Hola ${displayName},` : "Hola,";
+
+	const msg = {
+		to,
+		from: FROM,
+		subject: `Reserva cancelada · ${espacioNombre}`,
+		text: `${greeting} has cancelado tu reserva de ${espacioNombre} que estaba prevista desde ${inicioStr}${textFin}.`,
+		html: `
+	        <h1>Reserva cancelada</h1>
+	        <p>${greeting}</p>
+	        <p>Has cancelado tu reserva de <strong>${espacioNombre}</strong>.</p>
+	        <p><strong>Desde:</strong> ${inicioStr}${htmlFin}</p>
+	        <p>Si no has realizado tú esta cancelación, por favor contacta con la asociación.</p>
+	        <p>Gracias por usar Rural Connect.</p>
+	        `,
+	};
+
+	await sgMail.send(msg as any);
+}
+
 export interface PasswordResetEmail {
     to: string;
     name?: string | null;
@@ -163,6 +219,65 @@ export async function sendEventInscriptionEmail({
         ${lugarHtml}
         <p>${asistentesTexto}</p>
         <p>¡Gracias por participar en Rural Connect!</p>
+    `,
+    };
+
+    await sgMail.send(msg as any);
+}
+
+export interface EventUnsubscribeEmail {
+    to: string;
+    name?: string | null;
+    titulo: string;
+    fecha: Date;
+    lugar?: string | null;
+    asistentes?: number;
+}
+
+export async function sendEventUnsubscribeEmail({
+    to,
+    name,
+    titulo,
+    fecha,
+    lugar,
+    asistentes,
+}: EventUnsubscribeEmail) {
+    if (!apiKey) {
+        console.error(
+            "No se puede enviar email de baja de evento: falta SENDGRID_API_KEY",
+        );
+        return;
+    }
+
+    const displayName = name || "";
+    const greeting = displayName ? `Hola ${displayName},` : "Hola,";
+
+    const fechaStr = fecha.toLocaleString("es-ES", {
+        dateStyle: "short",
+        timeStyle: "short",
+    });
+
+    const lugarTexto = lugar ? `\nLugar: ${lugar}` : "";
+    const lugarHtml = lugar ? `<p><strong>Lugar:</strong> ${lugar}</p>` : "";
+
+    const asistentesTexto =
+        asistentes && asistentes > 1
+            ? `Has cancelado ${asistentes} asistentes.`
+            : "Has cancelado tu asistencia.";
+
+    const msg = {
+        to,
+        from: FROM,
+	        subject: `Has cancelado tu inscripción · ${titulo}`,
+	        text: `${greeting} has cancelado tu inscripción al evento "${titulo}" previsto para el ${fechaStr}.${lugarTexto}\n${asistentesTexto}\n\nSi ha sido un error, puedes volver a inscribirte desde Rural Connect.`,
+	        html: `
+	        <h1>Has cancelado tu inscripción</h1>
+	        <p>${greeting}</p>
+	        <p>Has cancelado tu inscripción al evento <strong>${titulo}</strong>.</p>
+        <p><strong>Fecha y hora:</strong> ${fechaStr}</p>
+        ${lugarHtml}
+        <p>${asistentesTexto}</p>
+        <p>Si ha sido un error, puedes volver a inscribirte desde Rural Connect.</p>
     `,
     };
 
@@ -389,6 +504,63 @@ Rural Connect`,
         <p><strong>${pasajeroNombreText}</strong> ha cancelado su plaza en tu viaje <strong>${origen} → ${destino}</strong>.</p>
         <p><strong>Fecha y hora:</strong> ${fechaStr}</p>
         <p><strong>Contacto del pasajero:</strong> ${pasajeroEmail}${telefonoLineaHtml}</p>
+        <p>Rural Connect</p>
+    `,
+    };
+
+    await sgMail.send(msg as any);
+}
+
+export interface TripCancelledPassengerEmail {
+    to: string;
+    name?: string | null;
+    origen: string;
+    destino: string;
+    fecha: Date;
+    conductorNombre?: string | null;
+}
+
+export async function sendTripCancelledPassengerEmail({
+    to,
+    name,
+    origen,
+    destino,
+    fecha,
+    conductorNombre,
+}: TripCancelledPassengerEmail) {
+    if (!apiKey) {
+        console.error("No se puede enviar email de viaje cancelado: falta SENDGRID_API_KEY");
+        return;
+    }
+
+    const displayName = name || "";
+    const greeting = displayName ? `Hola ${displayName},` : "Hola,";
+
+    const fechaStr = fecha.toLocaleString("es-ES", {
+        dateStyle: "short",
+        timeStyle: "short",
+    });
+
+    const conductorText = conductorNombre || "El conductor";
+
+    const msg = {
+        to,
+        from: FROM,
+        subject: `Viaje cancelado · ${origen} → ${destino}`,
+        text: `${greeting} lamentamos informarte que ${conductorText} ha cancelado el viaje ${origen} → ${destino} del ${fechaStr}.
+
+Si necesitas realizar este trayecto, puedes buscar otros viajes disponibles en Rural Connect o crear una solicitud de viaje.
+
+Disculpa las molestias.
+
+Rural Connect`,
+        html: `
+        <h1>Viaje cancelado</h1>
+        <p>${greeting}</p>
+        <p>Lamentamos informarte que <strong>${conductorText}</strong> ha cancelado el viaje <strong>${origen} → ${destino}</strong>.</p>
+        <p><strong>Fecha y hora:</strong> ${fechaStr}</p>
+        <p>Si necesitas realizar este trayecto, puedes buscar otros viajes disponibles en Rural Connect o crear una solicitud de viaje.</p>
+        <p>Disculpa las molestias.</p>
         <p>Rural Connect</p>
     `,
     };

@@ -1,5 +1,3 @@
-// src/types/Travel.ts
-
 export interface Travel {
     id: string;
     name: string;
@@ -13,6 +11,7 @@ export interface Travel {
     description?: string;
     joined?: boolean;
     isDriver?: boolean;
+
 }
 
 // Tipo que devuelve el BACKEND

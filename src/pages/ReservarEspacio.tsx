@@ -96,7 +96,6 @@ const ReservasEspacio = () => {
                 <section className="rc-card-section">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-base font-semibold text-dark flex items-center gap-2">
-                            <span className="text-xl">📍</span>
                             Espacios disponibles
                         </h3>
                         <p className="text-xs text-muted">

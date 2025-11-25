@@ -1,0 +1,899 @@
+openapi: 3.0.3
+info:
+  title: RuralConnect API
+  version: "1.0.0"
+  description: |
+    Especificación API/Swagger para el backend de RuralConnect
+
+servers:
+  - url: http://localhost:4000/api
+    description: Local
+
+tags:
+  - name: Health
+  - name: Auth
+  - name: Dashboard
+  - name: Espacios
+  - name: Reservas
+  - name: Eventos
+  - name: Viajes
+  - name: SolicitudesViaje
+  - name: Users
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          type: array
+          items: { type: string }
+      additionalProperties: false
+
+    Role:
+      type: string
+      enum: [ADMIN, SOCIO]
+
+    EstadoReserva:
+      type: string
+      enum: [PENDIENTE, CONFIRMADA, CANCELADA]
+
+    EstadoViaje:
+      type: string
+      enum: [ABIERTO, COMPLETO, CANCELADO]
+
+    EstadoEvento:
+      type: string
+      enum: [BORRADOR, PUBLICADO, CANCELADO]
+
+    EstadoSolicitudViaje:
+      type: string
+      enum: [ABIERTA, ACEPTADA, CANCELADA]
+
+    User:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+        name: { type: string }
+        phone: { type: string, nullable: true }
+        role: { $ref: "#/components/schemas/Role" }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required: [id, email, name, role, isActive, createdAt, updatedAt]
+
+    UserPublic:
+      allOf:
+        - $ref: "#/components/schemas/User"
+        - type: object
+          properties:
+            password:
+              readOnly: true
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 6 }
+      additionalProperties: false
+
+    LoginResponse:
+      type: object
+      properties:
+        token: { type: string }
+        user: { $ref: "#/components/schemas/User" }
+      required: [token, user]
+
+    ForgotPasswordRequest:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string, format: email }
+      additionalProperties: false
+
+    ResetPasswordRequest:
+      type: object
+      required: [token, password]
+      properties:
+        token: { type: string }
+        password: { type: string, minLength: 6 }
+      additionalProperties: false
+
+    Espacio:
+      type: object
+      properties:
+        id: { type: string }
+        nombre: { type: string }
+        tipo: { type: string }
+        aforo: { type: integer, nullable: true }
+        descripcion: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required: [id, nombre, tipo, createdAt, updatedAt]
+
+    EspacioCreate:
+      type: object
+      required: [nombre, tipo]
+      properties:
+        nombre: { type: string, minLength: 2 }
+        tipo: { type: string, minLength: 2 }
+        aforo: { type: integer, minimum: 1, nullable: true }
+        descripcion: { type: string, nullable: true }
+      additionalProperties: false
+
+    EspacioUpdate:
+      type: object
+      properties:
+        nombre: { type: string, minLength: 2 }
+        tipo: { type: string, minLength: 2 }
+        aforo: { type: integer, minimum: 1, nullable: true }
+        descripcion: { type: string, nullable: true }
+      additionalProperties: false
+
+    Reserva:
+      type: object
+      properties:
+        id: { type: string }
+        usuarioId: { type: string }
+        espacioId: { type: string }
+        inicio: { type: string, format: date-time }
+        fin: { type: string, format: date-time }
+        estado: { $ref: "#/components/schemas/EstadoReserva" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        Espacio:
+          $ref: "#/components/schemas/Espacio"
+        Usuario:
+          $ref: "#/components/schemas/User"
+      required: [id, usuarioId, espacioId, inicio, fin, estado, createdAt, updatedAt]
+
+    ReservaCreate:
+      type: object
+      required: [espacioId, inicio, fin]
+      properties:
+        espacioId: { type: string }
+        inicio: { type: string, format: date-time }
+        fin: { type: string, format: date-time }
+      additionalProperties: false
+
+    ReservaUpdate:
+      type: object
+      properties:
+        inicio: { type: string, format: date-time }
+        fin: { type: string, format: date-time }
+        estado: { $ref: "#/components/schemas/EstadoReserva" }
+      additionalProperties: false
+
+    Evento:
+      type: object
+      properties:
+        id: { type: string }
+        titulo: { type: string }
+        descripcion: { type: string, nullable: true }
+        fecha: { type: string, format: date-time }
+        lugar: { type: string, nullable: true }
+        aforo: { type: integer, nullable: true }
+        estado: { $ref: "#/components/schemas/EstadoEvento" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required: [id, titulo, fecha, estado, createdAt, updatedAt]
+
+    EventoCreate:
+      type: object
+      required: [titulo, fecha]
+      properties:
+        titulo: { type: string, minLength: 2 }
+        descripcion: { type: string, nullable: true }
+        fecha: { type: string, format: date-time }
+        lugar: { type: string, nullable: true }
+        aforo: { type: integer, minimum: 1, nullable: true }
+        estado: { $ref: "#/components/schemas/EstadoEvento" }
+      additionalProperties: false
+
+    EventoUpdate:
+      type: object
+      properties:
+        titulo: { type: string, minLength: 2 }
+        descripcion: { type: string, nullable: true }
+        fecha: { type: string, format: date-time }
+        lugar: { type: string, nullable: true }
+        aforo: { type: integer, minimum: 1, nullable: true }
+        estado: { $ref: "#/components/schemas/EstadoEvento" }
+      additionalProperties: false
+
+    InscripcionEvento:
+      type: object
+      properties:
+        id: { type: string }
+        eventId: { type: string }
+        userId: { type: string }
+        asistentes: { type: integer }
+        createdAt: { type: string, format: date-time }
+      required: [id, eventId, userId, asistentes, createdAt]
+
+    InscripcionUpsert:
+      type: object
+      properties:
+        asistentes:
+          type: integer
+          minimum: 1
+          maximum: 20
+          default: 1
+      additionalProperties: false
+
+    Viaje:
+      type: object
+      properties:
+        id: { type: string }
+        conductorId: { type: string }
+        from: { type: string }
+        to: { type: string }
+        fecha: { type: string, format: date-time }
+        plazas: { type: integer }
+        estado: { $ref: "#/components/schemas/EstadoViaje" }
+        notas: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required: [id, conductorId, from, to, fecha, plazas, estado, createdAt, updatedAt]
+
+    ViajeCreate:
+      type: object
+      required: [from, to, fecha, plazas]
+      properties:
+        from: { type: string, minLength: 2 }
+        to: { type: string, minLength: 2 }
+        fecha: { type: string, format: date-time }
+        plazas: { type: integer, minimum: 1 }
+        notas: { type: string, nullable: true }
+      additionalProperties: false
+
+    SolicitudViaje:
+      type: object
+      properties:
+        id: { type: string }
+        solicitanteId: { type: string }
+        origen: { type: string }
+        destino: { type: string }
+        fecha: { type: string, format: date-time }
+        horaDesde: { type: string, example: "08:00" }
+        horaHasta: { type: string, example: "10:30" }
+        notas: { type: string, nullable: true }
+        estado: { $ref: "#/components/schemas/EstadoSolicitudViaje" }
+        aceptadaPorId: { type: string, nullable: true }
+        viajeId: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required:
+        [id, solicitanteId, origen, destino, fecha, horaDesde, horaHasta, estado, createdAt, updatedAt]
+
+    SolicitudViajeCreate:
+      type: object
+      required: [origen, destino, fecha, horaDesde, horaHasta]
+      properties:
+        origen: { type: string, minLength: 2 }
+        destino: { type: string, minLength: 2 }
+        fecha: { type: string, format: date-time }
+        horaDesde: { type: string, example: "08:00" }
+        horaHasta: { type: string, example: "10:30" }
+        notas: { type: string, nullable: true }
+      additionalProperties: false
+
+    UserCreate:
+      type: object
+      required: [email, password, name]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 6 }
+        name: { type: string, minLength: 2 }
+        phone: { type: string, nullable: true }
+        role: { $ref: "#/components/schemas/Role" }
+        isActive: { type: boolean }
+      additionalProperties: false
+
+    UserUpdate:
+      type: object
+      properties:
+        email: { type: string, format: email }
+        name: { type: string, minLength: 2 }
+        phone: { type: string, nullable: true }
+        role: { $ref: "#/components/schemas/Role" }
+        isActive: { type: boolean }
+        password: { type: string, minLength: 6 }
+      additionalProperties: false
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      responses:
+        "200": { description: OK }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login de usuario (admin o socio)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+      responses:
+        "200":
+          description: Devuelve JWT y usuario
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LoginResponse" }
+        "401":
+          description: Credenciales incorrectas
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Solicitar email de reseteo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ForgotPasswordRequest" }
+      responses:
+        "200": { description: OK }
+
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Resetear contraseña con token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ResetPasswordRequest" }
+      responses:
+        "200": { description: Password actualizada }
+        "400":
+          description: Token inválido o datos incompletos
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /dashboard/resumen:
+    get:
+      tags: [Dashboard]
+      summary: Resumen
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Resumen agregado }
+        "401": { description: No autorizado }
+
+  /dashboard/test-email:
+    post:
+      tags: [Dashboard]
+      summary: Endpoint interno para probar envío de email
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+
+  /espacios:
+    get:
+      tags: [Espacios]
+      summary: Listar espacios
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Lista de espacios
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Espacio" }
+    post:
+      tags: [Espacios]
+      summary: Crear espacio (admin)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EspacioCreate" }
+      responses:
+        "201":
+          description: Espacio creado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Espacio" }
+
+  /espacios/{id}:
+    patch:
+      tags: [Espacios]
+      summary: Actualizar espacio (admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EspacioUpdate" }
+      responses:
+        "200":
+          description: Espacio actualizado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Espacio" }
+    delete:
+      tags: [Espacios]
+      summary: Borrar espacio (admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "204": { description: Eliminado }
+
+  /reservas:
+    get:
+      tags: [Reservas]
+      summary: Listar reservas (con filtros)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: espacioId
+          schema: { type: string }
+          description: Filtra por id de espacio
+        - in: query
+          name: desde
+          schema: { type: string, format: date-time }
+        - in: query
+          name: hasta
+          schema: { type: string, format: date-time }
+        - in: query
+          name: estado
+          schema: { $ref: "#/components/schemas/EstadoReserva" }
+      responses:
+        "200":
+          description: Lista de reservas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Reserva" }
+    post:
+      tags: [Reservas]
+      summary: Crear reserva (socio)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReservaCreate" }
+      responses:
+        "201":
+          description: Reserva creada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Reserva" }
+
+  /reservas/{id}:
+    patch:
+      tags: [Reservas]
+      summary: Actualizar reserva
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReservaUpdate" }
+      responses:
+        "200":
+          description: Reserva actualizada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Reserva" }
+
+  /eventos:
+    get:
+      tags: [Eventos]
+      summary: Listar eventos (publicados)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: desde
+          schema: { type: string, format: date }
+        - in: query
+          name: hasta
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Lista de eventos
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Evento" }
+    post:
+      tags: [Eventos]
+      summary: Crear evento (admin)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EventoCreate" }
+      responses:
+        "201":
+          description: Evento creado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Evento" }
+
+  /eventos/{id}:
+    patch:
+      tags: [Eventos]
+      summary: Actualizar evento (admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EventoUpdate" }
+      responses:
+        "200":
+          description: Evento actualizado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Evento" }
+    delete:
+      tags: [Eventos]
+      summary: Borrar evento (admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "204": { description: Eliminado }
+
+  /eventos/{id}/inscribirme:
+    post:
+      tags: [Eventos]
+      summary: Inscribirme / actualizar asistentes (socio)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InscripcionUpsert" }
+      responses:
+        "200":
+          description: Inscripción creada/actualizada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InscripcionEvento" }
+        "404":
+          description: Evento no encontrado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /eventos/{id}/desinscribirme:
+    delete:
+      tags: [Eventos]
+      summary: Desinscribirme de un evento (socio)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "204": { description: Inscripción eliminada }
+
+  /solicitudes-viaje:
+    get:
+      tags: [SolicitudesViaje]
+      summary: Listar solicitudes de viaje (socio)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Lista de solicitudes
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SolicitudViaje" }
+    post:
+      tags: [SolicitudesViaje]
+      summary: Crear solicitud de viaje (socio)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SolicitudViajeCreate" }
+      responses:
+        "201":
+          description: Solicitud creada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SolicitudViaje" }
+
+  /solicitudes-viaje/{id}/ofrecer:
+    post:
+      tags: [SolicitudesViaje]
+      summary: Aceptar solicitud y ofrecer viaje (crea viaje + añade al solicitante)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+          description: Id de la solicitud
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ViajeCreate" }
+      responses:
+        "201":
+          description: Viaje creado y solicitud aceptada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  viaje: { $ref: "#/components/schemas/Viaje" }
+                  solicitudUpdated: { $ref: "#/components/schemas/SolicitudViaje" }
+        "404":
+          description: Solicitud no disponible
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /solicitudes-viaje/{id}:
+    delete:
+      tags: [SolicitudesViaje]
+      summary: Cancelar solicitud de viaje (socio)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "204": { description: Cancelada }
+        "403":
+          description: No autorizado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /viajes:
+    get:
+      tags: [Viajes]
+      summary: Listar viajes
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Lista de viajes
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Viaje" }
+    post:
+      tags: [Viajes]
+      summary: Crear viaje (socio conductor)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ViajeCreate" }
+      responses:
+        "201":
+          description: Viaje creado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Viaje" }
+
+  /viajes/{id}/unirse:
+    post:
+      tags: [Viajes]
+      summary: Unirse a un viaje (socio)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Ok }
+    delete:
+      tags: [Viajes]
+      summary: Salir de un viaje (socio)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "204": { description: Ok }
+
+  /users:
+    get:
+      tags: [Users]
+      summary: Listar usuarios (admin)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Lista de usuarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/User" }
+    post:
+      tags: [Users]
+      summary: Crear socio (admin)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UserCreate" }
+      responses:
+        "201":
+          description: Usuario creado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+
+  /users/admin:
+    post:
+      tags: [Users]
+      summary: Crear admin (admin)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UserCreate" }
+      responses:
+        "201":
+          description: Admin creado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+
+  /users/export:
+    get:
+      tags: [Users]
+      summary: Exportar usuarios a CSV (admin)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: CSV generado
+
+  /users/import-csv:
+    post:
+      tags: [Users]
+      summary: Importar usuarios desde CSV (admin)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200": { description: Import OK }
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Obtener usuario por id (admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Usuario
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+    patch:
+      tags: [Users]
+      summary: Actualizar usuario (admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UserUpdate" }
+      responses:
+        "200":
+          description: Usuario actualizado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+    delete:
+      tags: [Users]
+      summary: Borrar usuario (admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "204": { description: Eliminado }
+
+  /users/{id}/password:
+    patch:
+      tags: [Users]
+      summary: Cambiar contraseña de usuario (admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string, minLength: 6 }
+      responses:
+        "200": { description: Password actualizada }

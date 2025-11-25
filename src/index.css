@@ -48,23 +48,23 @@
   }
 
   .rc-modal-overlay {
-    @apply fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4;
+    @apply fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 py-4 overflow-y-auto;
   }
 
   .rc-modal-panel {
-    @apply rc-card w-full max-w-lg md:max-w-xl p-6 md:p-8 relative;
+    @apply rc-card w-full max-w-lg md:max-w-xl p-4 md:p-6 lg:p-8 relative my-auto max-h-[90vh] overflow-y-auto;
   }
 
   .rc-modal-title {
-    @apply text-lg md:text-xl font-semibold text-dark;
+    @apply text-base md:text-lg lg:text-xl font-semibold text-dark;
   }
 
   .rc-modal-subtitle {
-    @apply text-sm text-muted mt-1 mb-4;
+    @apply text-xs md:text-sm text-muted mt-1 mb-3 md:mb-4;
   }
 
   .rc-modal-footer {
-    @apply mt-6 flex flex-col md:flex-row gap-3 justify-end;
+    @apply mt-4 md:mt-6 flex flex-col sm:flex-row gap-2 md:gap-3 justify-end;
   }
 
   .rc-btn-secondary {
