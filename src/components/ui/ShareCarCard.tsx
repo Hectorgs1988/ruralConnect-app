@@ -16,6 +16,7 @@ interface ShareCarCardProps {
     isDriver?: boolean;
     onJoin?: () => void;
     onLeave?: () => void;
+    onCancel?: () => void;
 }
 
 const ShareCarCard: FC<ShareCarCardProps> = ({
@@ -32,6 +33,7 @@ const ShareCarCard: FC<ShareCarCardProps> = ({
     isDriver,
     onJoin,
     onLeave,
+    onCancel,
 }) => {
     return (
         <div className="rc-card p-4 w-full max-w-sm">
@@ -63,7 +65,18 @@ const ShareCarCard: FC<ShareCarCardProps> = ({
                 </span>
 
                 {/* Botones según rol/estado */}
-                {isDriver && (
+                {isDriver && onCancel && (
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        className="text-xs md:text-sm px-4 py-1 rounded-full border border-red-400 text-red-600 hover:bg-red-50"
+                        onClick={onCancel}
+                    >
+                        Cancelar viaje
+                    </Button>
+                )}
+
+                {isDriver && !onCancel && (
                     <span className="text-xs text-muted">Eres el conductor</span>
                 )}
 

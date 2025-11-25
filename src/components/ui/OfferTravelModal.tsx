@@ -20,19 +20,49 @@ interface OfferTravelPayload {
 interface OfferTravelModalProps {
     onClose: () => void;
     onSubmit: (travel: OfferTravelPayload) => void;
+    initialTravel?: {
+        from: string;
+        to: string;
+        date: string; // ISO string
+        seats: number;
+        notes?: string;
+    };
 }
 
-const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit }) => {
-    const [origen, setOrigen] = useState("");
-    const [destino, setDestino] = useState("");
-    const [fecha, setFecha] = useState("");
-    const [hora, setHora] = useState("");
+const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initialTravel }) => {
+    // Helper para convertir ISO a fecha local YYYY-MM-DD
+    const isoToDateInput = (iso: string) => {
+        const d = new Date(iso);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${y}-${m}-${day}`;
+    };
+
+    // Helper para convertir ISO a hora local HH:MM
+    const isoToTimeInput = (iso: string) => {
+        const d = new Date(iso);
+        const hh = String(d.getHours()).padStart(2, "0");
+        const mm = String(d.getMinutes()).padStart(2, "0");
+        return `${hh}:${mm}`;
+    };
+
+    const [origen, setOrigen] = useState(initialTravel?.from ?? "");
+    const [destino, setDestino] = useState(initialTravel?.to ?? "");
+    const [fecha, setFecha] = useState(
+        initialTravel?.date ? isoToDateInput(initialTravel.date) : ""
+    );
+    const [hora, setHora] = useState(
+        initialTravel?.date ? isoToTimeInput(initialTravel.date) : ""
+    );
     const [origenVuelta, setOrigenVuelta] = useState("");
     const [destinoVuelta, setDestinoVuelta] = useState("");
     const [fechaVuelta, setFechaVuelta] = useState("");
     const [horaVuelta, setHoraVuelta] = useState("");
-    const [plazas, setPlazas] = useState<string>("");
-    const [descripcion, setDescripcion] = useState("");
+    const [plazas, setPlazas] = useState<string>(
+        initialTravel?.seats ? String(initialTravel.seats) : ""
+    );
+    const [descripcion, setDescripcion] = useState(initialTravel?.notes ?? "");
     const [sending, setSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [tipoViaje, setTipoViaje] = useState<"IDA" | "IDA_VUELTA">("IDA");
@@ -92,21 +122,25 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit }) => {
                 onClick={(e) => e.stopPropagation()}
             >
                 <button
-                    className="absolute top-4 right-4 text-muted hover:text-dark text-xl font-semibold"
+                    className="absolute top-3 right-3 md:top-4 md:right-4 text-muted hover:text-dark text-xl font-semibold z-10"
                     onClick={onClose}
                     aria-label="Cerrar modal"
                 >
                     ✕
                 </button>
 
-                <div className="mb-4">
-                    <h2 className="rc-modal-title">Ofrecer nuevo viaje</h2>
+                <div className="mb-4 pr-8">
+                    <h2 className="rc-modal-title">
+                        {initialTravel ? "Aceptar solicitud de viaje" : "Ofrecer nuevo viaje"}
+                    </h2>
                     <p className="rc-modal-subtitle">
-                        Publica tu viaje para que otros socios puedan unirse
+                        {initialTravel
+                            ? "Confirma los detalles del viaje para aceptar la solicitud"
+                            : "Publica tu viaje para que otros socios puedan unirse"}
                     </p>
                 </div>
 
-                <form className="space-y-4" onSubmit={handleSubmit}>
+                <form className="space-y-3 md:space-y-4" onSubmit={handleSubmit}>
                     <div className="flex flex-col md:flex-row gap-4">
                         <div className="md:w-1/2">
                             <label className="text-sm text-dark block mb-1">Origen</label>
@@ -156,34 +190,36 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit }) => {
                         />
                     </div>
 
-                    <div>
-                        <label className="text-sm text-dark block mb-1">Tipo de viaje</label>
-                        <div className="flex gap-4 text-sm">
-                            <label className="inline-flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="radio"
-                                    name="tipoViaje"
-                                    value="IDA"
-                                    checked={tipoViaje === "IDA"}
-                                    onChange={() => setTipoViaje("IDA")}
-                                />
-                                <span>Solo ida</span>
-                            </label>
-                            <label className="inline-flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="radio"
-                                    name="tipoViaje"
-                                    value="IDA_VUELTA"
-                                    checked={tipoViaje === "IDA_VUELTA"}
-                                    onChange={() => setTipoViaje("IDA_VUELTA")}
-                                />
-                                <span>Ida y vuelta</span>
-                            </label>
+                    {!initialTravel && (
+                        <div>
+                            <label className="text-sm text-dark block mb-1">Tipo de viaje</label>
+                            <div className="flex gap-4 text-sm">
+                                <label className="inline-flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="tipoViaje"
+                                        value="IDA"
+                                        checked={tipoViaje === "IDA"}
+                                        onChange={() => setTipoViaje("IDA")}
+                                    />
+                                    <span>Solo ida</span>
+                                </label>
+                                <label className="inline-flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="tipoViaje"
+                                        value="IDA_VUELTA"
+                                        checked={tipoViaje === "IDA_VUELTA"}
+                                        onChange={() => setTipoViaje("IDA_VUELTA")}
+                                    />
+                                    <span>Ida y vuelta</span>
+                                </label>
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {tipoViaje === "IDA_VUELTA" && (
-                        <div className="mt-4 space-y-4">
+                        <div className="mt-3 md:mt-4 space-y-3 md:space-y-4 pt-3 border-t border-borderSoft">
                             <p className="text-sm font-medium text-dark">
                                 Datos del viaje de vuelta
                             </p>
@@ -254,14 +290,14 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit }) => {
                         <Button
                             type="button"
                             onClick={onClose}
-                            className="w-full md:w-auto rc-btn-secondary"
+                            className="flex-1 sm:flex-initial rc-btn-secondary"
                             disabled={sending}
                         >
                             Cancelar
                         </Button>
                         <Button
                             type="submit"
-                            className="w-full md:w-auto rc-btn-primary"
+                            className="flex-1 sm:flex-initial rc-btn-primary"
                             disabled={sending}
                         >
                             {sending ? "Publicando…" : "Publicar viaje"}

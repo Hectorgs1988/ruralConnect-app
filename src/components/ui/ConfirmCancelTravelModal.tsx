@@ -2,13 +2,13 @@ import type { FC } from "react";
 import Button from "@/components/ui/button";
 import type { Travel } from "@/types/Travel";
 
-interface ConfirmJoinTravelModalProps {
+interface ConfirmCancelTravelModalProps {
     travel: Travel;
     onConfirm: () => void;
     onClose: () => void;
 }
 
-const ConfirmJoinTravelModal: FC<ConfirmJoinTravelModalProps> = ({
+const ConfirmCancelTravelModal: FC<ConfirmCancelTravelModalProps> = ({
     travel,
     onConfirm,
     onClose,
@@ -32,14 +32,14 @@ const ConfirmJoinTravelModal: FC<ConfirmJoinTravelModalProps> = ({
                 </button>
 
                 <div className="flex flex-col items-center text-center gap-2 mb-4 md:mb-5">
-                    <div className="rc-pill">
-                        🚗 Confirmar viaje
+                    <div className="rc-pill bg-red-50 text-red-600">
+                        ⚠️ Cancelar viaje
                     </div>
                     <h2 className="rc-modal-title">
-                        Confirmar reserva de viaje
+                        ¿Estás seguro de cancelar este viaje?
                     </h2>
                     <p className="rc-modal-subtitle">
-                        ¿Deseas unirte a este viaje?
+                        Esta acción no se puede deshacer. Se enviará un email a todos los pasajeros notificándoles la cancelación.
                     </p>
                 </div>
 
@@ -74,6 +74,15 @@ const ConfirmJoinTravelModal: FC<ConfirmJoinTravelModalProps> = ({
                     </div>
                 </div>
 
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-6">
+                    <p className="text-sm text-red-800">
+                        <strong>Pasajeros afectados:</strong> {travel.occupancy}
+                    </p>
+                    <p className="text-xs text-red-600 mt-1">
+                        Todos los pasajeros recibirán un email de notificación.
+                    </p>
+                </div>
+
                 <div className="rc-modal-footer">
                     <Button
                         type="button"
@@ -81,14 +90,14 @@ const ConfirmJoinTravelModal: FC<ConfirmJoinTravelModalProps> = ({
                         className="flex-1 sm:flex-initial rc-btn-secondary"
                         onClick={onClose}
                     >
-                        Cancelar
+                        No, mantener viaje
                     </Button>
                     <Button
                         type="button"
-                        className="flex-1 sm:flex-initial rc-btn-primary"
+                        className="flex-1 sm:flex-initial bg-red-600 hover:bg-red-700 text-white"
                         onClick={onConfirm}
                     >
-                        Confirmar
+                        Sí, cancelar viaje
                     </Button>
                 </div>
             </div>
@@ -96,4 +105,5 @@ const ConfirmJoinTravelModal: FC<ConfirmJoinTravelModalProps> = ({
     );
 };
 
-export default ConfirmJoinTravelModal;
+export default ConfirmCancelTravelModal;
+

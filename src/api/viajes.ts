@@ -117,3 +117,23 @@ export async function leaveViaje(
     }
 }
 
+
+export async function cancelViaje(
+    viajeId: string,
+    token: string
+): Promise<{ message: string; pasajerosNotificados: number }> {
+    const res = await fetch(`/api/viajes/${viajeId}`, {
+        method: "DELETE",
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    if (!res.ok) {
+        throw new Error(
+            await getErrorMessage(res, `Error ${res.status} al cancelar el viaje`)
+        );
+    }
+
+    return await res.json();
+}

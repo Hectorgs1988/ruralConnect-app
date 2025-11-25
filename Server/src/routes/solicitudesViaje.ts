@@ -8,11 +8,13 @@ export const solicitudesViajeRouter = Router();
 
 /**
  * GET /api/solicitudes-viaje
- * Lista solicitudes ABIERTAS
+ * Lista solicitudes ABIERTAS y no expiradas
+ * Filtra: viajes cancelados y fechas pasadas
  */
 solicitudesViajeRouter.get("/", requireAuth, async (req, res, next) => {
     try {
         const userId = (req as any).user.sub;
+        const ahora = new Date();
 
         const solicitudes = await prisma.solicitudViaje.findMany({
             where: {
@@ -20,16 +22,28 @@ solicitudesViajeRouter.get("/", requireAuth, async (req, res, next) => {
                     { estado: "ABIERTA" },
                     { solicitanteId: userId },
                 ],
+                // Filtrar fechas pasadas
+                fecha: {
+                    gte: ahora,
+                },
             },
             orderBy: { createdAt: "desc" },
             include: {
                 Solicitante: { select: { id: true, name: true } },
                 AceptadaPor: { select: { id: true, name: true } },
-                Viaje: true,
+                Viaje: { select: { id: true, estado: true } },
             },
         });
 
-        res.json(solicitudes);
+        // Filtrar solicitudes cuyo viaje asociado está cancelado
+        const solicitudesFiltradas = solicitudes.filter((s) => {
+            // Si no tiene viaje asociado, mostrarla
+            if (!s.Viaje) return true;
+            // Si tiene viaje asociado, solo mostrar si NO está cancelado
+            return s.Viaje.estado !== "CANCELADO";
+        });
+
+        res.json(solicitudesFiltradas);
     } catch (e) {
         next(e);
     }
@@ -119,7 +133,7 @@ solicitudesViajeRouter.post("/:id/ofrecer", requireAuth, async (req, res, next) 
 
 /**
  * DELETE /api/solicitudes-viaje/:id
- * Cancelar solicitud (solo solicitante)
+ * Cancelar/borrar solicitud (solo solicitante)
  */
 solicitudesViajeRouter.delete("/:id", requireAuth, async (req, res, next) => {
     try {
@@ -130,13 +144,24 @@ solicitudesViajeRouter.delete("/:id", requireAuth, async (req, res, next) => {
             where: { id: solicitudId },
         });
 
-        if (!solicitud || solicitud.solicitanteId !== userId) {
+        if (!solicitud) {
+            return res.status(404).json({ error: "Solicitud no encontrada" });
+        }
+
+        if (solicitud.solicitanteId !== userId) {
             return res.status(403).json({ error: "No autorizado" });
         }
 
-        await prisma.solicitudViaje.update({
+        // Si la solicitud ya fue aceptada y tiene viaje asociado, no permitir borrarla
+        if (solicitud.estado === "ACEPTADA" && solicitud.viajeId) {
+            return res.status(400).json({
+                error: "No puedes cancelar una solicitud que ya fue aceptada. Debes salir del viaje primero."
+            });
+        }
+
+        // Borrar la solicitud
+        await prisma.solicitudViaje.delete({
             where: { id: solicitudId },
-            data: { estado: "CANCELADA" },
         });
 
         res.status(204).end();

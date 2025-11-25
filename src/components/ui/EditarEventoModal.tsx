@@ -118,18 +118,18 @@ const EditarEventoModal: FC<EditarEventoModalProps> = ({ evento, onClose, onUpda
                 <button
                     type="button"
                     onClick={handleCancel}
-                    className="absolute top-4 right-4 text-muted hover:text-dark text-xl font-semibold"
+                    className="absolute top-3 right-3 md:top-4 md:right-4 text-muted hover:text-dark text-xl font-semibold z-10"
                     aria-label="Cerrar"
                 >
                     ✕
                 </button>
 
-                <div className="mb-6">
+                <div className="mb-4 md:mb-6 pr-8">
                     <h2 className="rc-modal-title">Editar evento</h2>
                     <p className="rc-modal-subtitle">Actualiza la informacion del evento</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
                     {error && (
                         <p className="text-sm text-error mb-2">
                             {error}
@@ -206,14 +206,14 @@ const EditarEventoModal: FC<EditarEventoModalProps> = ({ evento, onClose, onUpda
                         <Button
                             type="button"
                             onClick={handleCancel}
-                            className="w-full md:w-auto rc-btn-secondary"
+                            className="flex-1 sm:flex-initial rc-btn-secondary"
                             disabled={submitting}
                         >
                             Cancelar
                         </Button>
                         <Button
                             type="submit"
-                            className="w-full md:w-auto rc-btn-primary"
+                            className="flex-1 sm:flex-initial rc-btn-primary"
                             disabled={submitting}
                         >
                             {submitting ? "Guardando..." : "Guardar evento"}
