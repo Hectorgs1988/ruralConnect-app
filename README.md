@@ -1,30 +1,22 @@
-# 🏡 Susinos App
+# 🏡 RuralConnect App
 
-Aplicación web para la gestión de socios, eventos y reservas de usa asociación de un entorno rural.
+Aplicación web para la gestión de socios, eventos, reservas y viajes compartidos de la asociación Rural Connect (Burgos).
+
 Proyecto desarrollado con:
 
-- **Frontend:** React + TypeScript + Vite
-- **Backend:** Node.js + Express + Prisma
-- **Base de datos:** MySQL (Docker)
-- **ORM:** Prisma
+- **Frontend:** React + TypeScript + Vite  
+- **Backend:** Node.js + Express + Prisma  
+- **Base de datos:** MySQL (Docker)  
+- **ORM:** Prisma  
+- **Infraestructura:** Docker + Docker Compose  
 
----
-
-## 📦 Requisitos previos
-
-Antes de comenzar asegúrate de tener instalado:
-
-- Node.js 18+
-- npm
-- Docker + Docker Compose
-- (Opcional) Adminer, DBeaver o TablePlus
 
 ---
 
 ## ⚙️ Estructura del proyecto
 
-~~~text
-susinos-app/
+```text
+ruralConnect-app/
 ├── docker-compose.yml
 ├── .env.example
 │
@@ -32,208 +24,229 @@ susinos-app/
 │   ├── prisma/
 │   │   ├── schema.prisma
 │   │   └── migrations/
-│   ├── src/
+│   ├── docker-entrypoint.sh
+│   ├── Dockerfile
 │   ├── package.json
 │   ├── .env.example
 │
 └── src/
     ├── components/
+    ├── context/
+    ├── api/
+    ├── assets/
     ├── pages/
     ├── services/
     └── ...
-~~~
+```
 
 ---
-
-# ⚡ 0. Guía rápida: arrancar todo en local
-
-1. Clonar este repositorio en tu máquina.
-2. En la **raíz del proyecto** (`susinos-app/`), arrancar Docker (MySQL + Adminer):
-
-~~~bash
-cp .env.example .env
-docker compose up -d
-~~~
-
-3. En una terminal, arrancar el **backend**:
-
-~~~bash
-cd Server
-cp .env.example .env     # solo la primera vez
-npm install              # solo la primera vez
-npx prisma generate      # solo la primera vez
-npx prisma migrate dev   # solo la primera vez
-npm run dev
-~~~
-
-4. En otra terminal, en la **raíz del proyecto**, arrancar el **frontend**:
-
-~~~bash
-cd susinos-app           # si no estás ya en la raíz
-npm install              # solo la primera vez
-npm run dev
-~~~
-
-- Backend: http://localhost:4000
-- Frontend: http://localhost:5173
-
-
----
-
 
 # 🔑 1. Variables de entorno
 
-## 📌 `.env` en la raíz (Docker Compose)
+## 📌 `.env` (raíz del proyecto — Docker Compose)
 
-~~~env
+```env
 MYSQL_ROOT_PASSWORD=root
-MYSQL_DATABASE=pena
-MYSQL_USER=pena_user
-MYSQL_PASSWORD=pena_pwd
-~~~
-
-Normalmente NO hay que cambiar nada.
+MYSQL_DATABASE=xx
+MYSQL_USER=xx
+MYSQL_PASSWORD=xx
+```
 
 ---
 
-## 📌 `/Server/.env` (Prisma + backend)
+## 📌 `/Server/.env` (Prisma + Backend)
 
-~~~env
-DATABASE_URL="mysql://pena_user:pena_pwd@localhost:3306/pena"
-SHADOW_DATABASE_URL="mysql://root:root@localhost:3306/prisma_shadow"
+```env
+DATABASE_URL="mysql://pena_user:pena_pwd@db:3306/pena"
+SHADOW_DATABASE_URL="mysql://root:root@db:3306/prisma_shadow"
 
 PORT=4000
 FRONTEND_ORIGIN=http://localhost:5173
 APP_BASE_URL=http://localhost:5173
 
-JWT_SECRET=changeme_jwt_secret
+JWT_SECRET=xx
 
 # Email / SendGrid
-SENDGRID_API_KEY=
-SENDGRID_FROM_EMAIL=rconnect.rural@gmail.com
-~~~
-
-Puedes modificar:
-
-- JWT_SECRET (producción)
-- PORT (si 4000 está ocupado)
+SENDGRID_API_KEY=xx
+SENDGRID_FROM_EMAIL=xx
+```
 
 ---
 
-# 📝 Ajustes tras copiar `.env.example`
+# 🧷 Notas importantes
 
-Tras ejecutar `cp .env.example .env` revisa:
+## 🔐 JWT_SECRET
 
-### 📌 `.env` raíz
-✔ Normalmente no requiere cambios.
+Generar un secreto largo y aleatorio:
 
-### 📌 `/Server/.env`
-   - En producción, genera un secreto largo y aleatorio (por ejemplo):
+- https://randomkeygen.com → sección **CodeIgniter Encryption Keys**  
+- O desde terminal:
 
-     ```bash
-     # usando Node
-     node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-
-     # o con openssl
-     openssl rand -hex 32
-     ```
-
-   - Para que funcionen los emails (SendGrid) necesitas:
-     - `SENDGRID_API_KEY`: la API Key de tu cuenta de SendGrid
-     - `SENDGRID_FROM_EMAIL`: el email verificado desde el que se enviarán los correos
-
-✔ Cambiar **JWT_SECRET** en producción.
-❌ No cambiar `DATABASE_URL` salvo casos especiales.
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
 
 ---
 
-# 📜 2. Scripts útiles backend
+## 📧 SendGrid (Opcional)
+
+Si no configuras SendGrid:
+
+✔ Toda la aplicación web funcionara sin nungun problema  
+❌ No se enviarán emails  
+
+Para activarlo:
+
+1. Crear cuenta en https://sendgrid.com  
+2. Verificar un email  
+3. Crear API Key  
+4. Insertarla en `SENDGRID_API_KEY`  
+
+---
+
+## ⚠️ Nota sobre TLS dentro de Docker
+
+En el Dockerfile del backend se incluye:
+
+```dockerfile
+ENV NODE_TLS_REJECT_UNAUTHORIZED=0
+```
+
+Esto evita errores al ejecutar `npx prisma generate` en Windows/red corporativa dentro del contenedor Docker.  
+Solo aplica en desarrollo.
+
+---
+## Acceder a la aplicación
+
+- Frontend → http://localhost:5173  
+- Backend → http://localhost:4000  
+- Adminer → http://localhost:8080  
+
+Credenciales creadas automáticamente:
+
+### 👤 Administrador
+- Email: `admin@test.com`
+- Password: `xxx`
+
+### 👤 Socio
+- Email: `socio@test.com`
+- Password: `xxx`
+
+---
+---
+
+# 📜 2. Scripts útiles (backend)
 
 | Script | Descripción |
 |--------|-------------|
-| npm run dev | Ejecuta backend con autoreload |
-| npm run build | Compila backend |
-| npm start | Ejecuta versión compilada |
-| npx prisma studio | UI para gestionar la base de datos |
-| npm run seed:admin | Inserta un admin |
-| npm run seed:socio | Inserta socios |
+| `npm run dev` | Ejecuta backend con autoreload |
+| `npm run build` | Compila a `dist/` |
+| `npm start` | Ejecuta backend compilado |
+| `npx prisma studio` | UI para gestionar la DB |
+| `npm run seed:admin` | Crea admin de pruebas |
+| `npm run seed:socio` | Crea socio de pruebas |
 
 ---
 
-# 🚀 3. Despliegue / producción (opcional)
+# 🐳 3. Arquitectura Docker
 
-Si quieres desplegar la aplicación en un servidor (o simplemente probar el modo producción en local), estos son los pasos básicos.
+Stack incluido en `docker-compose.yml`:
 
-## Backend (Server/)
+- `db` → MySQL  
+- `adminer` → cliente SQL  
+- `backend` → Node + Prisma (migraciones + seeds automáticos)  
+- `frontend` → Vite (modo desarrollo)  
 
-1. Asegúrate de tener la base de datos accesible (puede ser la misma de Docker o una MySQL externa).
-2. Configura `/Server/.env` con las variables correctas (`DATABASE_URL`, `PORT`, `JWT_SECRET`, etc.).
-3. Desde la carpeta `Server/`:
+Comando principal:
 
-~~~bash
-cd Server
-npm install      # si no lo hiciste ya
-npm run build    # compila a dist/
-npm start        # arranca el backend compilado
-~~~
-
-El backend escuchará en `PORT` (por defecto 4000).
-
-## Frontend (susinos-app raíz)
-
-1. Desde la raíz del proyecto (`susinos-app/`):
-
-~~~bash
-npm install      # si no lo hiciste ya
-npm run build    # genera la carpeta dist/
-~~~
-
-2. Opciones para servir el frontend:
-   - Usar `npm run preview` para probar localmente la build:
-
-   ~~~bash
-   npm run preview
-   ~~~
-
-   - O copiar el contenido de `dist/` a un servidor estático (Nginx, Apache, Netlify, Vercel, etc.).
-
-3. Recuerda ajustar en el backend la variable `FRONTEND_ORIGIN` (en `/Server/.env`) para que coincida con la URL donde sirvas el frontend en producción.
+```bash
+docker compose up --build
+```
 
 ---
 
-3. `docker compose up -d`
-4. `cd Server` → `npm install`
-5. `npx prisma generate`
-6. `npx prisma migrate dev`
-7. `npm run dev` (backend)
-8. `npm run dev` (frontend)
-9. Crear branch desde develop
-10. PR hacia develop
+# 🚀 4. Despliegue en producción (opcional)
 
----
+## Backend
 
-# 🧹 4. Problemas comunes
-
-## ❌ `@prisma/client did not initialize yet`
-
-~~~bash
+```bash
 cd Server
 npm install
-npx prisma generate
-~~~
+npm run build
+npm start
+```
+
+---
+
+## Frontend
+
+```bash
+npm install
+npm run build
+npm run preview
+```
+
+Para producción real, servir `/dist` con un servidor estático (Nginx, Apache, Vercel…).
+
+Actualizar:
+
+```env
+FRONTEND_ORIGIN=https://tu-dominio.com
+```
+
+---
+
+# 🔄 5. Flujo de trabajo (GitFlow)
+
+1. Crear rama desde `develop`
+2. Implementar cambios  
+3. Commit  
+4. Pull Request hacia `develop`  
+5. Revisar + merge  
+6. Eventualmente → merge `develop` → `main`  
+
+---
+
+# 🧹 6. Problemas comunes
+
+## ❌ Backend devuelve “Unexpected token '<' …”
+
+El backend no ha arrancado.
+
+Solución:
+
+```bash
+docker compose logs backend
+```
+
+---
 
 ## ❌ No aparecen tablas en Adminer
 
-~~~bash
+```bash
+cd Server
 npx prisma migrate dev
-~~~
+```
 
-## ❌ MySQL falla por permisos
+---
 
-~~~bash
+## ❌ Error descargando binarios de Prisma dentro de Docker
+
+Solución incluida:
+
+```dockerfile
+ENV NODE_TLS_REJECT_UNAUTHORIZED=0
+```
+
+---
+
+## ❌ BBDD corrupta o con permisos incorrectos
+
+```bash
 docker compose down -v
-docker compose up -d
-~~~
+docker compose up --build
+```
+
 
 ---
 

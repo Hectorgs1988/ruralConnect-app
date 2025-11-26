@@ -27,14 +27,14 @@ const ActionCard: FC<ActionCardProps> = ({
             {href ? (
                 <Link
                     to={href}
-                    className="block bg-surface hover:bg-surfaceMuted text-xs md:text-sm font-semibold w-full text-center py-2 rounded-full shadow-sm transition-colors text-dark"
+                    className="block bg-surface hover:bg-surfaceMuted text-xs md:text-sm font-semibold w-full text-center py-2 rounded-full shadow-sm transition-colors text-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primaryStrong/70"
                 >
                     {buttonText}
                 </Link>
             ) : (
                 <button
                     onClick={onClick}
-                    className="bg-surface hover:bg-surfaceMuted text-xs md:text-sm font-semibold w-full py-2 rounded-full shadow-sm transition-colors text-dark"
+                    className="bg-surface hover:bg-surfaceMuted text-xs md:text-sm font-semibold w-full py-2 rounded-full shadow-sm transition-colors text-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primaryStrong/70"
                 >
                     {buttonText}
                 </button>

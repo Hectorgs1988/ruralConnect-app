@@ -16,7 +16,7 @@ export default {
         muted: '#6B7280',          // Texto secundario
         borderSoft: '#F3E8C9',     // Bordes sutiles
         dark: '#1b1b1b',           // Texto principal / negro rural
-        error: '#E74C3C',          // Errores
+        error: '#B91C1C',          // Errores (rojo más oscuro para mejor contraste)
         success: '#22C55E',        // Éxito / confirmaciones
       },
       fontFamily: {

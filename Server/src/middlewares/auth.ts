@@ -29,6 +29,5 @@ export function requireRole(role: "ADMIN" | "SOCIO") {
     };
 }
 
-// 👉 exports que te faltaban:
 export const requireAdmin = requireRole("ADMIN");
 export const requireSocio = requireRole("SOCIO");

@@ -20,6 +20,10 @@ const ConfirmCancelTravelModal: FC<ConfirmCancelTravelModalProps> = ({
         >
             <div
                 className="rc-modal-panel"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="confirm-cancel-travel-title"
+                aria-describedby="confirm-cancel-travel-description"
                 onClick={(e) => e.stopPropagation()}
             >
                 <button
@@ -35,10 +39,13 @@ const ConfirmCancelTravelModal: FC<ConfirmCancelTravelModalProps> = ({
                     <div className="rc-pill bg-red-50 text-red-600">
                         ⚠️ Cancelar viaje
                     </div>
-                    <h2 className="rc-modal-title">
+                    <h2 id="confirm-cancel-travel-title" className="rc-modal-title">
                         ¿Estás seguro de cancelar este viaje?
                     </h2>
-                    <p className="rc-modal-subtitle">
+                    <p
+                        id="confirm-cancel-travel-description"
+                        className="rc-modal-subtitle"
+                    >
                         Esta acción no se puede deshacer. Se enviará un email a todos los pasajeros notificándoles la cancelación.
                     </p>
                 </div>

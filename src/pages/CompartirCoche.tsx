@@ -89,6 +89,7 @@ export default function CompartirCoche() {
     const [to, setTo] = useState("");
     const [desde, setDesde] = useState("");
     const hayFiltros = useMemo(() => !!(from || to || desde), [from, to, desde]);
+    const [showFilters, setShowFilters] = useState(false);
 
     async function cargar(overrides?: {
         from?: string;
@@ -386,72 +387,110 @@ export default function CompartirCoche() {
         await cargar({ from: "", to: "", desde: null });
     };
 
-	    return (
-	        <div className="rc-page">
-	            <Header />
-	
-	            <main className="flex-1 rc-shell py-8 md:py-10 space-y-8 md:space-y-10">
-	                {/* Bloque principal: título + filtros */}
-	                <section className="rc-card-section">
-	                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
-	                        <div>
-	                            <h1 className="rc-hero-title text-left md:text-left mb-1">
-	                                Compartir coche
-	                            </h1>
-	                            <p className="rc-hero-subtitle text-left md:text-left max-w-2xl mb-0">
-	                                Encuentra o ofrece viajes para compartir desplazamientos con otros socios.
-	                            </p>
-	                        </div>
-	                        <Button
-	                            type="button"
-	                            onClick={() => setShowModal(true)}
-	                            className="rc-btn-primary whitespace-nowrap"
-	                        >
-	                            + Ofrecer viaje
-	                        </Button>
-	                    </div>
-	
-	                    {/* Filtros en línea */}
-	                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-2">
-	                        <input
-	                            className="border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
-	                            placeholder="Origen"
-	                            value={from}
-	                            onChange={(e) => setFrom(e.target.value)}
-	                        />
-	                        <input
-	                            className="border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
-	                            placeholder="Destino"
-	                            value={to}
-	                            onChange={(e) => setTo(e.target.value)}
-	                        />
-	                        <input
-	                            className="border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
-	                            placeholder="dd/mm/aaaa"
-	                            type="date"
-	                            value={desde}
-	                            onChange={(e) => setDesde(e.target.value)}
-	                        />
-	                        <div className="flex gap-2">
-	                            <Button onClick={buscar} className="flex-1 rc-btn-primary">
-	                                Buscar
-	                            </Button>
-	                            {hayFiltros && (
-	                                <button
-	                                    type="button"
-	                                    onClick={limpiar}
-	                                    className="px-3 text-sm text-muted hover:text-dark"
-	                                    title="Limpiar filtros"
-	                                >
-	                                    ✕
-	                                </button>
-	                            )}
-	                        </div>
-	                    </div>
-	                </section>
-	
-	                {/* Solicitudes de viaje - Scroll horizontal en desktop */}
-	                <section className="rc-card-section">
+    return (
+        <div className="rc-page">
+            <Header />
+
+            <main className="flex-1 rc-shell py-8 md:py-10 space-y-8 md:space-y-10">
+                {/* Bloque principal: título + filtros */}
+                <section className="rc-card-section">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+                        <div>
+                            <h1 className="rc-hero-title text-left md:text-left mb-1">
+                                Compartir coche
+                            </h1>
+                            <p className="rc-hero-subtitle text-left md:text-left max-w-2xl mb-0">
+                                Encuentra o ofrece viajes para compartir desplazamientos con otros socios.
+                            </p>
+                        </div>
+                        <Button
+                            type="button"
+                            onClick={() => setShowModal(true)}
+                            className="rc-btn-primary whitespace-nowrap"
+                        >
+                            + Ofrecer viaje
+                        </Button>
+                    </div>
+
+                    {/* Barra de filtros compacta */}
+                    <div className="mt-4 space-y-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-xs text-muted">Filtros</span>
+                                {from && (
+                                    <span className="rc-pill text-[11px] bg-surfaceMuted text-dark">
+                                        Origen: {from}
+                                    </span>
+                                )}
+                                {to && (
+                                    <span className="rc-pill text-[11px] bg-surfaceMuted text-dark">
+                                        Destino: {to}
+                                    </span>
+                                )}
+                                {desde && (
+                                    <span className="rc-pill text-[11px] bg-surfaceMuted text-dark">
+                                        Desde: {desde}
+                                    </span>
+                                )}
+                                {!hayFiltros && (
+                                    <span className="text-xs text-muted">
+                                        Ningún filtro aplicado
+                                    </span>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {hayFiltros && (
+                                    <button
+                                        type="button"
+                                        onClick={limpiar}
+                                        className="text-xs text-muted hover:text-dark"
+                                    >
+                                        Limpiar
+                                    </button>
+                                )}
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    className="text-xs md:text-sm whitespace-nowrap"
+                                    onClick={() => setShowFilters((v) => !v)}
+                                >
+                                    {showFilters ? "Ocultar filtros" : "Editar filtros"}
+                                </Button>
+                            </div>
+                        </div>
+
+                        {showFilters && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                <input
+                                    className="border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
+                                    placeholder="Origen"
+                                    value={from}
+                                    onChange={(e) => setFrom(e.target.value)}
+                                />
+                                <input
+                                    className="border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
+                                    placeholder="Destino"
+                                    value={to}
+                                    onChange={(e) => setTo(e.target.value)}
+                                />
+                                <input
+                                    className="border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
+                                    type="date"
+                                    value={desde}
+                                    onChange={(e) => setDesde(e.target.value)}
+                                />
+                                <div className="flex gap-2">
+                                    <Button onClick={buscar} className="flex-1 rc-btn-primary">
+                                        Buscar
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </section>
+
+                {/* Solicitudes de viaje - Scroll horizontal en desktop */}
+                <section className="rc-card-section">
                     <div className="flex items-center justify-between mb-4">
                         <div>
                             <h3 className="text-lg font-semibold text-dark">
@@ -481,90 +520,91 @@ export default function CompartirCoche() {
                         </div>
                     )}
 
-	                    {!loadingSolicitudes && solicitudes.length > 0 && (
-	                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                {solicitudes.map((s) => {
-                                    const isMine = s.solicitanteId === currentUserId;
-                                    const isAceptada = s.estado === "ACEPTADA";
-                                    const fechaStr = new Date(s.fecha).toLocaleDateString();
-                                    const solicitanteName = s.Solicitante?.name ?? "Socio";
-                                    const aceptadaPorName = s.AceptadaPor?.name ?? "Conductor";
+                    {!loadingSolicitudes && solicitudes.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            {solicitudes.map((s) => {
+                                const isMine = s.solicitanteId === currentUserId;
+                                const isAceptada = s.estado === "ACEPTADA";
+                                const fechaStr = new Date(s.fecha).toLocaleDateString();
+                                const solicitanteName = s.Solicitante?.name ?? "Socio";
+                                const aceptadaPorName = s.AceptadaPor?.name ?? "Conductor";
 
-	                                    return (
-	                                        <div
-	                                            key={s.id}
-	                                            className={`bg-white rounded-2xl p-4 shadow-sm border flex flex-col justify-between ${
-	                                                isMine
-	                                                    ? "border-primary/30 bg-primary/5"
-	                                                    : "border-borderSoft"
-	                                            } ${isAceptada ? "border-green-300 bg-green-50" : ""}`}
-	                                        >
-                                            <div className="space-y-1">
-                                                <div className="flex items-start justify-between gap-2">
-                                                    <p className="font-semibold text-dark">
-                                                        {s.origen} → {s.destino}
-                                                    </p>
-                                                    {isMine && !isAceptada && (
-                                                        <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full whitespace-nowrap">
-                                                            Tu solicitud
-                                                        </span>
-                                                    )}
-                                                    {isAceptada && (
-                                                        <span className="text-xs bg-green-600 text-white px-2 py-0.5 rounded-full whitespace-nowrap">
-                                                            ✓ Aceptada
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <p className="text-sm text-muted">
-                                                    {fechaStr} · {s.horaDesde}–{s.horaHasta}
+                                return (
+                                    <div
+                                        key={s.id}
+                                        className={`rc-card p-4 flex flex-col justify-between ${isAceptada
+                                                ? "border-2 border-green-400 bg-green-50"
+                                                : isMine
+                                                    ? "border-2 border-primary"
+                                                    : ""
+                                            }`}
+                                    >
+                                        <div className="space-y-1">
+                                            <div className="flex items-start justify-between gap-2">
+                                                <p className="font-semibold text-dark">
+                                                    {s.origen} → {s.destino}
                                                 </p>
-                                                {!isMine && !isAceptada && (
-                                                    <p className="text-xs text-muted">
-                                                        Solicitado por: {solicitanteName}
+                                                {isMine && !isAceptada && (
+                                                    <span className="rc-pill text-xs bg-primary text-dark font-semibold whitespace-nowrap">
+                                                        Tu solicitud
+                                                    </span>
+                                                )}
+                                                {isAceptada && (
+                                                    <span className="text-xs bg-green-600 text-white px-2 py-0.5 rounded-full whitespace-nowrap">
+                                                        ✓ Aceptada
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="text-sm text-muted">
+                                                {fechaStr} · {s.horaDesde}–{s.horaHasta}
+                                            </p>
+                                            {!isMine && !isAceptada && (
+                                                <p className="text-xs text-muted">
+                                                    Solicitado por: {solicitanteName}
+                                                </p>
+                                            )}
+                                            {s.notas && (
+                                                <p className="text-sm text-dark mt-2">{s.notas}</p>
+                                            )}
+                                            {isAceptada && isMine && (
+                                                <div className="mt-2 p-2 bg-white rounded border border-green-200">
+                                                    <p className="text-xs text-green-700 font-medium">
+                                                        ✓ {aceptadaPorName} aceptó tu solicitud
                                                     </p>
-                                                )}
-                                                {s.notas && (
-                                                    <p className="text-sm text-dark mt-2">{s.notas}</p>
-                                                )}
-                                                {isAceptada && isMine && (
-                                                    <div className="mt-2 p-2 bg-white rounded border border-green-200">
-                                                        <p className="text-xs text-green-700 font-medium">
-                                                            ✓ {aceptadaPorName} aceptó tu solicitud
-                                                        </p>
-                                                        <p className="text-xs text-muted mt-1">
-                                                            Ya estás añadido al viaje
-                                                        </p>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <div className="mt-4 flex justify-end gap-2">
-                                                {isMine && !isAceptada ? (
-                                                    <Button
-                                                        variant="secondary"
-                                                        className="text-sm"
-                                                        onClick={() => handleCancelarSolicitud(s.id)}
-                                                    >
-                                                        Cancelar
-                                                    </Button>
-                                                ) : !isMine && !isAceptada ? (
-                                                    <Button
-                                                        className="text-sm"
-                                                        onClick={() => setSelectedSolicitud(s)}
-                                                    >
-                                                        Ofrecer viaje
-                                                    </Button>
-                                                ) : null}
-                                            </div>
+                                                    <p className="text-xs text-muted mt-1">
+                                                        Ya estás añadido al viaje
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
-                                    );
-	                                })}
-	                        </div>
-	                    )}
-	                </section>
-	
-	                {/* Viajes ofrecidos - Grid normal */}
-	                <section className="rc-card-section">
+
+                                        <div className="mt-4 flex justify-end gap-2">
+                                            {isMine && !isAceptada ? (
+                                                <Button
+                                                    variant="secondary"
+                                                    className="text-sm"
+                                                    onClick={() => handleCancelarSolicitud(s.id)}
+                                                >
+                                                    Cancelar
+                                                </Button>
+                                            ) : !isMine && !isAceptada ? (
+                                                <Button
+                                                    className="text-sm"
+                                                    onClick={() => setSelectedSolicitud(s)}
+                                                >
+                                                    Ofrecer viaje
+                                                </Button>
+                                            ) : null}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </section>
+
+                {/* Viajes ofrecidos - Grid normal */}
+                <section className="rc-card-section">
                     <div className="mb-4">
                         <h3 className="text-lg font-semibold text-dark">
                             Viajes ofrecidos
