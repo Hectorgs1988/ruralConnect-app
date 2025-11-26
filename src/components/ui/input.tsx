@@ -1,7 +1,6 @@
 import React from "react";
 import clsx from "clsx"; // opcional, puedes quitarlo si no lo usas
 
-// 👇 Heredamos todos los atributos nativos de <input>
 type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
     error?: string;
 };
@@ -13,7 +12,7 @@ const Input: React.FC<InputProps> = ({
     onChange,
     error,
     className,
-    ...rest // 👈 aquí vienen min, max, step, etc.
+    ...rest
 }) => {
     return (
         <div className="w-full mb-4">
@@ -28,7 +27,7 @@ const Input: React.FC<InputProps> = ({
                     "focus:outline-none focus:ring-2 focus:ring-primary/60",
                     className
                 )}
-                {...rest} // 👈 aplica min, max, name, id, etc.
+                {...rest}
             />
             {error && <p className="text-sm text-error mt-1">{error}</p>}
         </div>

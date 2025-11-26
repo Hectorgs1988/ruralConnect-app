@@ -38,7 +38,6 @@ const router = createBrowserRouter([
     {path: "/ResumenGeneral",element: (<RoleGuard role="ADMIN"><ResumenGeneral /></RoleGuard>),},
     {path: "/GestionEspacios",element: (<RoleGuard role="ADMIN"><GestionEspacios /></RoleGuard>),},
 
-    // puedes dejar pública o también protegerla
     { path: "/AsociacionMosquitos", element: <AsociacionMosquitos /> },
 ]);
 

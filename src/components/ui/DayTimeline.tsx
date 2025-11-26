@@ -43,7 +43,6 @@ const DayTimeline: FC<Props> = ({ occupied, selected, step = 30 }) => {
                     {slots.map((m) => {
                         const sel = selected && within(m, selected);
                         const busy = occupied.some(iv => within(m, iv));
-                        // 👇 prioridad: seleccionado > ocupado > libre
                         const bg = sel ? "bg-primary/80" : busy ? "bg-error/60" : "bg-success/40";
                         return (
                             <div

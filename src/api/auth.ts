@@ -4,7 +4,7 @@ export async function login(email: string, password: string) {
     const r = await fetch(`${BASE}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include", // 👈 cookies
+        credentials: "include", 
         body: JSON.stringify({ email, password }),
     });
     if (!r.ok) throw new Error((await r.json()).error || "Login fallido");
@@ -56,7 +56,6 @@ export async function resetPassword(token: string, password: string) {
             const body = await r.json();
             if (body && body.error) msg = body.error;
         } catch {
-            // ignorar error al parsear JSON
         }
         throw new Error(msg);
     }
