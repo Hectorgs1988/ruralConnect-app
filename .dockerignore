@@ -1,0 +1,25 @@
+# Node modules
+node_modules
+
+# Builds
+dist
+
+# Logs
+npm-debug.log
+yarn-error.log
+
+# System files
+.DS_Store
+
+# env files (para no meter credenciales en la imagen)
+.env
+.env.local
+.env.*.local
+
+# Git
+.git
+.gitignore
+
+# Dockerfiles y configs
+Dockerfile
+docker-compose.yml
