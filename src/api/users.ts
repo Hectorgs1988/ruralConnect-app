@@ -1,4 +1,4 @@
-import { getErrorMessage } from "./client";
+import {apiFetch, getErrorMessage } from "./client";
 
 export type ApiUser = {
     id: string;
@@ -42,7 +42,7 @@ export async function listUsers(
     if (params.size) searchParams.set("size", String(params.size));
 
     const query = searchParams.toString();
-    const res = await fetch(`/api/users${query ? `?${query}` : ""}`, {
+    const res = await apiFetch(`/api/users${query ? `?${query}` : ""}`, {
         headers: {
             Authorization: `Bearer ${token}`,
         },
@@ -75,7 +75,7 @@ export async function createUser(input: CreateUserInput, token: string): Promise
         phone: input.phone ?? null,
     };
 
-    const res = await fetch(url, {
+    const res = await apiFetch(url, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -107,7 +107,7 @@ export async function updateUser(
     input: UpdateUserInput,
     token: string
 ): Promise<ApiUser> {
-    const res = await fetch(`/api/users/${id}`, {
+    const res = await apiFetch(`/api/users/${id}`, {
         method: "PATCH",
         headers: {
             "Content-Type": "application/json",
@@ -128,7 +128,7 @@ export async function updateUser(
 }
 
 export async function deleteUser(id: string, token: string): Promise<void> {
-    const res = await fetch(`/api/users/${id}`, {
+    const res = await apiFetch(`/api/users/${id}`, {
         method: "DELETE",
         headers: {
             Authorization: `Bearer ${token}`,

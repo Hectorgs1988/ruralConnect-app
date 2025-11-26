@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { apiFetch } from '@/api/client';
 
 type User = { id: string; name: string; email: string; role: 'ADMIN' | 'SOCIO' };
 type AuthState = { user: User | null; token: string | null; loading: boolean };
@@ -19,7 +20,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     async function login(email: string, password: string): Promise<User> {
-        const r = await fetch('/api/auth/login', {
+        const r = await apiFetch('/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })

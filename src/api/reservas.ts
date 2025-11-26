@@ -1,4 +1,4 @@
-import { getErrorMessage } from "./client";
+import { apiFetch, getErrorMessage } from "./client";
 
 export type ApiReservaEstado = "PENDIENTE" | "CONFIRMADA" | "CANCELADA";
 
@@ -36,7 +36,7 @@ export async function listReservas(
         headers.Authorization = `Bearer ${token}`;
     }
 
-    const res = await fetch(`/api/reservas${query ? `?${query}` : ""}`, {
+    const res = await apiFetch(`/api/reservas${query ? `?${query}` : ""}`, {
         headers,
     });
 
@@ -59,7 +59,7 @@ export async function createReserva(
     input: CreateReservaInput,
     token: string
 ): Promise<ApiReserva> {
-    const res = await fetch("/api/reservas", {
+    const res = await apiFetch("/api/reservas", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -90,7 +90,7 @@ export async function updateReserva(
     input: UpdateReservaInput,
     token: string
 ): Promise<ApiReserva> {
-    const res = await fetch(`/api/reservas/${id}`, {
+    const res = await apiFetch(`/api/reservas/${id}`, {
         method: "PATCH",
         headers: {
             "Content-Type": "application/json",

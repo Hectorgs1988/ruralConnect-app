@@ -1,4 +1,4 @@
-import { getErrorMessage } from "./client";
+import {apiFetch, getErrorMessage } from "./client";
 
 export type UltimoEvento = {
     id: string;
@@ -26,7 +26,7 @@ export type ResumenStats = {
 };
 
 export async function getResumenDashboard(token: string): Promise<ResumenStats> {
-    const res = await fetch("/api/dashboard/resumen", {
+    const res = await apiFetch("/api/dashboard/resumen", {
         headers: {
             Authorization: `Bearer ${token}`,
         },

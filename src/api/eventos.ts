@@ -1,4 +1,4 @@
-import { getErrorMessage } from "./client";
+import {apiFetch, getErrorMessage } from "./client";
 
 export type ApiEvento = {
     id: string;
@@ -35,7 +35,7 @@ export async function listEventos(
         headers.Authorization = `Bearer ${token}`;
     }
 
-    const res = await fetch(`/api/eventos${query ? `?${query}` : ""}`, {
+    const res = await apiFetch(`/api/eventos${query ? `?${query}` : ""}`, {
         headers,
     });
 
@@ -59,7 +59,7 @@ export async function createEvento(
     input: CreateEventoInput,
     token: string
 ): Promise<ApiEvento> {
-    const res = await fetch(`/api/eventos`, {
+    const res = await apiFetch(`/api/eventos`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -89,7 +89,7 @@ export async function updateEvento(
     input: UpdateEventoInput,
     token: string
 ): Promise<ApiEvento> {
-    const res = await fetch(`/api/eventos/${id}`, {
+    const res = await apiFetch(`/api/eventos/${id}`, {
         method: "PATCH",
         headers: {
             "Content-Type": "application/json",
@@ -106,7 +106,7 @@ export async function updateEvento(
 }
 
 export async function deleteEvento(id: string, token: string): Promise<void> {
-    const res = await fetch(`/api/eventos/${id}`, {
+    const res = await apiFetch(`/api/eventos/${id}`, {
         method: "DELETE",
         headers: {
             Authorization: `Bearer ${token}`,
@@ -129,7 +129,7 @@ export async function joinEvento(
     input: JoinEventoInput,
     token: string
 ): Promise<void> {
-    const res = await fetch(`/api/eventos/${eventId}/inscribirme`, {
+    const res = await apiFetch(`/api/eventos/${eventId}/inscribirme`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -150,7 +150,7 @@ export async function joinEvento(
 }
 
 export async function leaveEvento(eventId: string, token: string): Promise<void> {
-    const res = await fetch(`/api/eventos/${eventId}/desinscribirme`, {
+    const res = await apiFetch(`/api/eventos/${eventId}/desinscribirme`, {
         method: "DELETE",
         headers: {
             Authorization: `Bearer ${token}`,
@@ -168,7 +168,7 @@ export async function leaveEvento(eventId: string, token: string): Promise<void>
  * Obtiene los eventos a los que el usuario está inscrito
  */
 export async function getMyEventos(token: string): Promise<ApiEvento[]> {
-    const res = await fetch(`/api/eventos/mis-eventos`, {
+    const res = await apiFetch(`/api/eventos/mis-eventos`, {
         headers: {
             Authorization: `Bearer ${token}`,
         },
