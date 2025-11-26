@@ -1,0 +1,6 @@
+* text=auto eol=lf
+
+# Archivos que SIEMPRE deben ser LF
+*.sh text eol=lf
+*.sh eol=lf
+*.sh linguist-language=Shell
