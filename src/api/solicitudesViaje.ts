@@ -1,10 +1,10 @@
-import { getErrorMessage } from "./client";
+import { apiFetch, getErrorMessage } from "./client";
 import type { SolicitudViaje, SolicitudViajeCreateInput } from "../types/SolicitudViaje";
 import type { Viaje } from "../types/Travel";
 import type { CreateViajeInput } from "./viajes";
 
 export async function listSolicitudesViaje(token: string): Promise<SolicitudViaje[]> {
-    const res = await fetch("/api/solicitudes-viaje", {
+    const res = await apiFetch("/api/solicitudes-viaje", {
         headers: {
             Authorization: `Bearer ${token}`,
         },
@@ -23,7 +23,7 @@ export async function createSolicitudViaje(
     data: SolicitudViajeCreateInput,
     token: string
 ): Promise<SolicitudViaje> {
-    const res = await fetch("/api/solicitudes-viaje", {
+    const res = await apiFetch("/api/solicitudes-viaje", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -47,7 +47,7 @@ export async function ofrecerDesdeSolicitud(
     viajeData: CreateViajeInput,
     token: string
 ): Promise<{ viaje: Viaje; solicitudActualizada: SolicitudViaje }> {
-    const res = await fetch(`/api/solicitudes-viaje/${solicitudId}/ofrecer`, {
+    const res = await apiFetch(`/api/solicitudes-viaje/${solicitudId}/ofrecer`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -69,7 +69,7 @@ export async function cancelarSolicitudViaje(
     solicitudId: string,
     token: string
 ): Promise<void> {
-    const res = await fetch(`/api/solicitudes-viaje/${solicitudId}`, {
+    const res = await apiFetch(`/api/solicitudes-viaje/${solicitudId}`, {
         method: "DELETE",
         headers: {
             Authorization: `Bearer ${token}`,

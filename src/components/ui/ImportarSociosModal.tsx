@@ -2,6 +2,7 @@ import type { FC } from "react";
 import { useState } from "react";
 import Button from "./button";
 import { useAuth } from "@/context/AuthContext";
+import { apiFetch } from "@/api/client";
 
 interface ImportarSociosModalProps {
   onClose: () => void;
@@ -33,7 +34,7 @@ const ImportarSociosModal: FC<ImportarSociosModalProps> = ({ onClose, onImported
     try {
       setSubmitting(true);
 
-      const res = await fetch("/api/users/import-csv", {
+      const res = await apiFetch("/api/users/import-csv", {
         method: "POST",
         headers: {
           "Content-Type": "text/csv",
