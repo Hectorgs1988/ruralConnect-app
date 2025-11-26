@@ -9,8 +9,8 @@ import EditarSocioModal from "@/components/ui/EditarSocioModal";
 import EliminarSocioModal from "@/components/ui/EliminarSocioModal";
 import { useAuth } from "@/context/AuthContext";
 import ImportarSociosModal from "@/components/ui/ImportarSociosModal";
-
 import { listUsers } from "@/api/users";
+import { apiFetch } from "@/api/client";
 
 
 type Socio = {
@@ -86,7 +86,7 @@ const GestionSocio: FC = () => {
             setExporting(true);
             setError(null);
 
-            const res = await fetch("/api/users/export", {
+            const res = await apiFetch("/api/users/export", {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -197,7 +197,7 @@ const GestionSocio: FC = () => {
                     {loading && !error && (
                         <p className="text-sm text-muted mb-3">Cargando socios...</p>
                     )}
-
+                    
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
                             <thead>

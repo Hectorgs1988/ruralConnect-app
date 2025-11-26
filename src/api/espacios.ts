@@ -1,8 +1,8 @@
 import type { Espacio } from "@/types/Espacio";
-import { getErrorMessage } from "./client";
+import {apiFetch, getErrorMessage } from "./client";
 
 export async function listEspacios(): Promise<Espacio[]> {
-    const res = await fetch("/api/espacios");
+    const res = await apiFetch("/api/espacios");
 
     if (!res.ok) {
         throw new Error(
@@ -24,7 +24,7 @@ export async function createEspacio(
     input: CreateEspacioInput,
     token: string
 ): Promise<Espacio> {
-    const res = await fetch("/api/espacios", {
+    const res = await apiFetch("/api/espacios", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -54,7 +54,7 @@ export async function updateEspacio(
     input: UpdateEspacioInput,
     token: string
 ): Promise<Espacio> {
-    const res = await fetch(`/api/espacios/${id}`, {
+    const res = await apiFetch(`/api/espacios/${id}`, {
         method: "PATCH",
         headers: {
             "Content-Type": "application/json",
@@ -73,7 +73,7 @@ export async function updateEspacio(
 }
 
 export async function deleteEspacio(id: string, token: string): Promise<void> {
-    const res = await fetch(`/api/espacios/${id}`, {
+    const res = await apiFetch(`/api/espacios/${id}`, {
         method: "DELETE",
         headers: {
             Authorization: `Bearer ${token}`,

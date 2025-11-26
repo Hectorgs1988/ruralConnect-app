@@ -1,3 +1,13 @@
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
+
+export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
+    const url = `${API_URL}${path}`;
+    const res = await fetch(url, {
+        ...options,
+    });
+    return res;
+}
+
 export async function getErrorMessage(res: Response, fallback?: string): Promise<string> {
     try {
         const data = await res.json();
@@ -11,4 +21,3 @@ export async function getErrorMessage(res: Response, fallback?: string): Promise
 
     return fallback ?? `Error ${res.status}`;
 }
-

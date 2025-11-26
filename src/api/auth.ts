@@ -1,7 +1,8 @@
+import { apiFetch } from "./client";
 const BASE = "/api/auth";
 
 export async function login(email: string, password: string) {
-    const r = await fetch(`${BASE}/login`, {
+    const r = await apiFetch(`${BASE}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include", 
@@ -12,18 +13,18 @@ export async function login(email: string, password: string) {
 }
 
 export async function logout() {
-    await fetch(`${BASE}/logout`, { method: "POST", credentials: "include" });
+    await apiFetch(`${BASE}/logout`, { method: "POST", credentials: "include" });
 }
 
 export async function me() {
-    const r = await fetch(`${BASE}/me`, { credentials: "include" });
+    const r = await apiFetch(`${BASE}/me`, { credentials: "include" });
     if (!r.ok) return null;
     return r.json();
 }
 
 
 export async function forgotPassword(email: string) {
-    const r = await fetch(`${BASE}/forgot-password`, {
+    const r = await apiFetch(`${BASE}/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -44,7 +45,7 @@ export async function forgotPassword(email: string) {
 }
 
 export async function resetPassword(token: string, password: string) {
-    const r = await fetch(`${BASE}/reset-password`, {
+    const r = await apiFetch(`${BASE}/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, password }),

@@ -1,5 +1,5 @@
 import type { Viaje } from "@/types/Travel";
-import { getErrorMessage } from "./client";
+import { apiFetch, getErrorMessage } from "./client";
 
 export interface ListViajesParams {
     from?: string;
@@ -23,7 +23,7 @@ export async function listViajes(
         headers.Authorization = `Bearer ${token}`;
     }
 
-    const res = await fetch(`/api/viajes${query ? `?${query}` : ""}` , {
+    const res = await apiFetch(`/api/viajes${query ? `?${query}` : ""}` , {
         headers,
     });
 
@@ -48,7 +48,7 @@ export async function createViaje(
     input: CreateViajeInput,
     token: string
 ): Promise<Viaje> {
-    const res = await fetch("/api/viajes", {
+    const res = await apiFetch("/api/viajes", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -71,7 +71,7 @@ export async function joinViaje(
     userId: string,
     token: string
 ): Promise<void> {
-    const res = await fetch(`/api/viajes/${viajeId}/unirse`, {
+    const res = await apiFetch(`/api/viajes/${viajeId}/unirse`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -101,7 +101,7 @@ export async function leaveViaje(
     userId: string,
     token: string
 ): Promise<void> {
-    const res = await fetch(`/api/viajes/${viajeId}/unirse`, {
+    const res = await apiFetch(`/api/viajes/${viajeId}/unirse`, {
         method: "DELETE",
         headers: {
             "Content-Type": "application/json",
@@ -122,7 +122,7 @@ export async function cancelViaje(
     viajeId: string,
     token: string
 ): Promise<{ message: string; pasajerosNotificados: number }> {
-    const res = await fetch(`/api/viajes/${viajeId}`, {
+    const res = await apiFetch(`/api/viajes/${viajeId}`, {
         method: "DELETE",
         headers: {
             Authorization: `Bearer ${token}`,
