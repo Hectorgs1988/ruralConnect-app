@@ -364,9 +364,8 @@ export default function CompartirCoche() {
         if (!travelToCancel || !token) return;
 
         try {
-            const result = await cancelViaje(travelToCancel.id, token);
+            await cancelViaje(travelToCancel.id, token);
             setTravelToCancel(null);
-            alert(`Viaje cancelado. Se ha notificado a ${result.pasajerosNotificados} pasajero(s).`);
             await cargar();
         } catch (e: any) {
             alert(e.message ?? "No se pudo cancelar el viaje");
@@ -533,10 +532,10 @@ export default function CompartirCoche() {
                                     <div
                                         key={s.id}
                                         className={`rc-card p-4 flex flex-col justify-between ${isAceptada
-                                                ? "border-2 border-green-400 bg-green-50"
-                                                : isMine
-                                                    ? "border-2 border-primary"
-                                                    : ""
+                                            ? "border-2 border-green-400 bg-green-50"
+                                            : isMine
+                                                ? "border-2 border-primary"
+                                                : ""
                                             }`}
                                     >
                                         <div className="space-y-1">
