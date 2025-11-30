@@ -10,6 +10,11 @@ interface NuevoSocioModalProps {
     onCreated?: () => void;
 }
 
+const ROLES = [
+    { value: "ADMIN", label: "Admin" },
+    { value: "SOCIO", label: "Socio" },
+];
+
 const NuevoSocioModal: FC<NuevoSocioModalProps> = ({ onClose, onCreated }) => {
     const { token } = useAuth();
 
@@ -17,7 +22,7 @@ const NuevoSocioModal: FC<NuevoSocioModalProps> = ({ onClose, onCreated }) => {
     const [apellidos, setApellidos] = useState("");
     const [email, setEmail] = useState("");
     const [telefono, setTelefono] = useState("");
-    const [rol, setRol] = useState("");
+    const [rol, setRol] = useState("SOCIO");
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -151,11 +156,17 @@ const NuevoSocioModal: FC<NuevoSocioModalProps> = ({ onClose, onCreated }) => {
 
                     <div>
                         <label className="block text-sm font-medium mb-1">Rol *</label>
-                        <Input
+                        <select
+                            className="w-full px-3 py-2 rounded-md bg-surfaceMuted border border-borderSoft focus:outline-none focus:ring-2 focus:ring-primary/60 text-sm"
                             value={rol}
                             onChange={(e) => setRol(e.target.value)}
-                            placeholder="Rol (ADMIN o SOCIO)"
-                        />
+                        >
+                            {ROLES.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     <div className="rc-modal-footer">
