@@ -76,7 +76,7 @@ export default function CompartirCoche() {
     const [err, setErr] = useState<string | null>(null);
     const [travelToJoin, setTravelJoin] = useState<Travel | null>(null);
     const [travelToCancel, setTravelToCancel] = useState<Travel | null>(null);
-	    const [travelToLeave, setTravelToLeave] = useState<Travel | null>(null);
+    const [travelToLeave, setTravelToLeave] = useState<Travel | null>(null);
 
     // solicitudes
     const [solicitudes, setSolicitudes] = useState<SolicitudViaje[]>([]);
@@ -340,25 +340,25 @@ export default function CompartirCoche() {
         }
     }
 
-	    function onLeave(travel: Travel) {
-	        if (!currentUserId || !token) {
-	            alert("Inicia sesión para salir del viaje");
-	            return;
-	        }
-	        setTravelToLeave(travel);
-	    }
+    function onLeave(travel: Travel) {
+        if (!currentUserId || !token) {
+            alert("Inicia sesión para salir del viaje");
+            return;
+        }
+        setTravelToLeave(travel);
+    }
 
-	    async function confirmLeaveTrip() {
-	        if (!travelToLeave || !currentUserId || !token) return;
+    async function confirmLeaveTrip() {
+        if (!travelToLeave || !currentUserId || !token) return;
 
-	        try {
-	            await leaveViaje(travelToLeave.id, currentUserId, token);
-	            setTravelToLeave(null);
-	            await cargar();
-	        } catch (e: any) {
-	            alert(e.message ?? "No se pudo salir");
-	        }
-	    }
+        try {
+            await leaveViaje(travelToLeave.id, currentUserId, token);
+            setTravelToLeave(null);
+            await cargar();
+        } catch (e: any) {
+            alert(e.message ?? "No se pudo salir");
+        }
+    }
 
     function onCancelTrip(travel: Travel) {
         if (!token) {
@@ -665,14 +665,14 @@ export default function CompartirCoche() {
                 />
             )}
 
-	            {/* Modal confirmar anular plaza (salir del viaje como pasajero) */}
-	            {travelToLeave && (
-	                <ConfirmLeaveTravelModal
-	                    travel={travelToLeave}
-	                    onClose={() => setTravelToLeave(null)}
-	                    onConfirm={confirmLeaveTrip}
-	                />
-	            )}
+            {/* Modal confirmar anular plaza (salir del viaje como pasajero) */}
+            {travelToLeave && (
+                <ConfirmLeaveTravelModal
+                    travel={travelToLeave}
+                    onClose={() => setTravelToLeave(null)}
+                    onConfirm={confirmLeaveTrip}
+                />
+            )}
 
             {/* Modal solicitar viaje */}
             {showRequestModal && (
