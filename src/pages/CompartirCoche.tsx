@@ -6,6 +6,7 @@ import ShareCarCard from "@/components/ui/ShareCarCard";
 import OfferTravelModal from "@/components/ui/OfferTravelModal";
 import ConfirmJoinTravelModal from "@/components/ui/ConfirmJoinTravelModal";
 import ConfirmCancelTravelModal from "@/components/ui/ConfirmCancelTravelModal";
+import ConfirmLeaveTravelModal from "@/components/ui/ConfirmLeaveTravelModal";
 import RequestTravelModal from "@/components/ui/RequestTravelModal";
 
 import type { Travel, Viaje } from "@/types/Travel";
@@ -75,6 +76,7 @@ export default function CompartirCoche() {
     const [err, setErr] = useState<string | null>(null);
     const [travelToJoin, setTravelJoin] = useState<Travel | null>(null);
     const [travelToCancel, setTravelToCancel] = useState<Travel | null>(null);
+    const [travelToLeave, setTravelToLeave] = useState<Travel | null>(null);
 
     // solicitudes
     const [solicitudes, setSolicitudes] = useState<SolicitudViaje[]>([]);
@@ -338,14 +340,20 @@ export default function CompartirCoche() {
         }
     }
 
-    async function onLeave(travel: Travel) {
+    function onLeave(travel: Travel) {
         if (!currentUserId || !token) {
             alert("Inicia sesión para salir del viaje");
             return;
         }
+        setTravelToLeave(travel);
+    }
+
+    async function confirmLeaveTrip() {
+        if (!travelToLeave || !currentUserId || !token) return;
 
         try {
-            await leaveViaje(travel.id, currentUserId, token);
+            await leaveViaje(travelToLeave.id, currentUserId, token);
+            setTravelToLeave(null);
             await cargar();
         } catch (e: any) {
             alert(e.message ?? "No se pudo salir");
@@ -364,9 +372,8 @@ export default function CompartirCoche() {
         if (!travelToCancel || !token) return;
 
         try {
-            const result = await cancelViaje(travelToCancel.id, token);
+            await cancelViaje(travelToCancel.id, token);
             setTravelToCancel(null);
-            alert(`Viaje cancelado. Se ha notificado a ${result.pasajerosNotificados} pasajero(s).`);
             await cargar();
         } catch (e: any) {
             alert(e.message ?? "No se pudo cancelar el viaje");
@@ -533,10 +540,10 @@ export default function CompartirCoche() {
                                     <div
                                         key={s.id}
                                         className={`rc-card p-4 flex flex-col justify-between ${isAceptada
-                                                ? "border-2 border-green-400 bg-green-50"
-                                                : isMine
-                                                    ? "border-2 border-primary"
-                                                    : ""
+                                            ? "border-2 border-green-400 bg-green-50"
+                                            : isMine
+                                                ? "border-2 border-primary"
+                                                : ""
                                             }`}
                                     >
                                         <div className="space-y-1">
@@ -655,6 +662,15 @@ export default function CompartirCoche() {
                     travel={travelToJoin}
                     onClose={() => setTravelJoin(null)}
                     onConfirm={ConfirmJoin}
+                />
+            )}
+
+            {/* Modal confirmar anular plaza (salir del viaje como pasajero) */}
+            {travelToLeave && (
+                <ConfirmLeaveTravelModal
+                    travel={travelToLeave}
+                    onClose={() => setTravelToLeave(null)}
+                    onConfirm={confirmLeaveTrip}
                 />
             )}
 
