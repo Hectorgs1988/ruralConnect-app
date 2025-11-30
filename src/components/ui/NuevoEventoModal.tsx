@@ -22,6 +22,7 @@ const NuevoEventoModal: FC<NuevoEventoModalProps> = ({ onClose, onCreated }) => 
 
     const [titulo, setTitulo] = useState("");
     const [fecha, setFecha] = useState("");
+    const [hora, setHora] = useState("");
     const [lugar, setLugar] = useState("");
     const [aforo, setAforo] = useState("");
     const [descripcion, setDescripcion] = useState("");
@@ -38,8 +39,12 @@ const NuevoEventoModal: FC<NuevoEventoModalProps> = ({ onClose, onCreated }) => 
             return;
         }
 
-        if (!titulo.trim() || !fecha.trim() || !estado) {
-            setError("Rellena los campos obligatorios: titulo, fecha y estado.");
+        const tituloTrim = titulo.trim();
+        const fechaTrim = fecha.trim();
+        const horaTrim = hora.trim();
+
+        if (!tituloTrim || !fechaTrim || !horaTrim || !estado) {
+            setError("Rellena los campos obligatorios: titulo, fecha, hora y estado.");
             return;
         }
 
@@ -54,9 +59,18 @@ const NuevoEventoModal: FC<NuevoEventoModalProps> = ({ onClose, onCreated }) => 
             aforoNumber = parsed;
         }
 
+        // Construimos la fecha completa combinando fecha (YYYY-MM-DD) y hora (HH:MM)
+        // y la convertimos a ISO UTC para evitar desfases de huso horario en el frontend.
+        const fechaLocal = new Date(`${fechaTrim}T${horaTrim}`);
+        if (Number.isNaN(fechaLocal.getTime())) {
+            setError("La fecha u hora no es valida.");
+            return;
+        }
+        const fechaIso = fechaLocal.toISOString();
+
         const body: any = {
-            titulo: titulo.trim(),
-            fecha: fecha.trim(),
+            titulo: tituloTrim,
+            fecha: fechaIso,
         };
 
         const descTrim = descripcion.trim();
@@ -124,7 +138,7 @@ const NuevoEventoModal: FC<NuevoEventoModalProps> = ({ onClose, onCreated }) => 
                     )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
+                        <div className="md:col-span-2">
                             <label className="block text-sm font-medium mb-1">Titulo *</label>
                             <Input
                                 value={titulo}
@@ -138,7 +152,15 @@ const NuevoEventoModal: FC<NuevoEventoModalProps> = ({ onClose, onCreated }) => 
                                 type="date"
                                 value={fecha}
                                 onChange={(e) => setFecha(e.target.value)}
-                                placeholder="dd/mm/aaaa"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Hora *</label>
+                            <Input
+                                type="time"
+                                value={hora}
+                                onChange={(e) => setHora(e.target.value)}
+                                step={300}
                             />
                         </div>
                     </div>
