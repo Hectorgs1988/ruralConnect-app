@@ -15,7 +15,7 @@ const Input: React.FC<InputProps> = ({
     ...rest
 }) => {
     return (
-        <div className="w-full mb-4">
+	        <div className="w-full mb-4 overflow-x-hidden">
             <input
                 type={type}
                 placeholder={placeholder}

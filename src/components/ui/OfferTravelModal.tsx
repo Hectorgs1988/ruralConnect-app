@@ -117,8 +117,8 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
             className="rc-modal-overlay"
             onClick={onClose}
         >
-            <div
-                className="rc-modal-panel max-w-lg"
+	            <div
+	                className="rc-modal-panel max-w-full sm:max-w-lg overflow-x-hidden"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="offer-travel-modal-title"
