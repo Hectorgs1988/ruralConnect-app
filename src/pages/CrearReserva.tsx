@@ -125,7 +125,6 @@ export default function CrearReserva() {
     async function reloadCalendarMonth(monthDate: Date, espacioId: string) {
         try {
             setLoadingCalendar(true);
-            // Primer y último día del mes en horario local
             const firstDay = new Date(
                 monthDate.getFullYear(),
                 monthDate.getMonth(),
@@ -216,12 +215,10 @@ export default function CrearReserva() {
             .finally(() => setLoadingSlots(false));
     }, [fecha, espacio.id]);
 
-    // Cargar reservas activas del usuario para este espacio
     useEffect(() => {
         void reloadMisReservas(espacio.id);
     }, [espacio.id, token, user?.id]);
 
-    // Cargar estado de disponibilidad por d para el mes mostrado en el calendario
     useEffect(() => {
         void reloadCalendarMonth(calendarMonth, espacio.id);
     }, [calendarMonth, espacio.id, token]);
@@ -379,7 +376,6 @@ export default function CrearReserva() {
     });
     const firstDayOfMonth = new Date(calendarYear, calendarMonthIndex, 1);
     const daysInMonth = new Date(calendarYear, calendarMonthIndex + 1, 0).getDate();
-    // Queremos que la semana empiece en lunes (0 = lunes)
     const startWeekday = (firstDayOfMonth.getDay() + 6) % 7;
     const calendarCells: Array<Date | null> = [];
     for (let i = 0; i < startWeekday; i++) {
