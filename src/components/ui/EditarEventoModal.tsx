@@ -31,8 +31,21 @@ const EditarEventoModal: FC<EditarEventoModalProps> = ({ evento, onClose, onUpda
 
     const [titulo, setTitulo] = useState(evento.titulo);
     const [fecha, setFecha] = useState(() => {
-        const raw = evento.fecha || "";
-        return raw.length >= 10 ? raw.slice(0, 10) : raw;
+        if (!evento.fecha) return "";
+        const d = new Date(evento.fecha);
+        if (Number.isNaN(d.getTime())) return "";
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    });
+    const [hora, setHora] = useState(() => {
+        if (!evento.fecha) return "";
+        const d = new Date(evento.fecha);
+        if (Number.isNaN(d.getTime())) return "";
+        const hours = String(d.getHours()).padStart(2, "0");
+        const minutes = String(d.getMinutes()).padStart(2, "0");
+        return `${hours}:${minutes}`;
     });
     const [lugar, setLugar] = useState(evento.lugar ?? "");
     const [aforo, setAforo] = useState(
@@ -52,8 +65,14 @@ const EditarEventoModal: FC<EditarEventoModalProps> = ({ evento, onClose, onUpda
             return;
         }
 
-        if (!titulo.trim() || !fecha.trim() || !estado) {
-            setError("Rellena los campos obligatorios: titulo, fecha y estado.");
+        const tituloTrim = titulo.trim();
+        const fechaTrim = fecha.trim();
+        const horaTrim = hora.trim();
+        const descTrim = descripcion.trim();
+        const lugarTrim = lugar.trim();
+
+        if (!tituloTrim || !fechaTrim || !horaTrim || !estado) {
+            setError("Rellena los campos obligatorios: titulo, fecha, hora y estado.");
             return;
         }
 
@@ -70,13 +89,17 @@ const EditarEventoModal: FC<EditarEventoModalProps> = ({ evento, onClose, onUpda
 
         const body: any = {};
 
-        const tituloTrim = titulo.trim();
-        const fechaTrim = fecha.trim();
-        const descTrim = descripcion.trim();
-        const lugarTrim = lugar.trim();
+        // Construimos la fecha completa combinando fecha (YYYY-MM-DD) y hora (HH:MM)
+        // y la convertimos a ISO UTC para evitar desfases de huso horario en el frontend.
+        const fechaLocal = new Date(`${fechaTrim}T${horaTrim}`);
+        if (Number.isNaN(fechaLocal.getTime())) {
+            setError("La fecha u hora no es valida.");
+            return;
+        }
+        const fechaIso = fechaLocal.toISOString();
 
         if (tituloTrim) body.titulo = tituloTrim;
-        if (fechaTrim) body.fecha = fechaTrim;
+        if (fechaTrim && horaTrim) body.fecha = fechaIso;
         if (descTrim) body.descripcion = descTrim;
         if (lugarTrim) body.lugar = lugarTrim;
         if (aforoNumber !== undefined) {
@@ -137,7 +160,7 @@ const EditarEventoModal: FC<EditarEventoModalProps> = ({ evento, onClose, onUpda
                     )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
+                        <div className="md:col-span-2">
                             <label className="block text-sm font-medium mb-1">Titulo *</label>
                             <Input
                                 value={titulo}
@@ -151,7 +174,15 @@ const EditarEventoModal: FC<EditarEventoModalProps> = ({ evento, onClose, onUpda
                                 type="date"
                                 value={fecha}
                                 onChange={(e) => setFecha(e.target.value)}
-                                placeholder="dd/mm/aaaa"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Hora *</label>
+                            <Input
+                                type="time"
+                                value={hora}
+                                onChange={(e) => setHora(e.target.value)}
+                                step={300}
                             />
                         </div>
                     </div>
