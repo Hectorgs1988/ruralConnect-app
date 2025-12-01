@@ -32,6 +32,13 @@ const addMinutes = (hhmm: string, mins: number) => {
     return fromMinutes(val);
 };
 
+const formatDateKey = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+};
+
 function buildTimeOptions(step = STEP_MIN) {
     const out: string[] = [];
     for (let h = 0; h < 24; h++) {
@@ -58,6 +65,12 @@ export default function CrearReserva() {
 
     const espacio: Espacio = state.espacio;
     const [fecha, setFecha] = useState("");
+    const [calendarMonth, setCalendarMonth] = useState(() => {
+        const today = new Date();
+        return new Date(today.getFullYear(), today.getMonth(), 1);
+    });
+    const [fullDays, setFullDays] = useState<Record<string, true>>({});
+    const [loadingCalendar, setLoadingCalendar] = useState(false);
     const [inicio, setInicio] = useState("");
     const [fin, setFin] = useState("");
     const [motivo, setMotivo] = useState("");
@@ -109,6 +122,92 @@ export default function CrearReserva() {
         }
     }
 
+    async function reloadCalendarMonth(monthDate: Date, espacioId: string) {
+        try {
+            setLoadingCalendar(true);
+            // Primer y último día del mes en horario local
+            const firstDay = new Date(
+                monthDate.getFullYear(),
+                monthDate.getMonth(),
+                1
+            );
+            const lastDay = new Date(
+                monthDate.getFullYear(),
+                monthDate.getMonth() + 1,
+                0
+            );
+
+            const desde = new Date(
+                firstDay.getFullYear(),
+                firstDay.getMonth(),
+                firstDay.getDate(),
+                0,
+                0,
+                0
+            ).toISOString();
+            const hasta = new Date(
+                lastDay.getFullYear(),
+                lastDay.getMonth(),
+                lastDay.getDate(),
+                23,
+                59,
+                59
+            ).toISOString();
+
+            const data = await listReservas(
+                { espacioId, desde, hasta },
+                token ?? undefined
+            );
+
+            const activas = data.filter((r) => r.estado !== "CANCELADA");
+            const byDate: Record<string, Array<{ s: number; e: number }>> = {};
+
+            for (const r of activas) {
+                const s = new Date(r.inicio);
+                const e = new Date(r.fin);
+                const key = formatDateKey(s);
+                const interval = {
+                    s: s.getHours() * 60 + s.getMinutes(),
+                    e: e.getHours() * 60 + e.getMinutes(),
+                };
+                if (!byDate[key]) byDate[key] = [];
+                byDate[key].push(interval);
+            }
+
+            const full: Record<string, true> = {};
+            for (const [key, list] of Object.entries(byDate)) {
+                const sorted = list
+                    .filter((x) => x.e > x.s)
+                    .sort((a, b) => a.s - b.s);
+                const merged: Array<{ s: number; e: number }> = [];
+                for (const it of sorted) {
+                    const last = merged[merged.length - 1];
+                    if (!last || it.s > last.e) merged.push({ ...it });
+                    else last.e = Math.max(last.e, it.e);
+                }
+
+                let lastEnd = 0;
+                let hasGap = false;
+                for (const iv of merged) {
+                    if (iv.s - lastEnd >= MIN_DURATION) {
+                        hasGap = true;
+                        break;
+                    }
+                    lastEnd = Math.max(lastEnd, iv.e);
+                }
+                if (!hasGap && 24 * 60 - lastEnd < MIN_DURATION) {
+                    full[key] = true;
+                }
+            }
+
+            setFullDays(full);
+        } catch (e: any) {
+            setError(e.message ?? "Error cargando disponibilidad del mes");
+        } finally {
+            setLoadingCalendar(false);
+        }
+    }
+
     useEffect(() => {
         if (!fecha) return;
         setLoadingSlots(true);
@@ -121,6 +220,11 @@ export default function CrearReserva() {
     useEffect(() => {
         void reloadMisReservas(espacio.id);
     }, [espacio.id, token, user?.id]);
+
+    // Cargar estado de disponibilidad por d para el mes mostrado en el calendario
+    useEffect(() => {
+        void reloadCalendarMonth(calendarMonth, espacio.id);
+    }, [calendarMonth, espacio.id, token]);
 
     const intervals = useMemo(() => {
         const list = reservasDia
@@ -266,6 +370,25 @@ export default function CrearReserva() {
     const noHayHueco = !!fecha && !loadingSlots && !inicioOptions.length;
     const submitDisabled = loading || noHayHueco;
 
+    // Datos derivados para el calendario mensual
+    const calendarYear = calendarMonth.getFullYear();
+    const calendarMonthIndex = calendarMonth.getMonth();
+    const calendarLabel = calendarMonth.toLocaleDateString("es-ES", {
+        month: "long",
+        year: "numeric",
+    });
+    const firstDayOfMonth = new Date(calendarYear, calendarMonthIndex, 1);
+    const daysInMonth = new Date(calendarYear, calendarMonthIndex + 1, 0).getDate();
+    // Queremos que la semana empiece en lunes (0 = lunes)
+    const startWeekday = (firstDayOfMonth.getDay() + 6) % 7;
+    const calendarCells: Array<Date | null> = [];
+    for (let i = 0; i < startWeekday; i++) {
+        calendarCells.push(null);
+    }
+    for (let day = 1; day <= daysInMonth; day++) {
+        calendarCells.push(new Date(calendarYear, calendarMonthIndex, day));
+    }
+
     return (
         <div className="rc-page">
             <Header />
@@ -294,18 +417,147 @@ export default function CrearReserva() {
 
                         <div className="mt-5">
                             <h4 className="font-medium mb-2">Disponibilidad</h4>
-                            <DayTimeline
-                                occupied={intervals}
-                                selected={
-                                    inicio && fin
-                                        ? { s: toMinutes(inicio), e: toMinutes(fin) }
-                                        : undefined
-                                }
-                                step={30}
-                            />
-                            {loadingSlots && (
-                                <p className="text-sm text-muted mt-2">
-                                    Actualizando disponibilidad…
+
+                            {/* Calendario mensual */}
+                            <div className="border border-borderSoft rounded-2xl p-3 bg-surfaceMuted/50">
+                                <div className="flex items-center justify-between mb-3">
+                                    <button
+                                        type="button"
+                                        className="text-sm px-2 py-1 rounded-full hover:bg-surfaceMuted"
+                                        onClick={() =>
+                                            setCalendarMonth(
+                                                new Date(
+                                                    calendarYear,
+                                                    calendarMonthIndex - 1,
+                                                    1
+                                                )
+                                            )
+                                        }
+                                    >
+                                        «
+                                    </button>
+                                    <span className="text-sm font-medium capitalize">
+                                        {calendarLabel}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        className="text-sm px-2 py-1 rounded-full hover:bg-surfaceMuted"
+                                        onClick={() =>
+                                            setCalendarMonth(
+                                                new Date(
+                                                    calendarYear,
+                                                    calendarMonthIndex + 1,
+                                                    1
+                                                )
+                                            )
+                                        }
+                                    >
+                                        »
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium text-muted mb-1">
+                                    {["L", "M", "X", "J", "V", "S", "D"].map((d) => (
+                                        <div key={d}>{d}</div>
+                                    ))}
+                                </div>
+
+                                <div className="grid grid-cols-7 gap-1">
+                                    {calendarCells.map((date, idx) => {
+                                        if (!date) {
+                                            return (
+                                                <div
+                                                    key={`empty-${idx}`}
+                                                    className="h-8 md:h-9"
+                                                />
+                                            );
+                                        }
+                                        const key = formatDateKey(date);
+                                        const isSelected = fecha === key;
+                                        const isFull = !!fullDays[key];
+                                        const isDisabled = isFull;
+
+                                        let className =
+                                            "flex items-center justify-center rounded-full w-8 h-8 md:w-9 md:h-9 text-xs md:text-sm border-2 transition-colors ";
+                                        if (isFull) {
+                                            className +=
+                                                "border-red-500 text-red-600 bg-white cursor-not-allowed opacity-80";
+                                        } else if (isSelected) {
+                                            className +=
+                                                "border-transparent bg-emerald-600 text-white cursor-default";
+                                        } else {
+                                            className +=
+                                                "border-transparent bg-primary text-dark hover:bg-primaryStrong cursor-pointer";
+                                        }
+
+                                        return (
+                                            <button
+                                                key={key}
+                                                type="button"
+                                                onClick={() => {
+                                                    if (isDisabled) return;
+                                                    const dateStr = formatDateKey(date);
+                                                    setFecha(dateStr);
+                                                    setInicio("");
+                                                    setFin("");
+                                                }}
+                                                className={className}
+                                            >
+                                                {date.getDate()}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                <div className="flex flex-wrap gap-3 mt-4 text-[11px] text-muted">
+                                    <div className="flex items-center gap-1">
+                                        <span className="w-3 h-3 rounded-full bg-primary" />
+                                        <span>Disponible</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <span className="w-3 h-3 rounded-full bg-emerald-600" />
+                                        <span>Día seleccionado</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <span className="w-3 h-3 rounded-full border-2 border-red-500" />
+                                        <span>Completo</span>
+                                    </div>
+                                </div>
+
+                                {loadingCalendar && (
+                                    <p className="text-xs text-muted mt-2">
+                                        Cargando calendario…
+                                    </p>
+                                )}
+                            </div>
+
+                            {fecha ? (
+                                <div className="mt-5">
+                                    <h5 className="text-sm font-medium mb-1">
+                                        Horario para el {fecha.split("-").reverse().join("/")}
+                                    </h5>
+                                    <DayTimeline
+                                        occupied={intervals}
+                                        selected={
+                                            inicio && fin
+                                                ? {
+                                                    s: toMinutes(inicio),
+                                                    e: toMinutes(fin),
+                                                }
+                                                : undefined
+                                        }
+                                        step={30}
+                                    />
+                                    {loadingSlots && (
+                                        <p className="text-sm text-muted mt-2">
+                                            Actualizando disponibilidad…
+                                        </p>
+                                    )}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-muted mt-3">
+                                    Selecciona un día en el calendario para ver el horario
+                                    disponible.
                                 </p>
                             )}
                         </div>
