@@ -576,17 +576,17 @@ export default function CrearReserva() {
                             </p>
                         </div>
 
-	                        <div>
-	                            <label className="block text-sm mb-1">Fecha</label>
-	                            <div className="w-full rounded-full border border-borderSoft bg-surfaceMuted px-4 py-2 text-sm mb-1 flex items-center justify-center">
-	                                <span className={fecha ? "text-dark" : "text-muted"}>
-	                                    {fechaLabel}
-	                                </span>
-	                            </div>
-	                            <p className="text-[11px] text-muted">
-	                                Selecciona el día en el calendario de la izquierda.
-	                            </p>
-	                        </div>
+                        <div>
+                            <label className="block text-sm mb-1">Fecha</label>
+                            <div className="w-full rounded-full border border-borderSoft bg-surfaceMuted px-4 py-2 text-sm mb-1 flex items-center justify-center">
+                                <span className={fecha ? "text-dark" : "text-muted"}>
+                                    {fechaLabel}
+                                </span>
+                            </div>
+                            <p className="text-[11px] text-muted">
+                                Selecciona el día en el calendario de la izquierda.
+                            </p>
+                        </div>
 
                         <div>
                             <label className="block text-sm mb-1">Horario</label>
