@@ -102,7 +102,7 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
     };
 
     // Componente para fecha/hora con placeholder falso
-    const DateTimeField = ({
+	    const DateTimeField = ({
         type,
         value,
         onChange,
@@ -112,18 +112,18 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
         value: string;
         placeholder: string;
         onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    }) => (
-        <div className="relative w-full mb-4">
-            <input
-                type={type}
-                value={value}
-                onChange={onChange}
-                className="
-                    w-full px-4 py-2 rounded-full bg-surfaceMuted border text-sm border-borderSoft
-                    focus:outline-none focus:ring-2 focus:ring-primary/60
-                    [appearance:none] [-webkit-appearance:none]
-                "
-            />
+	    }) => (
+	        <div className="relative w-full mb-4">
+	            <input
+	                type={type}
+	                value={value}
+	                onChange={onChange}
+	                className="
+	                    w-full h-11 px-4 py-2 rounded-full bg-surfaceMuted border text-sm border-borderSoft
+	                    focus:outline-none focus:ring-2 focus:ring-primary/60
+	                    [appearance:none] [-webkit-appearance:none]
+	                "
+	            />
             {!value && (
                 <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted">
                     {placeholder}
