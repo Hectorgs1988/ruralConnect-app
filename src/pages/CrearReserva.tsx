@@ -385,6 +385,14 @@ export default function CrearReserva() {
         calendarCells.push(new Date(calendarYear, calendarMonthIndex, day));
     }
 
+    const fechaLabel = fecha
+        ? new Date(`${fecha}T00:00:00`).toLocaleDateString("es-ES", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+        })
+        : "Selecciona un día en el calendario";
+
     return (
         <div className="rc-page">
             <Header />
@@ -568,16 +576,17 @@ export default function CrearReserva() {
                             </p>
                         </div>
 
-                        <div>
-                            <label className="block text-sm mb-1">Fecha</label>
-                            <input
-                                type="date"
-                                value={fecha}
-                                onChange={(e) => setFecha(e.target.value)}
-                                className="w-full rounded-full border border-borderSoft bg-surfaceMuted px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/60 mb-2"
-                                required
-                            />
-                        </div>
+	                        <div>
+	                            <label className="block text-sm mb-1">Fecha</label>
+	                            <div className="w-full rounded-full border border-borderSoft bg-surfaceMuted px-4 py-2 text-sm mb-1 flex items-center justify-center">
+	                                <span className={fecha ? "text-dark" : "text-muted"}>
+	                                    {fechaLabel}
+	                                </span>
+	                            </div>
+	                            <p className="text-[11px] text-muted">
+	                                Selecciona el día en el calendario de la izquierda.
+	                            </p>
+	                        </div>
 
                         <div>
                             <label className="block text-sm mb-1">Horario</label>

@@ -144,6 +144,7 @@ const NuevoEventoModal: FC<NuevoEventoModalProps> = ({ onClose, onCreated }) => 
                                 value={titulo}
                                 onChange={(e) => setTitulo(e.target.value)}
                                 placeholder="Titulo del evento"
+                                className="rounded-full"
                             />
                         </div>
                         <div>
@@ -152,6 +153,8 @@ const NuevoEventoModal: FC<NuevoEventoModalProps> = ({ onClose, onCreated }) => 
                                 type="date"
                                 value={fecha}
                                 onChange={(e) => setFecha(e.target.value)}
+                                placeholder="Selecciona fecha"
+                                className="rounded-full"
                             />
                         </div>
                         <div>
@@ -161,6 +164,8 @@ const NuevoEventoModal: FC<NuevoEventoModalProps> = ({ onClose, onCreated }) => 
                                 value={hora}
                                 onChange={(e) => setHora(e.target.value)}
                                 step={300}
+                                placeholder="Selecciona hora"
+                                className="rounded-full"
                             />
                         </div>
                     </div>
@@ -172,6 +177,7 @@ const NuevoEventoModal: FC<NuevoEventoModalProps> = ({ onClose, onCreated }) => 
                                 value={lugar}
                                 onChange={(e) => setLugar(e.target.value)}
                                 placeholder="Lugar del evento"
+                                className="rounded-full"
                             />
                         </div>
                         <div>
@@ -182,6 +188,7 @@ const NuevoEventoModal: FC<NuevoEventoModalProps> = ({ onClose, onCreated }) => 
                                 value={aforo}
                                 onChange={(e) => setAforo(e.target.value)}
                                 placeholder="Numero de plazas"
+                                className="rounded-full"
                             />
                         </div>
                     </div>

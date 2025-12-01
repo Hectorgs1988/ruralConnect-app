@@ -155,6 +155,7 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
                                 placeholder="Ej: Burgos"
                                 value={origen}
                                 onChange={(e) => setOrigen(e.target.value)}
+                                className="rounded-full"
                             />
                         </div>
                         <div className="md:w-1/2">
@@ -163,6 +164,7 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
                                 placeholder="Ej: Susinos"
                                 value={destino}
                                 onChange={(e) => setDestino(e.target.value)}
+                                className="rounded-full"
                             />
                         </div>
                     </div>
@@ -172,16 +174,20 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
                             <label className="text-sm text-dark block mb-1">Fecha</label>
                             <Input
                                 type="date"
+                                placeholder="Selecciona fecha"
                                 value={fecha}
                                 onChange={(e) => setFecha(e.target.value)}
+                                className="rounded-full"
                             />
                         </div>
                         <div className="md:w-1/2">
                             <label className="text-sm text-dark block mb-1">Hora</label>
                             <Input
                                 type="time"
+                                placeholder="Selecciona hora"
                                 value={hora}
                                 onChange={(e) => setHora(e.target.value)}
+                                className="rounded-full"
                             />
                         </div>
                     </div>
@@ -194,6 +200,7 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
                             placeholder="Ej: 3"
                             value={plazas}
                             onChange={(e) => setPlazas(e.target.value)}
+                            className="rounded-full"
                         />
                     </div>
 
@@ -239,6 +246,7 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
                                         placeholder="Ej: Susinos"
                                         value={origenVuelta}
                                         onChange={(e) => setOrigenVuelta(e.target.value)}
+                                        className="rounded-full"
                                     />
                                 </div>
                                 <div className="md:w-1/2">
@@ -249,6 +257,7 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
                                         placeholder="Ej: Burgos"
                                         value={destinoVuelta}
                                         onChange={(e) => setDestinoVuelta(e.target.value)}
+                                        className="rounded-full"
                                     />
                                 </div>
                             </div>
@@ -259,8 +268,10 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
                                     </label>
                                     <Input
                                         type="date"
+                                        placeholder="Selecciona fecha"
                                         value={fechaVuelta}
                                         onChange={(e) => setFechaVuelta(e.target.value)}
+                                        className="rounded-full"
                                     />
                                 </div>
                                 <div className="md:w-1/2">
@@ -269,8 +280,10 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
                                     </label>
                                     <Input
                                         type="time"
+                                        placeholder="Selecciona hora"
                                         value={horaVuelta}
                                         onChange={(e) => setHoraVuelta(e.target.value)}
+                                        className="rounded-full"
                                     />
                                 </div>
                             </div>

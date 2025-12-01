@@ -62,7 +62,7 @@ const RequestTravelModal: FC<Props> = ({ onClose, onSubmit }) => {
                     <div>
                         <label className="block text-sm font-medium mb-1 text-dark">Origen</label>
                         <input
-                            className="w-full border border-borderSoft rounded-md px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
+                            className="w-full border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
                             placeholder="Ej: Madrid"
                             value={origen}
                             onChange={(e) => setOrigen(e.target.value)}
@@ -74,7 +74,7 @@ const RequestTravelModal: FC<Props> = ({ onClose, onSubmit }) => {
                     <div>
                         <label className="block text-sm font-medium mb-1 text-dark">Destino</label>
                         <input
-                            className="w-full border border-borderSoft rounded-md px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
+                            className="w-full border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
                             placeholder="Ej: Susinos"
                             value={destino}
                             onChange={(e) => setDestino(e.target.value)}
@@ -88,7 +88,8 @@ const RequestTravelModal: FC<Props> = ({ onClose, onSubmit }) => {
                             <label className="block text-sm font-medium mb-1 text-dark">Día</label>
                             <input
                                 type="date"
-                                className="w-full border border-borderSoft rounded-md px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
+                                className="w-full border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
+                                placeholder="Selecciona día"
                                 value={fecha}
                                 onChange={(e) => setFecha(e.target.value)}
                                 required
@@ -99,7 +100,8 @@ const RequestTravelModal: FC<Props> = ({ onClose, onSubmit }) => {
                             <label className="block text-sm font-medium mb-1 text-dark">Desde</label>
                             <input
                                 type="time"
-                                className="w-full border border-borderSoft rounded-md px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
+                                className="w-full border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
+                                placeholder="Selecciona hora"
                                 value={horaDesde}
                                 onChange={(e) => setHoraDesde(e.target.value)}
                                 required
@@ -110,7 +112,8 @@ const RequestTravelModal: FC<Props> = ({ onClose, onSubmit }) => {
                             <label className="block text-sm font-medium mb-1 text-dark">Hasta</label>
                             <input
                                 type="time"
-                                className="w-full border border-borderSoft rounded-md px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
+                                className="w-full border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
+                                placeholder="Selecciona hora"
                                 value={horaHasta}
                                 onChange={(e) => setHoraHasta(e.target.value)}
                                 required
@@ -121,7 +124,7 @@ const RequestTravelModal: FC<Props> = ({ onClose, onSubmit }) => {
                     <div>
                         <label className="block text-sm font-medium mb-1 text-dark">Notas (opcional)</label>
                         <textarea
-                            className="w-full border border-borderSoft rounded-md px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
+                            className="w-full border border-borderSoft rounded-lg px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
                             rows={3}
                             placeholder="Ej: Prefiero salir temprano"
                             value={notas}
