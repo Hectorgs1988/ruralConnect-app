@@ -18,15 +18,15 @@ const RequestTravelModal: FC<Props> = ({ onClose, onSubmit }) => {
 
     // Componente para inputs DATE/TIME con placeholder falso
 	    const DateTimeField = ({
-        type,
-        value,
-        placeholder,
-        onChange,
-    }: {
-        type: "date" | "time";
-        value: string;
-        placeholder: string;
-        onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+	        type,
+	        value,
+	        placeholder,
+	        onChange,
+	    }: {
+	        type: "date" | "time";
+	        value: string;
+	        placeholder: string;
+	        onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 	    }) => (
 	        <div className="relative w-full">
 	            <input
@@ -34,18 +34,18 @@ const RequestTravelModal: FC<Props> = ({ onClose, onSubmit }) => {
 	                value={value}
 	                onChange={onChange}
 	                className="
-	                    w-full h-11 rounded-full px-4 py-2 text-sm bg-surfaceMuted border border-borderSoft
-	                    focus:outline-none focus:ring-2 focus:ring-primary/60
-	                    [appearance:none] [-webkit-appearance:none]
-	                "
+		                    w-full h-11 rounded-full px-4 py-2 text-sm bg-surfaceMuted border border-borderSoft
+		                    focus:outline-none focus:ring-2 focus:ring-primary/60
+		                    [appearance:none] [-webkit-appearance:none]
+		                "
 	            />
-            {!value && (
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xs text-muted">
-                    {placeholder}
-                </span>
-            )}
-        </div>
-    );
+	            {!value && (
+	                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xs text-muted md:hidden">
+	                    {placeholder}
+	                </span>
+	            )}
+	        </div>
+	    );
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();

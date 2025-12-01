@@ -48,7 +48,8 @@
   }
 
   .rc-modal-overlay {
-    @apply fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 py-4 overflow-y-auto;
+	    @apply fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 py-4;
+	    overflow-y: hidden;
   }
 
   .rc-modal-panel {
