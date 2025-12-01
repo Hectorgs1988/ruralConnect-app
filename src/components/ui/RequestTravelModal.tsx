@@ -86,38 +86,56 @@ const RequestTravelModal: FC<Props> = ({ onClose, onSubmit }) => {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div className="sm:col-span-1">
                             <label className="block text-sm font-medium mb-1 text-dark">Día</label>
-                            <input
-                                type="date"
-                                className="w-full border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
-                                placeholder="Selecciona día"
-                                value={fecha}
-                                onChange={(e) => setFecha(e.target.value)}
-                                required
-                            />
+	                            <div className="relative">
+	                                <input
+	                                    type="date"
+	                                    className="w-full border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
+	                                    value={fecha}
+	                                    onChange={(e) => setFecha(e.target.value)}
+	                                    required
+	                                />
+	                                {!fecha && (
+	                                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xs text-muted">
+	                                        Selecciona día
+	                                    </span>
+	                                )}
+	                            </div>
                         </div>
 
                         <div className="sm:col-span-1">
                             <label className="block text-sm font-medium mb-1 text-dark">Desde</label>
-                            <input
-                                type="time"
-                                className="w-full border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
-                                placeholder="Selecciona hora"
-                                value={horaDesde}
-                                onChange={(e) => setHoraDesde(e.target.value)}
-                                required
-                            />
+	                            <div className="relative">
+	                                <input
+	                                    type="time"
+	                                    className="w-full border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
+	                                    value={horaDesde}
+	                                    onChange={(e) => setHoraDesde(e.target.value)}
+	                                    required
+	                                />
+	                                {!horaDesde && (
+	                                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xs text-muted">
+	                                        Selecciona hora
+	                                    </span>
+	                                )}
+	                            </div>
                         </div>
 
                         <div className="sm:col-span-1">
                             <label className="block text-sm font-medium mb-1 text-dark">Hasta</label>
-                            <input
-                                type="time"
-                                className="w-full border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
-                                placeholder="Selecciona hora"
-                                value={horaHasta}
-                                onChange={(e) => setHoraHasta(e.target.value)}
-                                required
-                            />
+	                            <div className="relative">
+	                                <input
+	                                    type="time"
+	                                    className="w-full border border-borderSoft rounded-full px-4 py-2 text-sm bg-surfaceMuted focus:outline-none focus:ring-2 focus:ring-primary/60"
+	                                    value={horaHasta}
+	                                    onChange={(e) => setHoraHasta(e.target.value)}
+	                                    required
+	                                />
+	                                {!horaHasta && (
+	                                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xs text-muted">
+	                                        Selecciona hora
+	                                    </span>
+	                                )}
+	                            </div>
                         </div>
                     </div>
 
