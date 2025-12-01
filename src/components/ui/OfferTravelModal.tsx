@@ -169,28 +169,40 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
                         </div>
                     </div>
 
-                    <div className="flex flex-col md:flex-row gap-4">
-                        <div className="md:w-1/2">
-                            <label className="text-sm text-dark block mb-1">Fecha</label>
-                            <Input
-                                type="date"
-                                placeholder="Selecciona fecha"
-                                value={fecha}
-                                onChange={(e) => setFecha(e.target.value)}
-                                className="rounded-full"
-                            />
-                        </div>
-                        <div className="md:w-1/2">
-                            <label className="text-sm text-dark block mb-1">Hora</label>
-                            <Input
-                                type="time"
-                                placeholder="Selecciona hora"
-                                value={hora}
-                                onChange={(e) => setHora(e.target.value)}
-                                className="rounded-full"
-                            />
-                        </div>
-                    </div>
+	                    <div className="flex flex-col md:flex-row gap-4">
+	                        <div className="md:w-1/2">
+	                            <label className="text-sm text-dark block mb-1">Fecha</label>
+	                            <div className="relative">
+	                                <Input
+	                                    type="date"
+	                                    value={fecha}
+	                                    onChange={(e) => setFecha(e.target.value)}
+	                                    className="rounded-full"
+	                                />
+	                                {!fecha && (
+	                                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xs text-muted">
+	                                        Selecciona fecha
+	                                    </span>
+	                                )}
+	                            </div>
+	                        </div>
+	                        <div className="md:w-1/2">
+	                            <label className="text-sm text-dark block mb-1">Hora</label>
+	                            <div className="relative">
+	                                <Input
+	                                    type="time"
+	                                    value={hora}
+	                                    onChange={(e) => setHora(e.target.value)}
+	                                    className="rounded-full"
+	                                />
+	                                {!hora && (
+	                                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xs text-muted">
+	                                        Selecciona hora
+	                                    </span>
+	                                )}
+	                            </div>
+	                        </div>
+	                    </div>
 
                     <div>
                         <label className="text-sm text-dark block mb-1">Plazas disponibles</label>
@@ -261,32 +273,44 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
                                     />
                                 </div>
                             </div>
-                            <div className="flex flex-col md:flex-row gap-4">
-                                <div className="md:w-1/2">
-                                    <label className="text-sm text-dark block mb-1">
-                                        Fecha (vuelta)
-                                    </label>
-                                    <Input
-                                        type="date"
-                                        placeholder="Selecciona fecha"
-                                        value={fechaVuelta}
-                                        onChange={(e) => setFechaVuelta(e.target.value)}
-                                        className="rounded-full"
-                                    />
-                                </div>
-                                <div className="md:w-1/2">
-                                    <label className="text-sm text-dark block mb-1">
-                                        Hora (vuelta)
-                                    </label>
-                                    <Input
-                                        type="time"
-                                        placeholder="Selecciona hora"
-                                        value={horaVuelta}
-                                        onChange={(e) => setHoraVuelta(e.target.value)}
-                                        className="rounded-full"
-                                    />
-                                </div>
-                            </div>
+	                            <div className="flex flex-col md:flex-row gap-4">
+	                                <div className="md:w-1/2">
+	                                    <label className="text-sm text-dark block mb-1">
+	                                        Fecha (vuelta)
+	                                    </label>
+	                                    <div className="relative">
+	                                        <Input
+	                                            type="date"
+	                                            value={fechaVuelta}
+	                                            onChange={(e) => setFechaVuelta(e.target.value)}
+	                                            className="rounded-full"
+	                                        />
+	                                        {!fechaVuelta && (
+	                                            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xs text-muted">
+	                                                Selecciona fecha
+	                                            </span>
+	                                        )}
+	                                    </div>
+	                                </div>
+	                                <div className="md:w-1/2">
+	                                    <label className="text-sm text-dark block mb-1">
+	                                        Hora (vuelta)
+	                                    </label>
+	                                    <div className="relative">
+	                                        <Input
+	                                            type="time"
+	                                            value={horaVuelta}
+	                                            onChange={(e) => setHoraVuelta(e.target.value)}
+	                                            className="rounded-full"
+	                                        />
+	                                        {!horaVuelta && (
+	                                            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xs text-muted">
+	                                                Selecciona hora
+	                                            </span>
+	                                        )}
+	                                    </div>
+	                                </div>
+	                            </div>
                         </div>
                     )}
 
