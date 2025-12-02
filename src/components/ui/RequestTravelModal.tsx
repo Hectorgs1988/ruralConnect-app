@@ -17,35 +17,42 @@ const RequestTravelModal: FC<Props> = ({ onClose, onSubmit }) => {
     const [notas, setNotas] = useState("");
 
     // Componente para inputs DATE/TIME con placeholder falso
-	    const DateTimeField = ({
-	        type,
-	        value,
-	        placeholder,
-	        onChange,
-	    }: {
-	        type: "date" | "time";
-	        value: string;
-	        placeholder: string;
-	        onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-	    }) => (
-	        <div className="relative w-full">
-	            <input
-	                type={type}
-	                value={value}
-	                onChange={onChange}
-	                className="
-		                    w-full h-11 rounded-full px-4 py-2 text-sm bg-surfaceMuted border border-borderSoft
-		                    focus:outline-none focus:ring-2 focus:ring-primary/60
-		                    [appearance:none] [-webkit-appearance:none]
-		                "
-	            />
-	            {!value && (
-	                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xs text-muted md:hidden">
-	                    {placeholder}
-	                </span>
-	            )}
-	        </div>
-	    );
+    const DateTimeField = ({
+    type,
+    value,
+    placeholder,
+    onChange,
+}: {
+    type: "date" | "time";
+    value: string;
+    placeholder: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) => {
+    const [focused, setFocused] = useState(false);
+    const showPlaceholder = !value && !focused;
+
+    return (
+        <div className="relative w-full">
+            <input
+                type={type}
+                value={value}
+                onChange={onChange}
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
+                className="
+                    w-full rounded-full px-4 py-2 text-sm bg-surfaceMuted border border-borderSoft
+                    focus:outline-none focus:ring-2 focus:ring-primary/60
+                    [appearance:none] [-webkit-appearance:none]
+                "
+            />
+            {showPlaceholder && (
+                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xs text-muted">
+                    {placeholder}
+                </span>
+            )}
+        </div>
+    );
+};
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();

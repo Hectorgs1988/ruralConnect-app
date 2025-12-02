@@ -102,35 +102,43 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
     };
 
     // Componente para fecha/hora con placeholder falso
-	    const DateTimeField = ({
-	        type,
-	        value,
-	        onChange,
-	        placeholder
-	    }: {
-	        type: "date" | "time";
-	        value: string;
-	        placeholder: string;
-	        onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-	    }) => (
-	        <div className="relative w-full mb-4">
-	            <input
-	                type={type}
-	                value={value}
-	                onChange={onChange}
-	                className="
-		                    w-full h-11 px-4 py-2 rounded-full bg-surfaceMuted border text-sm border-borderSoft
-		                    focus:outline-none focus:ring-2 focus:ring-primary/60
-		                    [appearance:none] [-webkit-appearance:none]
-		                "
-	            />
-	            {!value && (
-	                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted md:hidden">
-	                    {placeholder}
-	                </span>
-	            )}
-	        </div>
-	    );
+    const DateTimeField = ({
+    type,
+    value,
+    onChange,
+    placeholder,
+}: {
+    type: "date" | "time";
+    value: string;
+    placeholder: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) => {
+    const [focused, setFocused] = useState(false);
+
+    const showPlaceholder = !value && !focused;
+
+    return (
+        <div className="relative w-full mb-4">
+            <input
+                type={type}
+                value={value}
+                onChange={onChange}
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
+                className="
+                    w-full h-11 px-4 py-2 rounded-full bg-surfaceMuted border text-sm border-borderSoft
+                    focus:outline-none focus:ring-2 focus:ring-primary/60
+                    [appearance:none] [-webkit-appearance:none]
+                "
+            />
+            {showPlaceholder && (
+                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted">
+                    {placeholder}
+                </span>
+            )}
+        </div>
+    );
+};
 
     return (
         <div className="rc-modal-overlay" onClick={onClose}>
