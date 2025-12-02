@@ -1,6 +1,8 @@
 // src/components/ui/RequestTravelModal.tsx
 import { useState, type FC, type FormEvent } from "react";
 import Button from "@/components/ui/button";
+import DatePickerField from "./DatePickerField";
+import TimePickerField from "./TimePickerField";
 import type { SolicitudViajeCreateInput } from "@/types/SolicitudViaje";
 
 interface Props {
@@ -15,44 +17,6 @@ const RequestTravelModal: FC<Props> = ({ onClose, onSubmit }) => {
     const [horaDesde, setHoraDesde] = useState("");
     const [horaHasta, setHoraHasta] = useState("");
     const [notas, setNotas] = useState("");
-
-    // Componente para inputs DATE/TIME con placeholder falso
-    const DateTimeField = ({
-    type,
-    value,
-    placeholder,
-    onChange,
-}: {
-    type: "date" | "time";
-    value: string;
-    placeholder: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}) => {
-    const [focused, setFocused] = useState(false);
-    const showPlaceholder = !value && !focused;
-
-    return (
-        <div className="relative w-full">
-            <input
-                type={type}
-                value={value}
-                onChange={onChange}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
-                className="
-                    w-full rounded-full px-4 py-2 text-sm bg-surfaceMuted border border-borderSoft
-                    focus:outline-none focus:ring-2 focus:ring-primary/60
-                    [appearance:none] [-webkit-appearance:none]
-                "
-            />
-            {showPlaceholder && (
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xs text-muted">
-                    {placeholder}
-                </span>
-            )}
-        </div>
-    );
-};
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
@@ -127,34 +91,31 @@ const RequestTravelModal: FC<Props> = ({ onClose, onSubmit }) => {
                         {/* DÍA */}
                         <div>
                             <label className="block text-sm font-medium mb-1 text-dark">Día</label>
-                            <DateTimeField
-                                type="date"
-                                value={fecha}
-                                onChange={(e) => setFecha(e.target.value)}
-                                placeholder="Selecciona día"
-                            />
+	                            <DatePickerField
+	                                value={fecha}
+	                                onChange={setFecha}
+	                                placeholder="Selecciona día"
+	                            />
                         </div>
 
                         {/* DESDE */}
                         <div>
                             <label className="block text-sm font-medium mb-1 text-dark">Desde</label>
-                            <DateTimeField
-                                type="time"
-                                value={horaDesde}
-                                onChange={(e) => setHoraDesde(e.target.value)}
-                                placeholder="Selecciona hora"
-                            />
+	                            <TimePickerField
+	                                value={horaDesde}
+	                                onChange={setHoraDesde}
+	                                placeholder="Selecciona hora"
+	                            />
                         </div>
 
                         {/* HASTA */}
                         <div>
                             <label className="block text-sm font-medium mb-1 text-dark">Hasta</label>
-                            <DateTimeField
-                                type="time"
-                                value={horaHasta}
-                                onChange={(e) => setHoraHasta(e.target.value)}
-                                placeholder="Selecciona hora"
-                            />
+	                            <TimePickerField
+	                                value={horaHasta}
+	                                onChange={setHoraHasta}
+	                                placeholder="Selecciona hora"
+	                            />
                         </div>
                     </div>
 
