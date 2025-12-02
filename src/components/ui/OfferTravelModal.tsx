@@ -1,7 +1,9 @@
-import { useState, type FC } from "react";
+import { useState, type FC, type FormEvent } from "react";
 import Button from "./button";
 import Input from "./input";
 import Textarea from "./TextArea";
+import DatePickerField from "./DatePickerField";
+import TimePickerField from "./TimePickerField";
 
 interface OfferTravelPayload {
     from: string;
@@ -60,7 +62,7 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
     const [error, setError] = useState<string | null>(null);
     const [tipoViaje, setTipoViaje] = useState<"IDA" | "IDA_VUELTA">("IDA");
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setError(null);
 
@@ -100,45 +102,6 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
             setSending(false);
         }
     };
-
-    // Componente para fecha/hora con placeholder falso
-    const DateTimeField = ({
-    type,
-    value,
-    onChange,
-    placeholder,
-}: {
-    type: "date" | "time";
-    value: string;
-    placeholder: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}) => {
-    const [focused, setFocused] = useState(false);
-
-    const showPlaceholder = !value && !focused;
-
-    return (
-        <div className="relative w-full mb-4">
-            <input
-                type={type}
-                value={value}
-                onChange={onChange}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
-                className="
-                    w-full h-11 px-4 py-2 rounded-full bg-surfaceMuted border text-sm border-borderSoft
-                    focus:outline-none focus:ring-2 focus:ring-primary/60
-                    [appearance:none] [-webkit-appearance:none]
-                "
-            />
-            {showPlaceholder && (
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted">
-                    {placeholder}
-                </span>
-            )}
-        </div>
-    );
-};
 
     return (
         <div className="rc-modal-overlay" onClick={onClose}>
@@ -193,21 +156,19 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
                     <div className="flex flex-col md:flex-row gap-4">
                         <div className="md:w-1/2">
                             <label className="text-sm text-dark block mb-1">Fecha</label>
-                            <DateTimeField
-                                type="date"
-                                placeholder="Selecciona fecha"
+                            <DatePickerField
                                 value={fecha}
-                                onChange={(e) => setFecha(e.target.value)}
+                                onChange={setFecha}
+                                placeholder="Selecciona fecha"
                             />
                         </div>
 
                         <div className="md:w-1/2">
                             <label className="text-sm text-dark block mb-1">Hora</label>
-                            <DateTimeField
-                                type="time"
-                                placeholder="Selecciona hora"
+                            <TimePickerField
                                 value={hora}
-                                onChange={(e) => setHora(e.target.value)}
+                                onChange={setHora}
+                                placeholder="Selecciona hora"
                             />
                         </div>
                     </div>
@@ -287,21 +248,19 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
                             <div className="flex flex-col md:flex-row gap-4">
                                 <div className="md:w-1/2">
                                     <label className="text-sm text-dark block mb-1">Fecha (vuelta)</label>
-                                    <DateTimeField
-                                        type="date"
-                                        placeholder="Selecciona fecha"
+                                    <DatePickerField
                                         value={fechaVuelta}
-                                        onChange={(e) => setFechaVuelta(e.target.value)}
+                                        onChange={setFechaVuelta}
+                                        placeholder="Selecciona fecha"
                                     />
                                 </div>
 
                                 <div className="md:w-1/2">
                                     <label className="text-sm text-dark block mb-1">Hora (vuelta)</label>
-                                    <DateTimeField
-                                        type="time"
-                                        placeholder="Selecciona hora"
+                                    <TimePickerField
                                         value={horaVuelta}
-                                        onChange={(e) => setHoraVuelta(e.target.value)}
+                                        onChange={setHoraVuelta}
+                                        placeholder="Selecciona hora"
                                     />
                                 </div>
                             </div>
