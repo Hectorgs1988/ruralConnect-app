@@ -69,7 +69,6 @@ const DatePickerField: FC<DatePickerFieldProps> = ({ value, onChange, placeholde
         onClick={() => setOpen((v) => !v)}
       >
         <span className={value ? "text-dark" : "text-muted"}>{label}</span>
-        <span className="text-xs text-muted">📅</span>
       </button>
 
       {open && (
@@ -82,7 +81,7 @@ const DatePickerField: FC<DatePickerFieldProps> = ({ value, onChange, placeholde
                 setMonth(new Date(calendarYear, calendarMonthIndex - 1, 1))
               }
             >
-	              «
+              «
             </button>
             <span className="font-medium capitalize">{calendarLabel}</span>
             <button
@@ -92,7 +91,7 @@ const DatePickerField: FC<DatePickerFieldProps> = ({ value, onChange, placeholde
                 setMonth(new Date(calendarYear, calendarMonthIndex + 1, 1))
               }
             >
-	              »
+              »
             </button>
           </div>
 
