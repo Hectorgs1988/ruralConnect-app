@@ -3,6 +3,8 @@ import { useState } from "react";
 import Button from "./button";
 import Input from "./input";
 import Textarea from "./TextArea";
+import DatePickerField from "./DatePickerField";
+import TimePickerField from "./TimePickerField";
 import { useAuth } from "@/context/AuthContext";
 import { createEvento } from "@/api/eventos";
 
@@ -137,36 +139,31 @@ const NuevoEventoModal: FC<NuevoEventoModalProps> = ({ onClose, onCreated }) => 
                         </p>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="md:col-span-2">
+	                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+	                        <div className="md:col-span-2">
                             <label className="block text-sm font-medium mb-1">Titulo *</label>
                             <Input
                                 value={titulo}
                                 onChange={(e) => setTitulo(e.target.value)}
                                 placeholder="Titulo del evento"
-                                className="rounded-full"
+	                                className="rounded-md"
                             />
                         </div>
-                        <div>
+	                        <div className="md:col-span-2">
                             <label className="block text-sm font-medium mb-1">Fecha *</label>
-                            <Input
-                                type="date"
-                                value={fecha}
-                                onChange={(e) => setFecha(e.target.value)}
-                                placeholder="Selecciona fecha"
-                                className="rounded-full"
-                            />
+	                            <DatePickerField
+	                                value={fecha}
+	                                onChange={setFecha}
+	                                placeholder="Selecciona fecha"
+	                            />
                         </div>
-                        <div>
+	                        <div className="md:col-span-2">
                             <label className="block text-sm font-medium mb-1">Hora *</label>
-                            <Input
-                                type="time"
-                                value={hora}
-                                onChange={(e) => setHora(e.target.value)}
-                                step={300}
-                                placeholder="Selecciona hora"
-                                className="rounded-full"
-                            />
+	                            <TimePickerField
+	                                value={hora}
+	                                onChange={setHora}
+	                                placeholder="Selecciona hora"
+	                            />
                         </div>
                     </div>
 
@@ -177,7 +174,7 @@ const NuevoEventoModal: FC<NuevoEventoModalProps> = ({ onClose, onCreated }) => 
                                 value={lugar}
                                 onChange={(e) => setLugar(e.target.value)}
                                 placeholder="Lugar del evento"
-                                className="rounded-full"
+	                                className="rounded-md"
                             />
                         </div>
                         <div>
@@ -188,7 +185,7 @@ const NuevoEventoModal: FC<NuevoEventoModalProps> = ({ onClose, onCreated }) => 
                                 value={aforo}
                                 onChange={(e) => setAforo(e.target.value)}
                                 placeholder="Numero de plazas"
-                                className="rounded-full"
+	                                className="rounded-md"
                             />
                         </div>
                     </div>

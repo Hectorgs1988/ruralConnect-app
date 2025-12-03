@@ -65,7 +65,7 @@ const DatePickerField: FC<DatePickerFieldProps> = ({ value, onChange, placeholde
     <div className="w-full">
       <button
         type="button"
-        className="w-full h-11 px-4 rounded-full border border-borderSoft bg-surfaceMuted text-sm text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-primary/60"
+        className="w-full h-11 px-4 rounded-md border border-borderSoft bg-surfaceMuted text-sm text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-primary/60"
         onClick={() => setOpen((v) => !v)}
       >
         <span className={value ? "text-dark" : "text-muted"}>{label}</span>

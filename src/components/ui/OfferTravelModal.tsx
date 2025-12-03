@@ -138,7 +138,6 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
                                 placeholder="Ej: Burgos"
                                 value={origen}
                                 onChange={(e) => setOrigen(e.target.value)}
-                                className="rounded-full"
                             />
                         </div>
                         <div className="md:w-1/2">
@@ -147,14 +146,14 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
                                 placeholder="Ej: Susinos"
                                 value={destino}
                                 onChange={(e) => setDestino(e.target.value)}
-                                className="rounded-full"
                             />
                         </div>
                     </div>
 
                     {/* FECHA - HORA */}
-                    <div className="flex flex-col md:flex-row gap-4">
-                        <div className="md:w-1/2">
+                    {/* En escritorio, dejamos la fecha en una fila y la hora debajo para dar aire al calendario. */}
+                    <div className="space-y-3">
+                        <div>
                             <label className="text-sm text-dark block mb-1">Fecha</label>
                             <DatePickerField
                                 value={fecha}
@@ -163,7 +162,7 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
                             />
                         </div>
 
-                        <div className="md:w-1/2">
+                        <div>
                             <label className="text-sm text-dark block mb-1">Hora</label>
                             <TimePickerField
                                 value={hora}
@@ -182,7 +181,6 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
                             placeholder="Ej: 3"
                             value={plazas}
                             onChange={(e) => setPlazas(e.target.value)}
-                            className="rounded-full"
                         />
                     </div>
 
@@ -228,7 +226,6 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
                                         placeholder="Ej: Susinos"
                                         value={origenVuelta}
                                         onChange={(e) => setOrigenVuelta(e.target.value)}
-                                        className="rounded-full"
                                     />
                                 </div>
 
@@ -240,13 +237,12 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
                                         placeholder="Ej: Burgos"
                                         value={destinoVuelta}
                                         onChange={(e) => setDestinoVuelta(e.target.value)}
-                                        className="rounded-full"
                                     />
                                 </div>
                             </div>
 
-                            <div className="flex flex-col md:flex-row gap-4">
-                                <div className="md:w-1/2">
+                            <div className="space-y-3">
+                                <div>
                                     <label className="text-sm text-dark block mb-1">Fecha (vuelta)</label>
                                     <DatePickerField
                                         value={fechaVuelta}
@@ -255,7 +251,7 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
                                     />
                                 </div>
 
-                                <div className="md:w-1/2">
+                                <div>
                                     <label className="text-sm text-dark block mb-1">Hora (vuelta)</label>
                                     <TimePickerField
                                         value={horaVuelta}
