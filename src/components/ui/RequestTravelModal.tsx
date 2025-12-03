@@ -87,35 +87,38 @@ const RequestTravelModal: FC<Props> = ({ onClose, onSubmit }) => {
                     </div>
 
                     {/* FECHA / HORARIOS */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {/* Día en una fila completa, horas en otra fila para escritorio. En móvil sigue todo apilado. */}
+                    <div className="space-y-3">
                         {/* DÍA */}
                         <div>
                             <label className="block text-sm font-medium mb-1 text-dark">Día</label>
-	                            <DatePickerField
-	                                value={fecha}
-	                                onChange={setFecha}
-	                                placeholder="Selecciona día"
-	                            />
+                            <DatePickerField
+                                value={fecha}
+                                onChange={setFecha}
+                                placeholder="Selecciona día"
+                            />
                         </div>
 
-                        {/* DESDE */}
-                        <div>
-                            <label className="block text-sm font-medium mb-1 text-dark">Desde</label>
-	                            <TimePickerField
-	                                value={horaDesde}
-	                                onChange={setHoraDesde}
-	                                placeholder="Selecciona hora"
-	                            />
-                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {/* DESDE */}
+                            <div>
+                                <label className="block text-sm font-medium mb-1 text-dark">Desde</label>
+                                <TimePickerField
+                                    value={horaDesde}
+                                    onChange={setHoraDesde}
+                                    placeholder="Selecciona hora"
+                                />
+                            </div>
 
-                        {/* HASTA */}
-                        <div>
-                            <label className="block text-sm font-medium mb-1 text-dark">Hasta</label>
-	                            <TimePickerField
-	                                value={horaHasta}
-	                                onChange={setHoraHasta}
-	                                placeholder="Selecciona hora"
-	                            />
+                            {/* HASTA */}
+                            <div>
+                                <label className="block text-sm font-medium mb-1 text-dark">Hasta</label>
+                                <TimePickerField
+                                    value={horaHasta}
+                                    onChange={setHoraHasta}
+                                    placeholder="Selecciona hora"
+                                />
+                            </div>
                         </div>
                     </div>
 
