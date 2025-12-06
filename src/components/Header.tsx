@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 
 const navItems = [
     { to: "/inicio", label: "Inicio" },
+    { to: "/Eventos", label: "Eventos" },
     { to: "/ReservarEspacio", label: "Reservar Espacio" },
     { to: "/CompartirCoche", label: "Compartir Coche" },
     { to: "/AsociacionMosquitos", label: "Descubre Rural Connect" },
@@ -32,8 +33,8 @@ const Header: FC = () => {
                 {/* DESKTOP: logo + saludo + menú + logout */}
                 <div className="hidden md:flex items-center justify-between">
                     {/* Logo + saludo */}
-                    <div className="flex items-center gap-6">
-                        <Link to="/inicio" className="flex items-center gap-2">
+                    <div className="flex items-center gap-4">
+                        <Link to="/inicio" className="flex items-center gap-2 shrink-0">
                             <img
                                 src={logo}
                                 alt="Logo"
@@ -41,10 +42,10 @@ const Header: FC = () => {
                             />
                         </Link>
 
-                        <div className="flex-1 ml-3 text-xs text-muted">
+                        <div className="ml-3 text-xs text-muted whitespace-nowrap">
                             {user && firstName && (
                                 <>
-                                    <span className="text-base font-semibold">Hola,</span>{" "}
+                                    <span className="text-base font-bold">Hola,</span>{" "}
                                     <span className="text-base font-bold">{firstName}</span>
                                 </>
                             )}
@@ -53,7 +54,7 @@ const Header: FC = () => {
                     </div>
 
                     {/* Menú centro */}
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-3 lg:space-x-4">
                         {navItems.map((item) => (
                             <Link
                                 key={item.to}
@@ -100,7 +101,7 @@ const Header: FC = () => {
                     <div className="flex-1 ml-3 text-xs text-muted">
                         {user && firstName && (
                             <>
-                                <span className="text-base font-semibold">Hola,</span>{" "}
+                                <span className="text-base font-bold">Hola,</span>{" "}
                                 <span className="text-base font-bold">{firstName}</span>
                             </>
                         )}
