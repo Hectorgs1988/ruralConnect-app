@@ -10,7 +10,7 @@ const PanelAdmin: FC = () => {
         <div className="rc-page">
             <Header />
 
-            <main className="flex-1 rc-shell py-10 space-y-8">
+            <main className="flex-1 rc-shell py-10 space-y-10">
                 <h1 className="rc-hero-title">
                     Panel de administración de la asociación
                 </h1>
@@ -18,7 +18,7 @@ const PanelAdmin: FC = () => {
                     Gestión integral de la asociación
                 </p>
 
-                <div className="flex flex-col md:flex-row gap-6 justify-center mb-6">
+                <div className="grid gap-6 md:grid-cols-3 mb-10">
                     <ActionCard
                         icon={<Users size={36} className="text-black/90" />}
                         title="Gestión de socios"
