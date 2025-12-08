@@ -38,8 +38,9 @@ const ReservasEspacio = () => {
                 if (!alive) return;
                 setError(err?.message ?? "Error al cargar los espacios");
             } finally {
-                if (!alive) return;
-                setLoading(false);
+                if (alive){
+                    setLoading(false);
+                }
             }
         };
 

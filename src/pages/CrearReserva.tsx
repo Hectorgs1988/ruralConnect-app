@@ -14,6 +14,9 @@ type LocationState = { espacio: Espacio };
 export const STEP_MIN = 30;
 export const MIN_DURATION = 60;
 
+type DayInterval = { s: number; e: number };
+type DayIntervalsByDate = Record<string, DayInterval[]>;
+
 export const toMinutes = (hhmm: string) => {
     const [h, m] = hhmm.split(":").map(Number);
     return h * 60 + m;
@@ -51,6 +54,92 @@ export function buildTimeOptions(step = STEP_MIN) {
 
 export function toIsoLocal(dateStr: string, timeStr: string) {
     return new Date(`${dateStr}T${timeStr}`).toISOString();
+}
+
+function getMonthRangeIso(monthDate: Date): { desde: string; hasta: string } {
+	const firstDay = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+	const lastDay = new Date(
+		monthDate.getFullYear(),
+		monthDate.getMonth() + 1,
+		0
+	);
+
+	const desde = new Date(
+		firstDay.getFullYear(),
+		firstDay.getMonth(),
+		firstDay.getDate(),
+		0,
+		0,
+		0
+	).toISOString();
+
+	const hasta = new Date(
+		lastDay.getFullYear(),
+		lastDay.getMonth(),
+		lastDay.getDate(),
+		23,
+		59,
+		59
+	).toISOString();
+
+	return { desde, hasta };
+}
+
+function buildDayIntervalsByDate(reservas: Reserva[]): DayIntervalsByDate {
+	const byDate: DayIntervalsByDate = {};
+	for (const r of reservas) {
+		if (r.estado === "CANCELADA") continue;
+		const s = new Date(r.inicio);
+		const e = new Date(r.fin);
+		const key = formatDateKey(s);
+		const interval: DayInterval = {
+			s: s.getHours() * 60 + s.getMinutes(),
+			e: e.getHours() * 60 + e.getMinutes(),
+		};
+		if (!byDate[key]) byDate[key] = [];
+		byDate[key].push(interval);
+	}
+	return byDate;
+}
+
+function mergeIntervals(intervals: DayInterval[]): DayInterval[] {
+	const sorted = intervals
+		.filter((x) => x.e > x.s)
+		.sort((a, b) => a.s - b.s);
+	const merged: DayInterval[] = [];
+	for (const it of sorted) {
+		const last = merged[merged.length - 1];
+		if (!last || it.s > last.e) merged.push({ ...it });
+		else last.e = Math.max(last.e, it.e);
+	}
+	return merged;
+}
+
+function isFullDay(merged: DayInterval[]): boolean {
+	let lastEnd = 0;
+	let hasGap = false;
+	for (const iv of merged) {
+		if (iv.s - lastEnd >= MIN_DURATION) {
+			hasGap = true;
+			break;
+		}
+		lastEnd = Math.max(lastEnd, iv.e);
+	}
+	if (!hasGap && 24 * 60 - lastEnd < MIN_DURATION) {
+		return true;
+	}
+	return false;
+}
+
+function computeFullDays(byDate: DayIntervalsByDate): Record<string, true> {
+	const full: Record<string, true> = {};
+	for (const [key, list] of Object.entries(byDate)) {
+		const merged = mergeIntervals(list);
+		if (isFullDay(merged)) {
+			full[key] = true;
+		}
+	}
+	return full;
 }
 
 export default function CrearReserva() {
@@ -125,81 +214,16 @@ export default function CrearReserva() {
     async function reloadCalendarMonth(monthDate: Date, espacioId: string) {
         try {
             setLoadingCalendar(true);
-            const firstDay = new Date(
-                monthDate.getFullYear(),
-                monthDate.getMonth(),
-                1
-            );
-            const lastDay = new Date(
-                monthDate.getFullYear(),
-                monthDate.getMonth() + 1,
-                0
-            );
+			const { desde, hasta } = getMonthRangeIso(monthDate);
+			const data = await listReservas(
+				{ espacioId, desde, hasta },
+				token ?? undefined
+			);
 
-            const desde = new Date(
-                firstDay.getFullYear(),
-                firstDay.getMonth(),
-                firstDay.getDate(),
-                0,
-                0,
-                0
-            ).toISOString();
-            const hasta = new Date(
-                lastDay.getFullYear(),
-                lastDay.getMonth(),
-                lastDay.getDate(),
-                23,
-                59,
-                59
-            ).toISOString();
+			const byDate = buildDayIntervalsByDate(data);
+			const full = computeFullDays(byDate);
 
-            const data = await listReservas(
-                { espacioId, desde, hasta },
-                token ?? undefined
-            );
-
-            const activas = data.filter((r) => r.estado !== "CANCELADA");
-            const byDate: Record<string, Array<{ s: number; e: number }>> = {};
-
-            for (const r of activas) {
-                const s = new Date(r.inicio);
-                const e = new Date(r.fin);
-                const key = formatDateKey(s);
-                const interval = {
-                    s: s.getHours() * 60 + s.getMinutes(),
-                    e: e.getHours() * 60 + e.getMinutes(),
-                };
-                if (!byDate[key]) byDate[key] = [];
-                byDate[key].push(interval);
-            }
-
-            const full: Record<string, true> = {};
-            for (const [key, list] of Object.entries(byDate)) {
-                const sorted = list
-                    .filter((x) => x.e > x.s)
-                    .sort((a, b) => a.s - b.s);
-                const merged: Array<{ s: number; e: number }> = [];
-                for (const it of sorted) {
-                    const last = merged[merged.length - 1];
-                    if (!last || it.s > last.e) merged.push({ ...it });
-                    else last.e = Math.max(last.e, it.e);
-                }
-
-                let lastEnd = 0;
-                let hasGap = false;
-                for (const iv of merged) {
-                    if (iv.s - lastEnd >= MIN_DURATION) {
-                        hasGap = true;
-                        break;
-                    }
-                    lastEnd = Math.max(lastEnd, iv.e);
-                }
-                if (!hasGap && 24 * 60 - lastEnd < MIN_DURATION) {
-                    full[key] = true;
-                }
-            }
-
-            setFullDays(full);
+			setFullDays(full);
         } catch (e: any) {
             setError(e.message ?? "Error cargando disponibilidad del mes");
         } finally {

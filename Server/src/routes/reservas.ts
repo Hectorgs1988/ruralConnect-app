@@ -24,10 +24,10 @@ reservasRouter.get("/", async (req, res, next) => {
 
         // Rango de día/periodo (opcional)
         if (q.desde) {
-            where.inicio = { ...(where.inicio ?? {}), gte: new Date(q.desde) };
+            where.inicio = { ...where.inicio, gte: new Date(q.desde) };
         }
         if (q.hasta) {
-            where.fin = { ...(where.fin ?? {}), lte: new Date(q.hasta) };
+            where.fin = { ...where.fin, lte: new Date(q.hasta) };
         }
 
         const reservas = await prisma.reserva.findMany({
@@ -57,17 +57,17 @@ reservasRouter.post('/', requireAuth, async (req, res, next) => {
         const user = (req as any).user;
         const userId: string = user.sub;
 
-	    // solapes (ignorando reservas canceladas)
-	    const solape = await prisma.reserva.findFirst({
-	        where: {
-	            espacioId: body.espacioId,
-	            estado: { not: "CANCELADA" },
-	            AND: [
-	                { inicio: { lt: body.fin } },
-	                { fin: { gt: body.inicio } },
-	            ],
-	        },
-	    });
+        // solapes (ignorando reservas canceladas)
+        const solape = await prisma.reserva.findFirst({
+            where: {
+                espacioId: body.espacioId,
+                estado: { not: "CANCELADA" },
+                AND: [
+                    { inicio: { lt: body.fin } },
+                    { fin: { gt: body.inicio } },
+                ],
+            },
+        });
         if (solape) return res.status(409).json({ error: 'Horario no disponible' });
 
         const r = await prisma.reserva.create({
@@ -120,42 +120,42 @@ reservasRouter.patch("/:id", async (req, res, next) => {
         if (!["PENDIENTE", "CONFIRMADA", "CANCELADA"].includes(estado))
             return res.status(400).json({ error: "Estado no válido" });
 
-	    const r = await prisma.reserva.update({
-	        where: { id },
-	        data: { estado },
-	        include: {
-	            User: { select: { email: true, name: true } },
-	            Espacio: { select: { nombre: true } },
-	        },
-	    });
+        const r = await prisma.reserva.update({
+            where: { id },
+            data: { estado },
+            include: {
+                User: { select: { email: true, name: true } },
+                Espacio: { select: { nombre: true } },
+            },
+        });
 
-	    // Enviar email al usuario cuando cancela la reserva
-	    if (estado === "CANCELADA" && r.User?.email && r.Espacio) {
-	        try {
-	            await sendReservationCancelledEmail({
-	                to: r.User.email,
-	                name: r.User.name,
-	                espacioNombre: r.Espacio.nombre,
-	                inicio: r.inicio,
-	                fin: r.fin,
-	            });
-	        } catch (err) {
-	            console.error(
-	                "Error enviando email de cancelación de reserva:",
-	                err,
-	            );
-	        }
-	    }
+        // Enviar email al usuario cuando cancela la reserva
+        if (estado === "CANCELADA" && r.User?.email && r.Espacio) {
+            try {
+                await sendReservationCancelledEmail({
+                    to: r.User.email,
+                    name: r.User.name,
+                    espacioNombre: r.Espacio.nombre,
+                    inicio: r.inicio,
+                    fin: r.fin,
+                });
+            } catch (err) {
+                console.error(
+                    "Error enviando email de cancelación de reserva:",
+                    err,
+                );
+            }
+        }
 
-	    // Devolvemos la reserva sin los datos anidados para mantener el tipo ligero
-	    res.json({
-	        id: r.id,
-	        usuarioId: r.usuarioId,
-	        espacioId: r.espacioId,
-	        inicio: r.inicio,
-	        fin: r.fin,
-	        estado: r.estado,
-	    });
+        // Devolvemos la reserva sin los datos anidados para mantener el tipo ligero
+        res.json({
+            id: r.id,
+            usuarioId: r.usuarioId,
+            espacioId: r.espacioId,
+            inicio: r.inicio,
+            fin: r.fin,
+            estado: r.estado,
+        });
     } catch (e) {
         next(e);
     }
