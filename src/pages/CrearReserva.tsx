@@ -11,35 +11,35 @@ import type { ApiReserva as Reserva } from "@/api/reservas";
 
 type LocationState = { espacio: Espacio };
 
-const STEP_MIN = 30;
-const MIN_DURATION = 60;
+export const STEP_MIN = 30;
+export const MIN_DURATION = 60;
 
-const toMinutes = (hhmm: string) => {
+export const toMinutes = (hhmm: string) => {
     const [h, m] = hhmm.split(":").map(Number);
     return h * 60 + m;
 };
 
-const fromMinutes = (mins: number) => {
+export const fromMinutes = (mins: number) => {
     const clamp = Math.max(0, Math.min(24 * 60 - STEP_MIN, mins));
     const h = Math.floor(clamp / 60);
     const m = clamp % 60;
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 };
 
-const addMinutes = (hhmm: string, mins: number) => {
+export const addMinutes = (hhmm: string, mins: number) => {
     const val = toMinutes(hhmm) + mins;
-    if (val > 24 * 60) return null;
+    if (val >= 24 * 60) return null;
     return fromMinutes(val);
 };
 
-const formatDateKey = (d: Date) => {
+export const formatDateKey = (d: Date) => {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
     return `${y}-${m}-${day}`;
 };
 
-function buildTimeOptions(step = STEP_MIN) {
+export function buildTimeOptions(step = STEP_MIN) {
     const out: string[] = [];
     for (let h = 0; h < 24; h++) {
         for (let m = 0; m < 60; m += step) {
@@ -49,7 +49,7 @@ function buildTimeOptions(step = STEP_MIN) {
     return out;
 }
 
-function toIsoLocal(dateStr: string, timeStr: string) {
+export function toIsoLocal(dateStr: string, timeStr: string) {
     return new Date(`${dateStr}T${timeStr}`).toISOString();
 }
 
