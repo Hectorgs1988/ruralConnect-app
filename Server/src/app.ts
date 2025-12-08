@@ -7,8 +7,8 @@ import { api } from "./routes/index.js";
 // Swagger
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
-import path from "path";
-import { fileURLToPath } from "url";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 // Necesario para obtener __dirname en ESM
 const __filename = fileURLToPath(import.meta.url);
