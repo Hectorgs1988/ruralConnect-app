@@ -13,8 +13,8 @@ export default defineConfig({
 		environment: 'jsdom',
 		setupFiles: './src/test/setup.ts',
 		globals: true,
-		// Solo queremos que `npm test` ejecute los tests del front.
-		// Excluimos los E2E de Playwright y los tests del backend (`Server`).
+
+		
 		exclude: [
 			...configDefaults.exclude,
 			'tests/e2e/**',
