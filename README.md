@@ -10,36 +10,8 @@ Proyecto desarrollado con:
 - **ORM:** Prisma  
 - **Infraestructura:** Docker + Docker Compose  
 
-
 ---
 
-## ⚙️ Estructura del proyecto
-
-```text
-ruralConnect-app/
-├── docker-compose.yml
-├── .env.example
-│
-├── Server/
-│   ├── prisma/
-│   │   ├── schema.prisma
-│   │   └── migrations/
-│   ├── docker-entrypoint.sh
-│   ├── Dockerfile
-│   ├── package.json
-│   ├── .env.example
-│
-└── src/
-    ├── components/
-    ├── context/
-    ├── api/
-    ├── assets/
-    ├── pages/
-    ├── services/
-    └── ...
-```
-
----
 
 # 🔑 1. Variables de entorno
 
@@ -184,14 +156,6 @@ npm start
 npm install
 npm run build
 npm run preview
-```
-
-Para producción real, servir `/dist` con un servidor estático (Nginx, Apache, Vercel…).
-
-Actualizar:
-
-```env
-FRONTEND_ORIGIN=https://tu-dominio.com
 ```
 
 ---

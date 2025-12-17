@@ -3,16 +3,16 @@ import Footer from '@/components/Footer';
 
 const AsociacionMosquitos = () => {
     return (
-        <div className="min-h-screen bg-background text-black flex flex-col">
+        <div className="rc-page">
             <Header />
 
-            <main className="flex-grow container mx-auto px-4 py-8">
-                <h2 className="text-3xl font-bold text-center mb-2">Conoce Rural Connect</h2>
-                <p className="text-center text-gray-700 mb-8">
+            <main className="flex-1 rc-shell py-10">
+                <h2 className="rc-hero-title text-center mb-2">Conoce Rural Connect</h2>
+                <p className="rc-hero-subtitle text-center mb-8">
                     Historia e información sobre nuestra peña
                 </p>
 
-                <section className="max-w-3xl mx-auto space-y-4 text-gray-800 leading-relaxed">
+                <section className="rc-card-section max-w-3xl mx-auto space-y-4 text-gray-800 leading-relaxed">
                     <p>
                         La despoblación y el envejecimiento de la población en zonas rurales de España, conocido como la
                         “España vaciada”, plantea importantes retos sociales y de convivencia. En este contexto, las
