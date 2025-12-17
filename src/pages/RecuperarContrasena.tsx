@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Button from "@/components/ui/button";
-import Input from "@/components/ui/input";
 import { resetPassword } from "@/api/auth";
 
 const RecuperarContrasena = () => {
@@ -14,6 +13,8 @@ const RecuperarContrasena = () => {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -69,18 +70,40 @@ const RecuperarContrasena = () => {
                     onSubmit={handleSubmit}
                     className="bg-white p-6 rounded-lg shadow-md w-full max-w-sm space-y-3"
                 >
-                    <Input
-                        type="password"
-                        placeholder="Nueva contraseña"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                    />
-                    <Input
-                        type="password"
-                        placeholder="Repite la nueva contraseña"
-                        value={confirm}
-                        onChange={(e) => setConfirm(e.target.value)}
-                    />
+                    <div className="w-full mb-4 relative">
+                        <input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Nueva contraseña"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full px-4 py-2 bg-surfaceMuted border text-sm border-borderSoft focus:outline-none focus:ring-2 focus:ring-primary/60 rounded-md pr-16"
+                            autoComplete="new-password"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword((prev) => !prev)}
+                            className="absolute inset-y-0 right-3 flex items-center text-xs text-muted hover:text-dark"
+                        >
+                            {showPassword ? "Ocultar" : "Mostrar"}
+                        </button>
+                    </div>
+                    <div className="w-full mb-4 relative">
+                        <input
+                            type={showConfirm ? "text" : "password"}
+                            placeholder="Repite la nueva contraseña"
+                            value={confirm}
+                            onChange={(e) => setConfirm(e.target.value)}
+                            className="w-full px-4 py-2 bg-surfaceMuted border text-sm border-borderSoft focus:outline-none focus:ring-2 focus:ring-primary/60 rounded-md pr-16"
+                            autoComplete="new-password"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowConfirm((prev) => !prev)}
+                            className="absolute inset-y-0 right-3 flex items-center text-xs text-muted hover:text-dark"
+                        >
+                            {showConfirm ? "Ocultar" : "Mostrar"}
+                        </button>
+                    </div>
 
                     {error && (
                         <p className="text-red-600 text-sm mb-1">{error}</p>

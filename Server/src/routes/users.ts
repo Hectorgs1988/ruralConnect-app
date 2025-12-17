@@ -39,6 +39,32 @@ const escapeCsvField = (value: unknown): string => {
     return s;
 };
 
+// --- Helpers para reducir complejidad cognitiva en PATCH /:id ---
+type CurrentUser = { sub: string; role: 'ADMIN' | 'SOCIO' };
+type UpdateBody = { name?: string; phone?: string; email?: string; password?: string; isActive?: boolean; role?: 'ADMIN' | 'SOCIO' };
+
+const validateSelfModification = (
+    current: CurrentUser,
+    targetId: string,
+    body: UpdateBody
+): string | null => {
+    if (current.sub !== targetId) return null;
+    if (body.isActive === false) return 'No puedes desactivar tu propia cuenta';
+    if (body.role && body.role !== 'ADMIN') return 'No puedes cambiar tu propio rol a no-ADMIN';
+    return null;
+};
+
+const buildUpdateData = async (body: UpdateBody): Promise<Record<string, unknown>> => {
+    const data: Record<string, unknown> = {};
+    if (body.name !== undefined) data.name = body.name;
+    if (body.phone !== undefined) data.phone = body.phone;
+    if (body.email !== undefined) data.email = toEmail(body.email);
+    if (body.password) data.password = await bcrypt.hash(body.password, SALT_ROUNDS);
+    if (body.isActive !== undefined) data.isActive = body.isActive;
+    if (body.role) data.role = body.role;
+    return data;
+};
+
 
 // --- GET /api/usuarios  ------------------------------------------------------
 // ?q=texto&role=ADMIN|SOCIO&active=true|false&page=1&size=10
@@ -200,35 +226,19 @@ usersRouter.patch('/:id', requireAuth, requireAdmin, async (req, res, next) => {
     try {
         const body = updateUserSchema.parse(req.body);
         const targetId = req.params.id;
-        const current = (req as any).user as { sub: string; role: 'ADMIN' | 'SOCIO' };
+        const current = (req as any).user as CurrentUser;
 
         // Protege que un admin no se auto-desactive o auto-degrade
-        if (current.sub === targetId) {
-            if (typeof body.isActive !== 'undefined' && body.isActive === false) {
-                return res
-                    .status(400)
-                    .json({ error: 'No puedes desactivar tu propia cuenta' });
-            }
-            if (body.role && body.role !== 'ADMIN') {
-                return res
-                    .status(400)
-                    .json({ error: 'No puedes cambiar tu propio rol a no-ADMIN' });
-            }
+        const validationError = validateSelfModification(current, targetId, body);
+        if (validationError) {
+            return res.status(400).json({ error: validationError });
         }
 
-        const data: any = {};
-        if (body.name !== undefined) data.name = body.name;
-        if (body.phone !== undefined) data.phone = body.phone;
-
-        if (body.email !== undefined) data.email = toEmail(body.email);
-        if (body.password) data.password = await bcrypt.hash(body.password, SALT_ROUNDS);
-
-        if (typeof body.isActive !== 'undefined') data.isActive = body.isActive;
-        if (body.role) data.role = body.role; // permitido porque requiere ADMIN
+        const data = await buildUpdateData(body);
 
         // Si intenta cambiar el email a uno ya existente, que falle como 409
         if (data.email) {
-            const exists = await prisma.user.findUnique({ where: { email: data.email } });
+            const exists = await prisma.user.findUnique({ where: { email: data.email as string } });
             if (exists && exists.id !== targetId) {
                 return res.status(409).json({ error: 'Email already registered' });
             }

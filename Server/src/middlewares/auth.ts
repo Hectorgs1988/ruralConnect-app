@@ -1,10 +1,6 @@
-// src/middlewares/auth.ts
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../config/jwt.js";
-
-
-//const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
     const h = req.headers.authorization || "";

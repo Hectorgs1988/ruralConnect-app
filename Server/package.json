@@ -10,7 +10,8 @@
         "migrate": "prisma migrate dev",
         "prisma": "prisma",
         "seed:admin": "tsx src/scripts/seed-admin.ts",
-        "seed:socio": "tsx src/scripts/seed-socio.ts"
+        "seed:socio": "tsx src/scripts/seed-socio.ts",
+        "test": "vitest"
     },
     "dependencies": {
         "@prisma/client": "^6.17.0",
@@ -33,10 +34,13 @@
         "@types/jsonwebtoken": "^9.0.10",
         "@types/morgan": "^1.9.10",
         "@types/node": "^20.11.30",
+        "@types/supertest": "^6.0.3",
         "@types/swagger-ui-express": "^4.1.8",
         "@types/yamljs": "^0.2.34",
         "prisma": "^6.17.0",
+        "supertest": "^7.1.4",
         "tsx": "^4.11.0",
-        "typescript": "^5.4.2"
+        "typescript": "^5.4.2",
+        "vitest": "^4.0.15"
     }
 }

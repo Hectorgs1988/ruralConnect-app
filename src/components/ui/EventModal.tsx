@@ -21,6 +21,43 @@ interface EventModalProps {
 	};
 }
 
+type CountValidationMessages = {
+	empty: string;
+	invalid: string;
+};
+
+const getAuthOrEventError = (
+	token: string | null | undefined,
+	eventId?: string
+): string | null => {
+	if (!token) {
+		return "Debes iniciar sesión para apuntarte a un evento.";
+	}
+	if (!eventId) {
+		return "No se ha podido identificar el evento.";
+	}
+	return null;
+};
+
+const getEffectiveName = (inputName: string, userName?: string | null): string => {
+	return (inputName || userName || "").trim();
+};
+
+const validateAndParseCount = (
+	rawCount: string,
+	messages: CountValidationMessages
+): { count: number | null; error: string | null } => {
+	const trimmed = rawCount.trim();
+	if (!trimmed) {
+		return { count: null, error: messages.empty };
+	}
+	const value = Number(trimmed);
+	if (!Number.isFinite(value) || value < 1) {
+		return { count: null, error: messages.invalid };
+	}
+	return { count: value, error: null };
+};
+
 const EventModal: FC<EventModalProps> = ({ onClose, onUpdate, event }) => {
 	const [name, setName] = useState("");
 	const [peopleCount, setPeopleCount] = useState(
@@ -45,91 +82,85 @@ const EventModal: FC<EventModalProps> = ({ onClose, onUpdate, event }) => {
 		}
 	}, [user]);
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		setError(null);
-
-		if (!token) {
-			setError("Debes iniciar sesión para apuntarte a un evento.");
-			return;
-		}
-
-		if (!event.id) {
-			setError("No se ha podido identificar el evento.");
-			return;
-		}
-
-		const countStr = peopleCount.trim();
-
-		// Si ya está inscrito, solo necesita el número de asistentes
-		if (isJoined) {
-			if (!countStr) {
-				setError("Indica el número de asistentes.");
+		const handleSubmit = async (e: React.FormEvent) => {
+			e.preventDefault();
+			setError(null);
+	
+			const authError = getAuthOrEventError(token, event.id);
+			if (authError) {
+				setError(authError);
+				return;
+			}
+	
+			if (isJoined) {
+				const { error } = validateAndParseCount(peopleCount, {
+					empty: "Indica el número de asistentes.",
+					invalid: "El número de asistentes debe ser al menos 1.",
+				});
+	
+				if (error) {
+					setError(error);
+					setConfirmStep(false);
+					return;
+				}
+	
+				setConfirmStep(false);
+				setShowConfirmUpdate(true);
+				return;
+			}
+	
+			// Si no está inscrito, necesita número y, si no hay nombre en el campo,
+			// usaremos el nombre del usuario logueado si existe.
+			const effectiveName = getEffectiveName(name, user?.name);
+			if (!effectiveName) {
+				setError("Rellena tu nombre y el número de asistentes.");
 				setConfirmStep(false);
 				return;
 			}
-
-			const count = Number(countStr);
-			if (!Number.isFinite(count) || count < 1) {
-				setError("El número de asistentes debe ser al menos 1.");
+	
+			const { error } = validateAndParseCount(peopleCount, {
+				empty: "Rellena tu nombre y el número de asistentes.",
+				invalid: "El número de asistentes debe ser al menos 1.",
+			});
+	
+			if (error) {
+				setError(error);
 				setConfirmStep(false);
 				return;
 			}
-
-			// Mostrar modal de confirmación de actualización
+	
+			// Mostrar modal de confirmación en lugar de mensaje dentro del mismo modal
 			setConfirmStep(false);
-			setShowConfirmUpdate(true);
-			return;
-		}
+			setShowConfirmJoin(true);
+		};
 
-		// Si no está inscrito, necesita número y, si no hay nombre en el campo,
-		// usaremos el nombre del usuario logueado si existe.
-		const effectiveName = (name || user?.name || "").trim();
-
-		if (!effectiveName || !countStr) {
-			setError("Rellena tu nombre y el número de asistentes.");
-			setConfirmStep(false);
-			return;
-		}
-
-		const count = Number(countStr);
-		if (!Number.isFinite(count) || count < 1) {
-			setError("El número de asistentes debe ser al menos 1.");
-			setConfirmStep(false);
-			return;
-		}
-
-		// Mostrar modal de confirmación en lugar de mensaje dentro del mismo modal
-		setConfirmStep(false);
-		setShowConfirmJoin(true);
-		return;
-	};
-
-	const handleConfirmJoin = async () => {
-		if (!token || !event.id) return;
-
-		const countStr = peopleCount.trim();
-		const count = Number(countStr);
-
-		if (!countStr || !Number.isFinite(count) || count < 1) {
-			setError("El número de asistentes debe ser al menos 1.");
-			setShowConfirmJoin(false);
-			return;
-		}
-
-		try {
-			setSubmitting(true);
-			await joinEvento(event.id, { asistentes: count }, token);
-			if (onUpdate) onUpdate();
-			setShowConfirmJoin(false);
-			onClose();
-		} catch (err: any) {
-			setError(err?.message ?? "Error al apuntarte al evento");
-			setShowConfirmJoin(false);
-		} finally {
-			setSubmitting(false);
-		}
-	};
+		const handleConfirmJoin = async () => {
+			if (!token || !event.id) return;
+	
+			const { count, error } = validateAndParseCount(peopleCount, {
+				empty: "El número de asistentes debe ser al menos 1.",
+				invalid: "El número de asistentes debe ser al menos 1.",
+			});
+	
+			if (error || count === null) {
+				setError(error ?? "El número de asistentes debe ser al menos 1.");
+				setShowConfirmJoin(false);
+				return;
+			}
+	
+			try {
+				setSubmitting(true);
+				await joinEvento(event.id, { asistentes: count }, token);
+				if (onUpdate) onUpdate();
+				setShowConfirmJoin(false);
+				onClose();
+			} catch (err: any) {
+				setError(err?.message ?? "Error al apuntarte al evento");
+				setShowConfirmJoin(false);
+			} finally {
+				setSubmitting(false);
+			}
+		};
 
 	const handleLeave = async () => {
 		if (!token || !event.id) return;
@@ -147,34 +178,36 @@ const EventModal: FC<EventModalProps> = ({ onClose, onUpdate, event }) => {
 		}
 	};
 
-	const handleConfirmUpdate = async () => {
-		if (!token || !event.id) return;
-
-		const countStr = peopleCount.trim();
-		const count = Number(countStr);
-
-		if (!countStr || !Number.isFinite(count) || count < 1) {
-			setError("El número de asistentes debe ser al menos 1.");
-			setShowConfirmUpdate(false);
-			return;
-		}
-
-		try {
-			setSubmitting(true);
-			await joinEvento(event.id, { asistentes: count }, token);
-			if (onUpdate) onUpdate();
-			setIsEditing(false);
-			setConfirmStep(false);
-			setError(null);
-			setShowConfirmUpdate(false);
-			onClose();
-		} catch (err: any) {
-			setError(err?.message ?? "Error al actualizar el evento");
-			setShowConfirmUpdate(false);
-		} finally {
-			setSubmitting(false);
-		}
-	};
+		const handleConfirmUpdate = async () => {
+			if (!token || !event.id) return;
+	
+			const { count, error } = validateAndParseCount(peopleCount, {
+				empty: "El número de asistentes debe ser al menos 1.",
+				invalid: "El número de asistentes debe ser al menos 1.",
+			});
+	
+			if (error || count === null) {
+				setError(error ?? "El número de asistentes debe ser al menos 1.");
+				setShowConfirmUpdate(false);
+				return;
+			}
+	
+			try {
+				setSubmitting(true);
+				await joinEvento(event.id, { asistentes: count }, token);
+				if (onUpdate) onUpdate();
+				setIsEditing(false);
+				setConfirmStep(false);
+				setError(null);
+				setShowConfirmUpdate(false);
+				onClose();
+			} catch (err: any) {
+				setError(err?.message ?? "Error al actualizar el evento");
+				setShowConfirmUpdate(false);
+			} finally {
+				setSubmitting(false);
+			}
+		};
 
 	const handleClose = () => {
 		if (submitting) return;
