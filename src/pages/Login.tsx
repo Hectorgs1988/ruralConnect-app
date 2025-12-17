@@ -14,6 +14,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [showRecoverModal, setShowRecoverModal] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -66,12 +67,23 @@ export default function Login() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
-            <Input
-              type="password"
-              placeholder="Contraseña"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <div className="w-full mb-4 relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Contraseña"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-2 bg-surfaceMuted border text-sm border-borderSoft focus:outline-none focus:ring-2 focus:ring-primary/60 rounded-md pr-16"
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute inset-y-0 right-3 flex items-center text-xs text-muted hover:text-dark"
+              >
+                {showPassword ? "Ocultar" : "Mostrar"}
+              </button>
+            </div>
 
             {error && <p className="text-error text-sm">{error}</p>}
 
