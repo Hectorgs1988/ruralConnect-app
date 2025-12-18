@@ -362,11 +362,11 @@ components:
         pages: { type: integer }
       required: [items, total, page, size, pages]
 
-  paths:
+paths:
   /health:
     servers:
       - url: http://localhost:4000
-        description: Health sin prefijo /api
+        description:
     get:
       tags: [Health]
       summary: Health check
