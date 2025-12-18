@@ -38,6 +38,13 @@ components:
           items: { type: string }
       additionalProperties: false
 
+    HealthResponse:
+      type: object
+      properties:
+        ok: { type: boolean }
+        ts: { type: string, format: date-time }
+      required: [ok, ts]
+
     Role:
       type: string
       enum: [ADMIN, SOCIO]
@@ -79,6 +86,15 @@ components:
             password:
               readOnly: true
 
+    LoginUser:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+        name: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+      required: [id, email, name, role]
+
     LoginRequest:
       type: object
       required: [email, password]
@@ -91,7 +107,7 @@ components:
       type: object
       properties:
         token: { type: string }
-        user: { $ref: "#/components/schemas/User" }
+        user: { $ref: "#/components/schemas/LoginUser" }
       required: [token, user]
 
     ForgotPasswordRequest:
@@ -153,9 +169,9 @@ components:
         updatedAt: { type: string, format: date-time }
         Espacio:
           $ref: "#/components/schemas/Espacio"
-        Usuario:
+        User:
           $ref: "#/components/schemas/User"
-      required: [id, usuarioId, espacioId, inicio, fin, estado, createdAt, updatedAt]
+      required: [id, usuarioId, espacioId, inicio, fin, estado]
 
     ReservaCreate:
       type: object
@@ -186,6 +202,20 @@ components:
         estado: { $ref: "#/components/schemas/EstadoEvento" }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
+        Inscripciones:
+          type: array
+          items: { $ref: "#/components/schemas/InscripcionEvento" }
+        apuntados:
+          type: integer
+          description: Total de asistentes apuntados al evento
+        isJoined:
+          type: boolean
+          nullable: true
+          description: true si el usuario autenticado está inscrito en este evento
+        misAsistentes:
+          type: integer
+          nullable: true
+          description: Número de asistentes en la inscripción del usuario (si existe)
       required: [id, titulo, fecha, estado, createdAt, updatedAt]
 
     EventoCreate:
@@ -236,15 +266,15 @@ components:
       properties:
         id: { type: string }
         conductorId: { type: string }
-        from: { type: string }
-        to: { type: string }
+        origen: { type: string }
+        destino: { type: string }
         fecha: { type: string, format: date-time }
         plazas: { type: integer }
         estado: { $ref: "#/components/schemas/EstadoViaje" }
         notas: { type: string, nullable: true }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
-      required: [id, conductorId, from, to, fecha, plazas, estado, createdAt, updatedAt]
+      required: [id, conductorId, origen, destino, fecha, plazas, estado, createdAt, updatedAt]
 
     ViajeCreate:
       type: object
@@ -256,6 +286,15 @@ components:
         plazas: { type: integer, minimum: 1 }
         notas: { type: string, nullable: true }
       additionalProperties: false
+
+    PasajeroViaje:
+      type: object
+      properties:
+        id: { type: string }
+        viajeId: { type: string }
+        userId: { type: string }
+        createdAt: { type: string, format: date-time }
+      required: [id, viajeId, userId, createdAt]
 
     SolicitudViaje:
       type: object
@@ -311,13 +350,32 @@ components:
         password: { type: string, minLength: 6 }
       additionalProperties: false
 
-paths:
+    UsersPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/User" }
+        total: { type: integer }
+        page: { type: integer }
+        size: { type: integer }
+        pages: { type: integer }
+      required: [items, total, page, size, pages]
+
+  paths:
   /health:
+    servers:
+      - url: http://localhost:4000
+        description: Health sin prefijo /api
     get:
       tags: [Health]
       summary: Health check
       responses:
-        "200": { description: OK }
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HealthResponse" }
 
   /auth/login:
     post:
@@ -350,7 +408,20 @@ paths:
           application/json:
             schema: { $ref: "#/components/schemas/ForgotPasswordRequest" }
       responses:
-        "200": { description: OK }
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                required: [ok]
+        "400":
+          description: Datos incompletos
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
 
   /auth/reset-password:
     post:
@@ -362,7 +433,15 @@ paths:
           application/json:
             schema: { $ref: "#/components/schemas/ResetPasswordRequest" }
       responses:
-        "200": { description: Password actualizada }
+        "200":
+          description: Password actualizada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                required: [ok]
         "400":
           description: Token inválido o datos incompletos
           content:
@@ -390,7 +469,6 @@ paths:
     get:
       tags: [Espacios]
       summary: Listar espacios
-      security: [{ bearerAuth: [] }]
       responses:
         "200":
           description: Lista de espacios
@@ -452,7 +530,6 @@ paths:
     get:
       tags: [Reservas]
       summary: Listar reservas (con filtros)
-      security: [{ bearerAuth: [] }]
       parameters:
         - in: query
           name: espacioId
@@ -495,7 +572,6 @@ paths:
     patch:
       tags: [Reservas]
       summary: Actualizar reserva
-      security: [{ bearerAuth: [] }]
       parameters:
         - in: path
           name: id
@@ -517,7 +593,6 @@ paths:
     get:
       tags: [Eventos]
       summary: Listar eventos (publicados)
-      security: [{ bearerAuth: [] }]
       parameters:
         - in: query
           name: desde
@@ -525,6 +600,10 @@ paths:
         - in: query
           name: hasta
           schema: { type: string, format: date }
+        - in: query
+          name: estado
+          schema: { $ref: "#/components/schemas/EstadoEvento" }
+          description: Filtra por estado del evento
       responses:
         "200":
           description: Lista de eventos
@@ -598,13 +677,18 @@ paths:
           application/json:
             schema: { $ref: "#/components/schemas/InscripcionUpsert" }
       responses:
-        "200":
+        "201":
           description: Inscripción creada/actualizada
           content:
             application/json:
               schema: { $ref: "#/components/schemas/InscripcionEvento" }
         "404":
           description: Evento no encontrado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: Aforo completo
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
@@ -621,6 +705,21 @@ paths:
           schema: { type: string }
       responses:
         "204": { description: Inscripción eliminada }
+
+  /eventos/mis-eventos:
+    get:
+      tags: [Eventos]
+      summary: Listar eventos a los que está inscrito el usuario autenticado
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Lista de eventos del usuario
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Evento" }
+        "401": { description: No autorizado }
 
   /solicitudes-viaje:
     get:
@@ -676,7 +775,7 @@ paths:
                 type: object
                 properties:
                   viaje: { $ref: "#/components/schemas/Viaje" }
-                  solicitudUpdated: { $ref: "#/components/schemas/SolicitudViaje" }
+                  solicitudActualizada: { $ref: "#/components/schemas/SolicitudViaje" }
         "404":
           description: Solicitud no disponible
           content:
@@ -695,8 +794,18 @@ paths:
           schema: { type: string }
       responses:
         "204": { description: Cancelada }
+        "400":
+          description: No se puede cancelar una solicitud ya aceptada con viaje asociado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
         "403":
           description: No autorizado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404":
+          description: Solicitud no encontrada
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
@@ -705,7 +814,19 @@ paths:
     get:
       tags: [Viajes]
       summary: Listar viajes
-      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string }
+          description: Filtra por origen (subcadena)
+        - in: query
+          name: to
+          schema: { type: string }
+          description: Filtra por destino (subcadena)
+        - in: query
+          name: desde
+          schema: { type: string, format: date-time }
+          description: Filtra viajes a partir de esta fecha (ISO)
       responses:
         "200":
           description: Lista de viajes
@@ -733,18 +854,61 @@ paths:
   /viajes/{id}/unirse:
     post:
       tags: [Viajes]
-      summary: Unirse a un viaje (socio)
-      security: [{ bearerAuth: [] }]
+      summary: Unirse a un viaje (requiere userId en el body)
       parameters:
         - in: path
           name: id
           required: true
           schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId]
+              properties:
+                userId: { type: string }
       responses:
-        "200": { description: Ok }
+        "201":
+          description: Pasajero unido al viaje
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PasajeroViaje" }
+        "404":
+          description: Viaje no encontrado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: Viaje completo o pasajero ya unido
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
     delete:
       tags: [Viajes]
-      summary: Salir de un viaje (socio)
+      summary: Salir de un viaje (requiere userId en el body)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId]
+              properties:
+                userId: { type: string }
+      responses:
+        "204": { description: Eliminado }
+
+  /viajes/{id}:
+    delete:
+      tags: [Viajes]
+      summary: Cancelar viaje (solo conductor)
       security: [{ bearerAuth: [] }]
       parameters:
         - in: path
@@ -752,21 +916,65 @@ paths:
           required: true
           schema: { type: string }
       responses:
-        "204": { description: Ok }
+        "200":
+          description: Viaje cancelado correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  pasajerosNotificados: { type: integer }
+                required: [message, pasajerosNotificados]
+        "403":
+          description: Solo el conductor puede cancelar el viaje
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404":
+          description: Viaje no encontrado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
 
   /users:
     get:
       tags: [Users]
       summary: Listar usuarios (admin)
       security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+          description: Texto a buscar en nombre, email o teléfono
+        - in: query
+          name: role
+          schema: { $ref: "#/components/schemas/Role" }
+          description: Filtra por rol
+        - in: query
+          name: active
+          schema:
+            type: boolean
+          description: Filtra por usuarios activos/inactivos
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+          description: Página (1 por defecto)
+        - in: query
+          name: size
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+          description: Tamaño de página (10 por defecto, máx. 100)
       responses:
         "200":
-          description: Lista de usuarios
+          description: Lista paginada de usuarios
           content:
             application/json:
-              schema:
-                type: array
-                items: { $ref: "#/components/schemas/User" }
+              schema: { $ref: "#/components/schemas/UsersPage" }
     post:
       tags: [Users]
       summary: Crear socio (admin)
@@ -817,16 +1025,31 @@ paths:
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          text/csv:
             schema:
-              type: object
-              required: [file]
-              properties:
-                file:
-                  type: string
-                  format: binary
+              type: string
+              description: |
+                Contenido CSV en texto plano. La primera línea debe ser la cabecera con al menos:
+                email,name,phone,role
       responses:
-        "200": { description: Import OK }
+        "200":
+          description: Resultado de la importación
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  created: { type: integer }
+                  updated: { type: integer }
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        line: { type: integer }
+                        message: { type: string }
+                      required: [line, message]
+                required: [created, updated, errors]
 
   /users/{id}:
     get:
@@ -879,7 +1102,7 @@ paths:
   /users/{id}/password:
     patch:
       tags: [Users]
-      summary: Cambiar contraseña de usuario (admin)
+      summary: Cambiar contraseña de un usuario
       security: [{ bearerAuth: [] }]
       parameters:
         - in: path
@@ -892,8 +1115,42 @@ paths:
           application/json:
             schema:
               type: object
-              required: [password]
+              required: [newPassword]
               properties:
-                password: { type: string, minLength: 6 }
+                oldPassword:
+                  type: string
+                  minLength: 6
+                  description: Obligatorio si no eres ADMIN
+                newPassword:
+                  type: string
+                  minLength: 6
       responses:
-        "200": { description: Password actualizada }
+        "200":
+          description: Password actualizada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                required: [message]
+        "400":
+          description: Validación incorrecta (contraseña demasiado corta, etc.)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401":
+          description: Contraseña actual incorrecta (cuando no es admin)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "403":
+          description: No autorizado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404":
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
