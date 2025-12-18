@@ -45,7 +45,7 @@ const AsociacionMosquitos = () => {
                             <strong>Los Mosquitos</strong>, situada en un pequeño municipio de la provincia de Burgos.
                             Se trata de una localidad de alrededor de <strong>110 habitantes</strong>, pero la asociación
                             cuenta con <strong>más de 600 socios</strong>. Esta diferencia entre población y tamaño de la
-                            entidad incrementa la complejidad de la gestión diaria.
+                            asociación incrementa la complejidad de la gestión diaria.
                         </p>
                         <p className="mt-3">
                             La reserva de espacios, la planificación de eventos y la coordinación de actividades
