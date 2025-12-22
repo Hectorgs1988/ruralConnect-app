@@ -139,31 +139,31 @@ const NuevoEventoModal: FC<NuevoEventoModalProps> = ({ onClose, onCreated }) => 
                         </p>
                     )}
 
-	                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-	                        <div className="md:col-span-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="md:col-span-2">
                             <label className="block text-sm font-medium mb-1">Titulo *</label>
                             <Input
                                 value={titulo}
                                 onChange={(e) => setTitulo(e.target.value)}
                                 placeholder="Titulo del evento"
-	                                className="rounded-md"
+                                className="rounded-md"
                             />
                         </div>
-	                        <div className="md:col-span-2">
+                        <div className="md:col-span-2">
                             <label className="block text-sm font-medium mb-1">Fecha *</label>
-	                            <DatePickerField
-	                                value={fecha}
-	                                onChange={setFecha}
-	                                placeholder="Selecciona fecha"
-	                            />
+                            <DatePickerField
+                                value={fecha}
+                                onChange={setFecha}
+                                placeholder="Selecciona fecha"
+                            />
                         </div>
-	                        <div className="md:col-span-2">
+                        <div className="md:col-span-2">
                             <label className="block text-sm font-medium mb-1">Hora *</label>
-	                            <TimePickerField
-	                                value={hora}
-	                                onChange={setHora}
-	                                placeholder="Selecciona hora"
-	                            />
+                            <TimePickerField
+                                value={hora}
+                                onChange={setHora}
+                                placeholder="Selecciona hora"
+                            />
                         </div>
                     </div>
 
@@ -174,7 +174,7 @@ const NuevoEventoModal: FC<NuevoEventoModalProps> = ({ onClose, onCreated }) => 
                                 value={lugar}
                                 onChange={(e) => setLugar(e.target.value)}
                                 placeholder="Lugar del evento"
-	                                className="rounded-md"
+                                className="rounded-md"
                             />
                         </div>
                         <div>
@@ -185,7 +185,7 @@ const NuevoEventoModal: FC<NuevoEventoModalProps> = ({ onClose, onCreated }) => 
                                 value={aforo}
                                 onChange={(e) => setAforo(e.target.value)}
                                 placeholder="Numero de plazas"
-	                                className="rounded-md"
+                                className="rounded-md"
                             />
                         </div>
                     </div>

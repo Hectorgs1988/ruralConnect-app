@@ -37,7 +37,7 @@ const ConfirmCancelTravelModal: FC<ConfirmCancelTravelModalProps> = ({
 
                 <div className="flex flex-col items-center text-center gap-2 mb-4 md:mb-5">
                     <div className="rc-pill bg-red-50 text-red-600">
-                        ⚠️ Cancelar viaje
+                        Cancelar viaje
                     </div>
                     <h2 id="confirm-cancel-travel-title" className="rc-modal-title">
                         ¿Estás seguro de cancelar este viaje?

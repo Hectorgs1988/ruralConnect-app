@@ -6,8 +6,8 @@ export type ApiReserva = {
     id: string;
     usuarioId: string;
     espacioId: string;
-    inicio: string; // ISO
-    fin: string; // ISO
+    inicio: string;
+    fin: string;
     estado?: ApiReservaEstado;
 };
 
