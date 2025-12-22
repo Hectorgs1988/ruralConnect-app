@@ -14,7 +14,7 @@ async function main() {
         data: {
             email,
             password: passwordHash,
-            name: 'Administrador',
+            name: 'Admin Ejemplo',
             role: 'ADMIN',
             isActive: true,
         },

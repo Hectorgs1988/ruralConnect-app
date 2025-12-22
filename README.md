@@ -1,32 +1,52 @@
 # 🏡 RuralConnect App
 
-Aplicación web para la gestión de socios, eventos, reservas y viajes compartidos de la asociación Rural Connect (Burgos).
+Aplicación web para la gestión de **socios, eventos, reservas de espacios y viajes compartidos** de una asociación rural.
 
-Proyecto desarrollado con:
+## 1. Qué es el proyecto y cómo está desarrollado
 
-- **Frontend:** React + TypeScript + Vite  
-- **Backend:** Node.js + Express + Prisma  
-- **Base de datos:** MySQL (Docker)  
-- **ORM:** Prisma  
-- **Infraestructura:** Docker + Docker Compose  
+**Funcionalidades principales**
+- Gestión de socios (roles ADMIN y SOCIO)
+- Gestión de eventos con inscripciones y control de aforo
+- Reserva de espacios de la peña
+- Compartir coche (viajes y solicitudes de viaje)
+- Panel de administración / dashboard
+
+**Stack técnico**
+- **Frontend:** React + TypeScript + Vite
+- **Backend:** Node.js + Express + Prisma
+- **Base de datos:** MySQL
+- **ORM:** Prisma
+- **Infraestructura:** Docker + Docker Compose
 
 ---
 
+## 2. Puesta en marcha con Docker (recomendada)
 
-# 🔑 1. Variables de entorno
+### 2.1. Requisitos
+- Docker
+- Docker Compose
 
-## 📌 `.env` (raíz del proyecto — Docker Compose)
+### 2.2. Preparar ficheros `.env`
+
+En la raíz del proyecto:
+
+```bash
+cp .env.example .env
+cp Server/.env.example Server/.env
+```
+
+**`.env` (raíz)** – ejemplo (ya en `.env.example`):
 
 ```env
 MYSQL_ROOT_PASSWORD=root
-MYSQL_DATABASE=xx
-MYSQL_USER=xx
-MYSQL_PASSWORD=xx
+MYSQL_DATABASE=database
+MYSQL_USER=user
+MYSQL_PASSWORD=password
+
+VITE_API_URL=http://localhost:4000
 ```
 
----
-
-## 📌 `/Server/.env` (Prisma + Backend)
+**`Server/.env` (backend)** – ejemplo (ya en `Server/.env.example`):
 
 ```env
 DATABASE_URL="mysql://pena_user:pena_pwd@db:3306/pena"
@@ -36,181 +56,142 @@ PORT=4000
 FRONTEND_ORIGIN=http://localhost:5173
 APP_BASE_URL=http://localhost:5173
 
-JWT_SECRET=xx
+JWT_SECRET=changeme_jwt_secret
 
-# Email / SendGrid
-SENDGRID_API_KEY=xx
-SENDGRID_FROM_EMAIL=xx
+# Email / SendGrid (opcional)
+SENDGRID_API_KEY=
+SENDGRID_FROM_EMAIL=rconnect.rural@gmail.com
 ```
+
+> ❗ **Importante**: cambia `JWT_SECRET` por un valor seguro (ver sección 4).
+
+### 2.3. Levantar toda la stack
+
+Desde la raíz del proyecto:
+
+```bash
+docker compose up -d --build
+```
+
+Se levantarán los servicios definidos en `docker-compose.yml`:
+- `db` → MySQL
+- `adminer` → cliente SQL
+- `backend` → API Node + Prisma (migraciones + seeds automáticos)
+- `frontend` → app React (servida en el puerto 5173)
+
+En el primer arranque el backend ejecuta migraciones y los scripts de semillas (`seed:admin` y `seed:socio`).
+
+### 2.4. URLs de acceso
+- **Frontend (app):** http://localhost:5173
+- **Backend (API):** http://localhost:4000
+- **Swagger UI:** http://localhost:4000/api-docs
+- **Healthcheck:** http://localhost:4000/health
+- **Adminer (DB):** http://localhost:8080
+
+### 2.5. Usuarios creados automáticamente
+
+Al levantar el backend en Docker se crean usuarios de ejemplo:
+
+- 👤 **Administrador**  → email `admin@test.com`, password `admin123`
+- 👤 **Socio**          → email `socio@test.com`, password `socio123`
 
 ---
 
-# 🧷 Notas importantes
+## 3. Puesta en marcha en local (sin Docker para código)
 
-## 🔐 JWT_SECRET
+Si prefieres ejecutar backend y frontend en tu máquina (usando o no Docker para la BBDD):
 
-Generar un secreto largo y aleatorio:
+### 3.1. Preparar `.env`
 
-- https://randomkeygen.com → sección **CodeIgniter Encryption Keys**  
+Igual que con Docker:
+
+```bash
+cp .env.example .env
+cp Server/.env.example Server/.env
+```
+
+### 3.2. Arrancar base de datos (opción rápida con Docker)
+
+```bash
+docker compose up -d db adminer
+```
+
+### 3.3. Backend en local
+
+```bash
+cd Server
+npm install
+npx prisma migrate dev
+npm run seed:admin
+npm run seed:socio
+npm run dev
+```
+
+El backend quedará en `http://localhost:4000`.
+
+### 3.4. Frontend en local
+
+```bash
+cd /ruta/al/proyecto   # raíz
+npm install
+npm run dev
+```
+
+El frontend quedará en `http://localhost:5173`.
+
+---
+
+## 4. JWT_SECRET
+
+El backend usa `JWT_SECRET` para firmar los tokens de autenticación.
+
+Para generar un secreto largo y aleatorio puedes usar, por ejemplo:
+
+- https://randomkeygen.com → sección **CodeIgniter Encryption Keys**
 - O desde terminal:
 
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
----
+Copia el valor generado en `Server/.env`:
 
-## 📧 SendGrid (Opcional)
-
-Si no configuras SendGrid:
-
-✔ Toda la aplicación web funcionara sin nungun problema  
-❌ No se enviarán emails  
-
-Para activarlo:
-
-1. Crear cuenta en https://sendgrid.com  
-2. Verificar un email  
-3. Crear API Key  
-4. Insertarla en `SENDGRID_API_KEY`  
-
----
-
-## ⚠️ Nota sobre TLS dentro de Docker
-
-En el Dockerfile del backend se incluye:
-
-```dockerfile
-ENV NODE_TLS_REJECT_UNAUTHORIZED=0
-```
-
-Esto evita errores al ejecutar `npx prisma generate` en Windows/red corporativa dentro del contenedor Docker.  
-Solo aplica en desarrollo.
-
----
-## Acceder a la aplicación
-
-- Frontend → http://localhost:5173  
-- Backend → http://localhost:4000  
-- Adminer → http://localhost:8080  
-
-Credenciales creadas automáticamente:
-
-### 👤 Administrador
-- Email: `admin@test.com`
-- Password: `xxx`
-
-### 👤 Socio
-- Email: `socio@test.com`
-- Password: `xxx`
-
----
----
-
-# 📜 2. Scripts útiles (backend)
-
-| Script | Descripción |
-|--------|-------------|
-| `npm run dev` | Ejecuta backend con autoreload |
-| `npm run build` | Compila a `dist/` |
-| `npm start` | Ejecuta backend compilado |
-| `npx prisma studio` | UI para gestionar la DB |
-| `npm run seed:admin` | Crea admin de pruebas |
-| `npm run seed:socio` | Crea socio de pruebas |
-
----
-
-# 🐳 3. Arquitectura Docker
-
-Stack incluido en `docker-compose.yml`:
-
-- `db` → MySQL  
-- `adminer` → cliente SQL  
-- `backend` → Node + Prisma (migraciones + seeds automáticos)  
-- `frontend` → Vite (modo desarrollo)  
-
-Comando principal:
-
-```bash
-docker compose up --build
+```env
+JWT_SECRET=el_valor_aleatorio_que_has_generado
 ```
 
 ---
 
-# 🚀 4. Despliegue en producción (opcional)
+## 5. Envío de emails (SendGrid)
 
-## Backend
+La aplicación puede enviar emails para:
+- Confirmación/cancelación de reservas
+- Inscripción/baja en eventos
+- Viajes compartidos (altas/bajas/cancelación)
+- Recuperación de contraseña
 
-```bash
-cd Server
-npm install
-npm run build
-npm start
+Si **no** configuras SendGrid:
+- ✔ La aplicación funcionará igualmente (web + API)
+- ❌ Simplemente no se enviarán correos
+
+Para activarlo rellena en `Server/.env`:
+
+```env
+SENDGRID_API_KEY=tu_api_key
+SENDGRID_FROM_EMAIL=tu_email_verificado@dominio.com
 ```
 
 ---
 
-## Frontend
+## 6. Scripts útiles (backend)
 
-```bash
-npm install
-npm run build
-npm run preview
-```
+Desde el directorio `Server/`:
 
----
-
-# 🔄 5. Flujo de trabajo (GitFlow)
-
-1. Crear rama desde `develop`
-2. Implementar cambios  
-3. Commit  
-4. Pull Request hacia `develop`  
-5. Revisar + merge  
-6. Eventualmente → merge `develop` → `main`  
-
----
-
-# 🧹 6. Problemas comunes
-
-## ❌ Backend devuelve “Unexpected token '<' …”
-
-El backend no ha arrancado.
-
-Solución:
-
-```bash
-docker compose logs backend
-```
-
----
-
-## ❌ No aparecen tablas en Adminer
-
-```bash
-cd Server
-npx prisma migrate dev
-```
-
----
-
-## ❌ Error descargando binarios de Prisma dentro de Docker
-
-Solución incluida:
-
-```dockerfile
-ENV NODE_TLS_REJECT_UNAUTHORIZED=0
-```
-
----
-
-## ❌ BBDD corrupta o con permisos incorrectos
-
-```bash
-docker compose down -v
-docker compose up --build
-```
-
-
----
-
+| Script               | Descripción                        |
+|----------------------|-----------------------------------|
+| `npm run dev`        | Ejecuta backend en modo desarrollo |
+| `npm run build`      | Compila a `dist/`                  |
+| `npm start`          | Ejecuta backend compilado          |
+| `npx prisma studio`  | UI para gestionar la base de datos |
+| `npm run seed:admin` | Crea admin de pruebas              |
+| `npm run seed:socio` | Crea socio de pruebas              |

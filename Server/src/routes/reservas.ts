@@ -146,8 +146,6 @@ reservasRouter.patch("/:id", async (req, res, next) => {
                 );
             }
         }
-
-        // Devolvemos la reserva sin los datos anidados para mantener el tipo ligero
         res.json({
             id: r.id,
             usuarioId: r.usuarioId,

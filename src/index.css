@@ -19,9 +19,9 @@
     @apply min-h-screen flex flex-col bg-gradient-to-b from-background to-primarySoft text-dark;
   }
 
-	  .rc-shell {
-	    @apply w-full max-w-7xl mx-auto px-4 md:px-8;
-	  }
+  .rc-shell {
+    @apply w-full max-w-7xl mx-auto px-4 md:px-8;
+  }
 
   .rc-hero-title {
     @apply text-center text-3xl md:text-4xl font-semibold tracking-tight text-dark;
@@ -48,8 +48,8 @@
   }
 
   .rc-modal-overlay {
-	    @apply fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 py-4;
-	    overflow-y: hidden;
+    @apply fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 py-4;
+    overflow-y: hidden;
   }
 
   .rc-modal-panel {

@@ -37,7 +37,7 @@ const ConfirmJoinTravelModal: FC<ConfirmJoinTravelModalProps> = ({
 
                 <div className="flex flex-col items-center text-center gap-2 mb-4 md:mb-5">
                     <div className="rc-pill">
-                        🚗 Confirmar viaje
+                        Confirmar viaje
                     </div>
                     <h2 id="confirm-join-travel-title" className="rc-modal-title">
                         Confirmar reserva de viaje

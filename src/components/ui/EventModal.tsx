@@ -8,16 +8,16 @@ import { joinEvento, leaveEvento } from "@/api/eventos";
 
 interface EventModalProps {
 	onClose: () => void;
-	onUpdate?: () => void; // Callback para refrescar la lista
+	onUpdate?: () => void;
 	event: {
 		id?: string;
 		title: string;
 		date: string;
 		location: string;
-		apuntados?: number; // Total de personas apuntadas
-		aforo?: number | null; // Aforo máximo
-		isJoined?: boolean; // Si el usuario ya está inscrito
-		misAsistentes?: number; // Cuántos asistentes registró el usuario
+		apuntados?: number;
+		aforo?: number | null;
+		isJoined?: boolean;
+		misAsistentes?: number;
 	};
 }
 
@@ -69,13 +69,12 @@ const EventModal: FC<EventModalProps> = ({ onClose, onUpdate, event }) => {
 	const [showConfirmJoin, setShowConfirmJoin] = useState(false);
 	const [showConfirmUpdate, setShowConfirmUpdate] = useState(false);
 	const [showConfirmLeave, setShowConfirmLeave] = useState(false);
-	const [isEditing, setIsEditing] = useState(false); // Para modo edición
+	const [isEditing, setIsEditing] = useState(false);
 	const { token, user } = useAuth();
 
 	const parsedPeopleCount = Number(peopleCount || "0");
 	const isJoined = event.isJoined ?? false;
 
-	// Si el usuario está logueado, rellenar automáticamente el nombre
 	useEffect(() => {
 		if (user?.name) {
 			setName(user.name);
@@ -446,7 +445,7 @@ const EventModal: FC<EventModalProps> = ({ onClose, onUpdate, event }) => {
 				</div>
 			)}
 
-			{/* Modal de confirmaci f3n para actualizar asistentes */}
+			{/* Modal de confirmación de asistencias para actualizar asistentes */}
 			{isJoined && showConfirmUpdate && (
 				<div
 					className="rc-modal-overlay z-50"

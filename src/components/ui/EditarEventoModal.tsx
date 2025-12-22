@@ -89,8 +89,6 @@ const EditarEventoModal: FC<EditarEventoModalProps> = ({ evento, onClose, onUpda
 
         const body: any = {};
 
-        // Construimos la fecha completa combinando fecha (YYYY-MM-DD) y hora (HH:MM)
-        // y la convertimos a ISO UTC para evitar desfases de huso horario en el frontend.
         const fechaLocal = new Date(`${fechaTrim}T${horaTrim}`);
         if (Number.isNaN(fechaLocal.getTime())) {
             setError("La fecha u hora no es valida.");

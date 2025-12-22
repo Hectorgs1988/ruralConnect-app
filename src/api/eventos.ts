@@ -8,9 +8,9 @@ export type ApiEvento = {
     aforo: number | null;
     estado: "BORRADOR" | "PUBLICADO" | "CANCELADO";
     descripcion: string | null;
-    apuntados?: number; // Total de personas apuntadas
-    isJoined?: boolean; // Si el usuario está inscrito
-    misAsistentes?: number; // Cuántos asistentes registró el usuario
+    apuntados?: number;
+    isJoined?: boolean;
+    misAsistentes?: number;
 };
 
 export interface ListEventosParams {
