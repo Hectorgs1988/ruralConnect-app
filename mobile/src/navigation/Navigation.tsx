@@ -6,33 +6,37 @@ import { LoginScreen } from '@screens/LoginScreen';
 import { HomeScreen } from '@screens/HomeScreen';
 import { ActivityIndicator, View } from 'react-native';
 
-const Stack = createNativeStackNavigator();
+type RootStackParamList = {
+    Login: undefined;
+    Home: undefined;
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const Navigation: React.FC = () => {
-  const { isSignedIn, isLoading } = useAuth();
+    const { isSignedIn, isLoading } = useAuth();
 
-  if (isLoading) {
+    if (isLoading) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" />
+            </View>
+        );
+    }
+
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
-      </View>
+        <NavigationContainer>
+            <Stack.Navigator
+                screenOptions={{
+                    headerShown: false,
+                }}
+            >
+                {isSignedIn ? (
+                    <Stack.Screen name="Home" component={HomeScreen} />
+                ) : (
+                    <Stack.Screen name="Login" component={LoginScreen} />
+                )}
+            </Stack.Navigator>
+        </NavigationContainer>
     );
-  }
-
-  return (
-    <NavigationContainer>
-      <Stack.Navigator
-        screenOptions={{
-          headerShown: false,
-          animationEnabled: true,
-        }}
-      >
-        {isSignedIn ? (
-          <Stack.Screen name="Home" component={HomeScreen} />
-        ) : (
-          <Stack.Screen name="Login" component={LoginScreen} />
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
-  );
 };

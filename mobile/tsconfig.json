@@ -4,7 +4,7 @@
     "strict": true,
     "jsx": "react-native",
     "jsxImportSource": "react",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "declaration": true,
@@ -25,9 +25,13 @@
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
-    "**/*.ts",
-    "**/*.tsx",
+    "App.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build"
   ]
 }
