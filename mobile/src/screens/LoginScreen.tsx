@@ -54,7 +54,7 @@ export const LoginScreen: React.FC = () => {
 
   return (
     <ImageBackground
-      source={require('@/../../assets/Campos.jpg')}
+      source={require('../../assets/Campos.jpg')}
       style={styles.background}
       resizeMode="cover"
     >
@@ -69,7 +69,7 @@ export const LoginScreen: React.FC = () => {
         >
           <View style={styles.card}>
             <Image
-              source={require('@/../../assets/RuralConnect.png')}
+              source={require('../../assets/RuralConnect.png')}
               style={styles.logo}
               resizeMode="contain"
             />
