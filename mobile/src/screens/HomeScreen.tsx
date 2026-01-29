@@ -1,156 +1,196 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+} from 'react-native';
 import { useAuth } from '@context/AuthContext';
-import { apiClient } from '@services/api';
 
-interface Travel {
-    id: string;
-    title: string;
-    description: string;
-    date: string;
-    origin: string;
-    destination: string;
+// Colores de la web
+const COLORS = {
+  primary: '#fce500',
+  primaryStrong: '#F4C400',
+  background: '#f5f2e9',
+  surface: '#FFFFFF',
+  dark: '#1b1b1b',
+  muted: '#6B7280',
+};
+
+interface ActionCardProps {
+  title: string;
+  subtitle: string;
+  icon: string;
+  onPress: () => void;
 }
 
+const ActionCard: React.FC<ActionCardProps> = ({ title, subtitle, icon, onPress }) => (
+  <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
+    <View style={styles.cardContent}>
+      <Text style={styles.cardIcon}>{icon}</Text>
+      <Text style={styles.cardTitle}>{title}</Text>
+      <Text style={styles.cardSubtitle}>{subtitle}</Text>
+    </View>
+    <TouchableOpacity style={styles.cardButton} onPress={onPress}>
+      <Text style={styles.cardButtonText}>Ver {title}</Text>
+    </TouchableOpacity>
+  </TouchableOpacity>
+);
+
 export const HomeScreen: React.FC = () => {
-    const { user, logout } = useAuth();
-    const [viajes, setViajes] = useState<Travel[]>([]);
-    const [loading, setLoading] = useState(true);
+  const { user, logout } = useAuth();
 
-    useEffect(() => {
-        loadViajes();
-    }, []);
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
+  };
 
-    const loadViajes = async () => {
-        try {
-            setLoading(true);
-            const response = await apiClient.getViajes();
-            setViajes(response.data || []);
-        } catch (error) {
-            console.error('Error cargando viajes:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.greeting}>Hola, {user?.name || 'Usuario'}</Text>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutText}>Cerrar sesión</Text>
+        </TouchableOpacity>
+      </View>
 
-    const handleLogout = async () => {
-        try {
-            await logout();
-        } catch (error) {
-            console.error('Error al cerrar sesión:', error);
-        }
-    };
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.title}>Bienvenido/a a Rural Connect</Text>
+        <Text style={styles.subtitle}>
+          Reserva espacios, consulta todas las actividades de la peña, comparte coche y planifica
+          tu viaje con otros socios
+        </Text>
 
-    return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.greeting}>¡Hola, {user?.name}!</Text>
-                <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                    <Text style={styles.logoutText}>Cerrar sesión</Text>
-                </TouchableOpacity>
-            </View>
+        <View style={styles.cardsContainer}>
+          <ActionCard
+            icon="🏠"
+            title="Reservar Espacio"
+            subtitle="Comedor, pistas deportivas..."
+            onPress={() => console.log('Reservar Espacio')}
+          />
 
-            <Text style={styles.sectionTitle}>Viajes disponibles</Text>
+          <ActionCard
+            icon="🚗"
+            title="Compartir coche"
+            subtitle="Viajes pueblo - ciudad y viceversa"
+            onPress={() => console.log('Compartir coche')}
+          />
 
-            {loading ? (
-                <ActivityIndicator size="large" color="#007AFF" />
-            ) : viajes.length > 0 ? (
-                <FlatList
-                    data={viajes}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => (
-                        <TouchableOpacity style={styles.travelCard}>
-                            <Text style={styles.travelTitle}>{item.title}</Text>
-                            <Text style={styles.travelDescription}>{item.description}</Text>
-                            <View style={styles.travelDetails}>
-                                <Text style={styles.detailText}>De: {item.origin}</Text>
-                                <Text style={styles.detailText}>Hacia: {item.destination}</Text>
-                                <Text style={styles.detailText}>Fecha: {new Date(item.date).toLocaleDateString()}</Text>
-                            </View>
-                        </TouchableOpacity>
-                    )}
-                />
-            ) : (
-                <Text style={styles.emptyText}>No hay viajes disponibles</Text>
-            )}
+          <ActionCard
+            icon="📅"
+            title="Eventos"
+            subtitle="Consulta y apúntate a las actividades de la peña"
+            onPress={() => console.log('Eventos')}
+          />
+
+          <ActionCard
+            icon="🏡"
+            title="Rural Connect"
+            subtitle="Descubre Rural Connect"
+            onPress={() => console.log('Rural Connect')}
+          />
         </View>
-    );
+      </ScrollView>
+    </SafeAreaView>
+  );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#f5f5f5',
-        paddingTop: 20,
-    },
-    header: {
-        paddingHorizontal: 20,
-        paddingBottom: 20,
-        backgroundColor: '#fff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    greeting: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    logoutButton: {
-        backgroundColor: '#FF3B30',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 6,
-    },
-    logoutText: {
-        color: '#fff',
-        fontSize: 14,
-        fontWeight: '600',
-    },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        paddingHorizontal: 20,
-        paddingTop: 20,
-        paddingBottom: 10,
-        color: '#333',
-    },
-    travelCard: {
-        backgroundColor: '#fff',
-        marginHorizontal: 20,
-        marginBottom: 12,
-        padding: 15,
-        borderRadius: 8,
-        borderLeftWidth: 4,
-        borderLeftColor: '#007AFF',
-    },
-    travelTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 5,
-    },
-    travelDescription: {
-        fontSize: 14,
-        color: '#666',
-        marginBottom: 10,
-    },
-    travelDetails: {
-        backgroundColor: '#f0f0f0',
-        padding: 10,
-        borderRadius: 6,
-    },
-    detailText: {
-        fontSize: 12,
-        color: '#555',
-        marginBottom: 4,
-    },
-    emptyText: {
-        textAlign: 'center',
-        color: '#999',
-        marginTop: 40,
-        fontSize: 16,
-    },
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  header: {
+    backgroundColor: COLORS.surface,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  greeting: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.dark,
+  },
+  logoutButton: {
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  logoutText: {
+    color: COLORS.surface,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 20,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: COLORS.dark,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: COLORS.muted,
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 24,
+  },
+  cardsContainer: {
+    gap: 16,
+  },
+  card: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  cardContent: {
+    marginBottom: 16,
+  },
+  cardIcon: {
+    fontSize: 40,
+    marginBottom: 12,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.dark,
+    marginBottom: 4,
+  },
+  cardSubtitle: {
+    fontSize: 14,
+    color: COLORS.dark,
+    opacity: 0.8,
+  },
+  cardButton: {
+    backgroundColor: COLORS.surface,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  cardButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.dark,
+  },
 });
