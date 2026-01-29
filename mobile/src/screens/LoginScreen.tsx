@@ -239,4 +239,5 @@ const styles = StyleSheet.create({
   forgotPasswordText: {
     color: COLORS.muted,
     fontSize: 14,
+  },
 });
