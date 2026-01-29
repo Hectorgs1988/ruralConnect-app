@@ -3,6 +3,7 @@
     "name": "Susinos",
     "slug": "susinos-mobile",
     "version": "1.0.0",
+    "entryPoint": "./index.js",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "susinos",
