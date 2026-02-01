@@ -48,11 +48,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
+      // TODO: Conectar con backend real
       // const response = await apiClient.login(email, password);
       // const { token, user } = response.data;
       // await AsyncStorage.setItem('authToken', token);
       // await AsyncStorage.setItem('userData', JSON.stringify(user));
-      // setUser(user);
+      
+      // Mock login - acepta cualquier email/password para testing
+      if (email && password) {
+        const mockUser: AuthUser = {
+          id: '1',
+          email: email,
+          name: email.split('@')[0] || 'Usuario Test',
+          role: 'user'
+        };
+        await AsyncStorage.setItem('userData', JSON.stringify(mockUser));
+        setUser(mockUser);
+      } else {
+        throw new Error('Email y contraseña son requeridos');
+      }
     } catch (error) {
       console.error('Error en login:', error);
       throw error;
