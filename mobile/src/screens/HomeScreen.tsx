@@ -7,7 +7,11 @@ import {
     ScrollView,
     SafeAreaView,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '@context/AuthContext';
+
+type NavigationProp = NativeStackNavigationProp<any>;
 
 // Colores de la web
 const COLORS = {
@@ -41,6 +45,7 @@ const ActionCard: React.FC<ActionCardProps> = ({ title, subtitle, icon, onPress 
 
 export const HomeScreen: React.FC = () => {
     const { user, logout } = useAuth();
+    const navigation = useNavigation<NavigationProp>();
 
     const handleLogout = async () => {
         try {
@@ -71,7 +76,7 @@ export const HomeScreen: React.FC = () => {
                         icon="🏠"
                         title="Reservar Espacio"
                         subtitle="Comedor, pistas deportivas..."
-                        onPress={() => console.log('Reservar Espacio')}
+                        onPress={() => navigation.navigate('Reservas')}
                     />
 
                     <ActionCard
