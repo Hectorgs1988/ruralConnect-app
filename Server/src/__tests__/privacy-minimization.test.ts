@@ -11,6 +11,10 @@ vi.mock("../db/prisma.js", () => {
         },
         evento: {
             findMany: vi.fn(),
+            findUnique: vi.fn(),
+        },
+        inscripcionEvento: {
+            findMany: vi.fn(),
         },
     };
 
@@ -102,6 +106,51 @@ describe("Privacy data minimization", () => {
         });
 
         expect(res.body[0].Inscripciones).toBeUndefined();
+    });
+
+    it("GET /api/eventos/:id/apuntados devuelve solo nombre y asistentes", async () => {
+        mockedPrisma.evento.findUnique.mockResolvedValue({ id: "ev-1" });
+        mockedPrisma.inscripcionEvento.findMany.mockResolvedValue([
+            {
+                eventId: "ev-1",
+                userId: "user-1",
+                asistentes: 2,
+                User: {
+                    id: "user-1",
+                    name: "Hector",
+                    email: "hector@example.com",
+                    phone: "600000001",
+                },
+            },
+            {
+                eventId: "ev-1",
+                userId: "user-2",
+                asistentes: 1,
+                User: {
+                    id: "user-2",
+                    name: "Laura",
+                    email: "laura@example.com",
+                    phone: "600000002",
+                },
+            },
+        ]);
+
+        const token = makeToken({
+            sub: "user-3",
+            role: "SOCIO",
+            email: "viewer@example.com",
+            name: "Viewer",
+        });
+
+        const res = await request(app)
+            .get("/api/eventos/ev-1/apuntados")
+            .set("Authorization", `Bearer ${token}`);
+
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual([
+            { userId: "user-1", name: "Hector", asistentes: 2 },
+            { userId: "user-2", name: "Laura", asistentes: 1 },
+        ]);
     });
 
     it("PATCH /api/reservas/:id bloquea cambios de usuarios no propietarios", async () => {

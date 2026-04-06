@@ -171,6 +171,49 @@ eventosRouter.delete("/:id/desinscribirme", requireAuth, async (req: any, res, n
     } catch (e) { next(e); }
 });
 
+/** GET /api/eventos/:id/apuntados  (SOCIO/ADMIN autenticado) */
+eventosRouter.get("/:id/apuntados", requireAuth, async (req, res, next) => {
+    try {
+        const { id } = req.params;
+
+        const evento = await prisma.evento.findUnique({
+            where: { id },
+            select: { id: true },
+        });
+
+        if (!evento) {
+            return res.status(404).json({ error: "Evento no encontrado" });
+        }
+
+        const inscripciones = await prisma.inscripcionEvento.findMany({
+            where: { eventId: id },
+            include: {
+                User: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                },
+            },
+            orderBy: {
+                createdAt: "asc",
+            },
+        });
+
+        const apuntados = inscripciones
+            .filter((ins) => !!ins.User)
+            .map((ins) => ({
+                userId: ins.userId,
+                name: ins.User?.name,
+                asistentes: ins.asistentes,
+            }));
+
+        res.json(apuntados);
+    } catch (e) {
+        next(e);
+    }
+});
+
 /** GET /api/eventos/mis-eventos  (SOCIO) - Eventos a los que está inscrito el usuario */
 eventosRouter.get("/mis-eventos", requireAuth, async (req: any, res, next) => {
     try {
