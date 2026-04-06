@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 
 import CrearReserva from '../CrearReserva';
@@ -83,6 +83,51 @@ describe('CrearReserva page (componente / integración)', () => {
     });
 
     expect(calledWithEspacio).toBe(true);
+  });
+
+  it('muestra el nombre del usuario que ocupa una reserva del día', async () => {
+    mockListReservas.mockResolvedValue([
+      {
+        id: 'res-1',
+        usuarioId: 'user-2',
+        espacioId: 'esp-1',
+        inicio: new Date('2026-04-10T10:00:00.000Z').toISOString(),
+        fin: new Date('2026-04-10T11:00:00.000Z').toISOString(),
+        estado: 'CONFIRMADA',
+        usuario: { id: 'user-2', name: 'Hector' },
+      },
+    ]);
+
+    const espacio: Espacio = {
+      id: 'esp-1',
+      nombre: 'Sala de reuniones',
+      tipo: 'SALA',
+      aforo: 10,
+      descripcion: 'Sala para pruebas',
+    };
+
+    render(
+      <MemoryRouter
+        initialEntries={[
+          {
+            pathname: '/reservas/crear',
+            state: { espacio },
+          } as any,
+        ]}
+      >
+        <Routes>
+          <Route path="/reservas/crear" element={<CrearReserva />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText('Reserva de espacios')).toBeInTheDocument();
+
+    const dayButton = await screen.findByRole('button', { name: '10' });
+    fireEvent.click(dayButton);
+
+    expect(await screen.findByText(/Reservado por/i)).toBeInTheDocument();
+    expect(await screen.findByText('Hector')).toBeInTheDocument();
   });
 });
 

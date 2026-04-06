@@ -39,7 +39,18 @@ reservasRouter.get("/", async (req, res, next) => {
             },
         });
 
-        res.json(reservas);
+        const publicReservas = reservas.map((r) => ({
+            id: r.id,
+            usuarioId: r.usuarioId,
+            espacioId: r.espacioId,
+            inicio: r.inicio,
+            fin: r.fin,
+            estado: r.estado,
+            usuario: r.User ? { id: r.User.id, name: r.User.name } : null,
+            espacio: r.Espacio ? { id: r.Espacio.id, nombre: r.Espacio.nombre } : null,
+        }));
+
+        res.json(publicReservas);
     } catch (e) {
         next(e);
     }
@@ -113,12 +124,28 @@ reservasRouter.post('/', requireAuth, async (req, res, next) => {
 
 
 // PATCH /api/reservas/:id  { estado: 'PENDIENTE'|'CONFIRMADA'|'CANCELADA' }
-reservasRouter.patch("/:id", async (req, res, next) => {
+reservasRouter.patch("/:id", requireAuth, async (req, res, next) => {
     try {
         const { id } = req.params;
+        const authUser = (req as any).user;
         const estado = req.body?.estado;
         if (!["PENDIENTE", "CONFIRMADA", "CANCELADA"].includes(estado))
             return res.status(400).json({ error: "Estado no válido" });
+
+        const reservaActual = await prisma.reserva.findUnique({
+            where: { id },
+            select: { id: true, usuarioId: true },
+        });
+
+        if (!reservaActual) {
+            return res.status(404).json({ error: "Reserva no encontrada" });
+        }
+
+        const isAdmin = authUser?.role === "ADMIN";
+        const isOwner = reservaActual.usuarioId === authUser?.sub;
+        if (!isAdmin && !isOwner) {
+            return res.status(403).json({ error: "No autorizado" });
+        }
 
         const r = await prisma.reserva.update({
             where: { id },

@@ -4,7 +4,12 @@ import { useState, useEffect } from "react";
 import Button from "./button";
 import Input from "./input";
 import { useAuth } from "@/context/AuthContext";
-import { joinEvento, leaveEvento } from "@/api/eventos";
+import {
+	getEventoApuntados,
+	joinEvento,
+	leaveEvento,
+	type ApiEventoApuntado,
+} from "@/api/eventos";
 
 interface EventModalProps {
 	onClose: () => void;
@@ -70,6 +75,9 @@ const EventModal: FC<EventModalProps> = ({ onClose, onUpdate, event }) => {
 	const [showConfirmUpdate, setShowConfirmUpdate] = useState(false);
 	const [showConfirmLeave, setShowConfirmLeave] = useState(false);
 	const [isEditing, setIsEditing] = useState(false);
+	const [apuntadosLista, setApuntadosLista] = useState<ApiEventoApuntado[]>([]);
+	const [loadingApuntados, setLoadingApuntados] = useState(false);
+	const [apuntadosError, setApuntadosError] = useState<string | null>(null);
 	const { token, user } = useAuth();
 
 	const parsedPeopleCount = Number(peopleCount || "0");
@@ -80,6 +88,38 @@ const EventModal: FC<EventModalProps> = ({ onClose, onUpdate, event }) => {
 			setName(user.name);
 		}
 	}, [user]);
+
+	useEffect(() => {
+		if (!token || !event.id) {
+			setApuntadosLista([]);
+			setApuntadosError(null);
+			return;
+		}
+
+		let alive = true;
+		setLoadingApuntados(true);
+		setApuntadosError(null);
+
+		void getEventoApuntados(event.id, token)
+			.then((data) => {
+				if (!alive) return;
+				setApuntadosLista(data);
+			})
+			.catch((err: any) => {
+				if (!alive) return;
+				setApuntadosError(
+					err?.message ?? "No se ha podido cargar la lista de personas apuntadas."
+				);
+			})
+			.finally(() => {
+				if (!alive) return;
+				setLoadingApuntados(false);
+			});
+
+		return () => {
+			alive = false;
+		};
+	}, [event.id, token]);
 
 		const handleSubmit = async (e: React.FormEvent) => {
 			e.preventDefault();
@@ -261,6 +301,35 @@ const EventModal: FC<EventModalProps> = ({ onClose, onUpdate, event }) => {
 									{event.misAsistentes}
 								</span>
 							</div>
+						)}
+					</div>
+
+					<div className="mb-4 p-3 bg-surfaceMuted rounded-lg border border-borderSoft">
+						<p className="text-sm font-semibold text-dark mb-2">
+							Personas apuntadas
+						</p>
+						{loadingApuntados && (
+							<p className="text-xs text-muted">Cargando lista de apuntados...</p>
+						)}
+						{!loadingApuntados && apuntadosError && (
+							<p className="text-xs text-error">{apuntadosError}</p>
+						)}
+						{!loadingApuntados && !apuntadosError && apuntadosLista.length === 0 && (
+							<p className="text-xs text-muted">Todavía no hay personas apuntadas.</p>
+						)}
+						{!loadingApuntados && !apuntadosError && apuntadosLista.length > 0 && (
+							<ol className="list-decimal ml-5 space-y-1 text-sm text-dark">
+								{apuntadosLista.map((item) => (
+									<li key={item.userId}>
+										<span className="font-medium">{item.name}</span>
+										{item.asistentes > 1 && (
+											<span className="text-xs text-muted">
+												{" "}(+{item.asistentes - 1} acomp.)
+											</span>
+										)}
+									</li>
+								))}
+							</ol>
 						)}
 					</div>
 

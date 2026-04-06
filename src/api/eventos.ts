@@ -13,6 +13,12 @@ export type ApiEvento = {
     misAsistentes?: number;
 };
 
+export type ApiEventoApuntado = {
+    userId: string;
+    name: string;
+    asistentes: number;
+};
+
 export interface ListEventosParams {
     desde?: string;
     hasta?: string;
@@ -181,4 +187,23 @@ export async function getMyEventos(token: string): Promise<ApiEvento[]> {
     }
 
     return (await res.json()) as ApiEvento[];
+}
+
+export async function getEventoApuntados(
+    eventId: string,
+    token: string
+): Promise<ApiEventoApuntado[]> {
+    const res = await apiFetch(`/api/eventos/${eventId}/apuntados`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    if (!res.ok) {
+        throw new Error(
+            await getErrorMessage(res, `Error ${res.status} al cargar la lista de apuntados`)
+        );
+    }
+
+    return (await res.json()) as ApiEventoApuntado[];
 }

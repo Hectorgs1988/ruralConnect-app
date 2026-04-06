@@ -576,6 +576,40 @@ export default function CrearReserva() {
                                         }
                                         step={30}
                                     />
+                                    {!loadingSlots && reservasDia.length > 0 && (
+                                        <div className="mt-3">
+                                            <p className="text-xs text-muted mb-2">
+                                                Reservas existentes en este día:
+                                            </p>
+                                            <ul className="space-y-1">
+                                                {reservasDia.map((r) => {
+                                                    const start = new Date(r.inicio).toLocaleTimeString(
+                                                        "es-ES",
+                                                        { hour: "2-digit", minute: "2-digit" }
+                                                    );
+                                                    const end = new Date(r.fin).toLocaleTimeString(
+                                                        "es-ES",
+                                                        { hour: "2-digit", minute: "2-digit" }
+                                                    );
+                                                    const isMine = !!user && r.usuarioId === user.id;
+                                                    const ownerLabel = isMine
+                                                        ? `${r.usuario?.name ?? "Usuario"} (tú)`
+                                                        : (r.usuario?.name ?? "Usuario");
+
+                                                    return (
+                                                        <li
+                                                            key={r.id}
+                                                            className="text-xs text-dark bg-surfaceMuted border border-borderSoft rounded-lg px-2 py-1"
+                                                        >
+                                                            <span className="font-medium">{start} - {end}</span>
+                                                            {" · Reservado por "}
+                                                            <span className="font-semibold">{ownerLabel}</span>
+                                                        </li>
+                                                    );
+                                                })}
+                                            </ul>
+                                        </div>
+                                    )}
                                     {loadingSlots && (
                                         <p className="text-sm text-muted mt-2">
                                             Actualizando disponibilidad…
