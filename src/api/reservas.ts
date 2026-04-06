@@ -9,6 +9,14 @@ export type ApiReserva = {
     inicio: string;
     fin: string;
     estado?: ApiReservaEstado;
+    usuario?: {
+        id: string;
+        name: string;
+    } | null;
+    espacio?: {
+        id: string;
+        nombre: string;
+    } | null;
 };
 
 export interface ListReservasParams {
