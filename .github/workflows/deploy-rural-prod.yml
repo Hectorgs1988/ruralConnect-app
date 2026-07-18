@@ -1,0 +1,23 @@
+name: Deploy rural-prod
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: rural-prod-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy backend to rural-prod
+    runs-on: [self-hosted, Linux, X64, rural-prod-deploy]
+
+    steps:
+      - name: Ejecutar despliegue en producción
+        run: |
+          ssh rural-prod '/opt/rural-connect/deploy.sh'
+
+      - name: Comprobar API pública
+        run: |
+          curl --fail --silent --show-error \
+            https://api.rural-connect.es/health
