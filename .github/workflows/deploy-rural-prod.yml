@@ -2,6 +2,9 @@ name: Deploy rural-prod
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 concurrency:
   group: rural-prod-deployment
