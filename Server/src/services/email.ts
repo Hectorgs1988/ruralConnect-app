@@ -1,30 +1,72 @@
-import sgMail from "@sendgrid/mail";
+const apiKey = process.env.BREVO_API_KEY;
 
-const apiKey = process.env.SENDGRID_API_KEY;
-const FROM = process.env.SENDGRID_FROM_EMAIL || "rconnect.rural@gmail.com";
+const FROM_EMAIL =
+    process.env.EMAIL_FROM_ADDRESS || "no-reply@rural-connect.es";
 
-if (!apiKey) {
-    console.error("Falta SENDGRID_API_KEY en el .env");
-} else {
-    sgMail.setApiKey(apiKey);
+const FROM_NAME =
+    process.env.EMAIL_FROM_NAME || "Rural Connect";
+
+interface EmailMessage {
+    to: string;
+    subject: string;
+    text: string;
+    html: string;
+}
+
+async function sendEmail({
+    to,
+    subject,
+    text,
+    html,
+}: EmailMessage): Promise<void> {
+    if (!apiKey) {
+        console.error("No se puede enviar el email: falta BREVO_API_KEY");
+        return;
+    }
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+            accept: "application/json",
+            "api-key": apiKey,
+            "content-type": "application/json",
+        },
+        body: JSON.stringify({
+            sender: {
+                name: FROM_NAME,
+                email: FROM_EMAIL,
+            },
+            to: [{ email: to }],
+            subject,
+            textContent: text,
+            htmlContent: html,
+        }),
+    });
+
+    if (!response.ok) {
+        const errorBody = await response.text();
+
+        throw new Error(
+            `Error enviando correo con Brevo (${response.status}): ${errorBody}`,
+        );
+    }
 }
 
 export async function sendTestEmail(to?: string) {
-    const toEmail = to || FROM;
+    const toEmail = to || FROM_EMAIL;
 
     const msg = {
         to: toEmail,
-        from: FROM,
-        subject: "Prueba SendGrid · Rural Connect",
+        subject: "Prueba de correo · Rural Connect",
         text: "Este es un email de prueba enviado desde el backend de Rural Connect.",
         html: `
-        <h1>Prueba de SendGrid</h1>
-        <p>El envío de correo funciona </p>
-        <p><strong>Backend:</strong> susinos-app/server (localhost)</p>
-    `,
+            <h1>Prueba de correo</h1>
+            <p>El envío de correo mediante Brevo funciona correctamente.</p>
+            <p><strong>Backend:</strong> Rural Connect</p>
+        `,
     };
 
-    await sgMail.send(msg);
+    await sendEmail(msg);
 }
 
 export interface ReservationConfirmationEmail {
@@ -43,7 +85,7 @@ export async function sendReservationConfirmationEmail({
     fin,
 }: ReservationConfirmationEmail) {
     if (!apiKey) {
-        console.error("No se puede enviar email de reserva: falta SENDGRID_API_KEY");
+        console.error("No se puede enviar email de reserva: falta BREVO_API_KEY");
         return;
     }
 
@@ -65,7 +107,6 @@ export async function sendReservationConfirmationEmail({
 
     const msg = {
         to,
-        from: FROM,
         subject: `Reserva confirmada · ${espacioNombre}`,
         text: `${greeting} tu reserva de ${espacioNombre} está confirmada desde ${inicioStr}${textFin}.`,
         html: `
@@ -77,7 +118,7 @@ export async function sendReservationConfirmationEmail({
         `,
     };
 
-    await sgMail.send(msg as any);
+    await sendEmail(msg);
 }
 
 export interface ReservationCancelledEmail {
@@ -97,7 +138,7 @@ export async function sendReservationCancelledEmail({
 }: ReservationCancelledEmail) {
     if (!apiKey) {
         console.error(
-            "No se puede enviar email de cancelación de reserva: falta SENDGRID_API_KEY",
+            "No se puede enviar email de cancelación de reserva: falta BREVO_API_KEY",
         );
         return;
     }
@@ -120,7 +161,6 @@ export async function sendReservationCancelledEmail({
 
     const msg = {
         to,
-        from: FROM,
         subject: `Reserva cancelada · ${espacioNombre}`,
         text: `${greeting} has cancelado tu reserva de ${espacioNombre} que estaba prevista desde ${inicioStr}${textFin}.`,
         html: `
@@ -133,7 +173,7 @@ export async function sendReservationCancelledEmail({
 	        `,
     };
 
-    await sgMail.send(msg as any);
+    await sendEmail(msg);
 }
 
 export interface PasswordResetEmail {
@@ -144,7 +184,7 @@ export interface PasswordResetEmail {
 
 export async function sendPasswordResetEmail({ to, name, resetUrl }: PasswordResetEmail) {
     if (!apiKey) {
-        console.error("No se puede enviar email de reset: falta SENDGRID_API_KEY");
+        console.error("No se puede enviar email de reset: falta BREVO_API_KEY");
         return;
     }
 
@@ -153,7 +193,6 @@ export async function sendPasswordResetEmail({ to, name, resetUrl }: PasswordRes
 
     const msg = {
         to,
-        from: FROM,
         subject: "Recuperación de contraseña · Rural Connect",
         text: `${greeting} hemos recibido una solicitud para restablecer tu contraseña. Puedes hacerlo en: ${resetUrl}`,
         html: `
@@ -166,7 +205,7 @@ export async function sendPasswordResetEmail({ to, name, resetUrl }: PasswordRes
     `,
     };
 
-    await sgMail.send(msg as any);
+    await sendEmail(msg);
 }
 
 export interface EventInscriptionEmail {
@@ -187,7 +226,7 @@ export async function sendEventInscriptionEmail({
     asistentes,
 }: EventInscriptionEmail) {
     if (!apiKey) {
-        console.error("No se puede enviar email de evento: falta SENDGRID_API_KEY");
+        console.error("No se puede enviar email de evento: falta BREVO_API_KEY");
         return;
     }
 
@@ -208,7 +247,6 @@ export async function sendEventInscriptionEmail({
 
     const msg = {
         to,
-        from: FROM,
         subject: `Inscripción confirmada · ${titulo}`,
         text: `${greeting} tu inscripción al evento "${titulo}" está confirmada para el ${fechaStr}.${lugarTexto}\n${asistentesTexto}\n\n¡Gracias por participar en Rural Connect!`,
         html: `
@@ -222,7 +260,7 @@ export async function sendEventInscriptionEmail({
     `,
     };
 
-    await sgMail.send(msg as any);
+    await sendEmail(msg);
 }
 
 export interface EventUnsubscribeEmail {
@@ -244,7 +282,7 @@ export async function sendEventUnsubscribeEmail({
 }: EventUnsubscribeEmail) {
     if (!apiKey) {
         console.error(
-            "No se puede enviar email de baja de evento: falta SENDGRID_API_KEY",
+            "No se puede enviar email de baja de evento: falta BREVO_API_KEY",
         );
         return;
     }
@@ -267,7 +305,6 @@ export async function sendEventUnsubscribeEmail({
 
     const msg = {
         to,
-        from: FROM,
         subject: `Has cancelado tu inscripción · ${titulo}`,
         text: `${greeting} has cancelado tu inscripción al evento "${titulo}" previsto para el ${fechaStr}.${lugarTexto}\n${asistentesTexto}\n\nSi ha sido un error, puedes volver a inscribirte desde Rural Connect.`,
         html: `
@@ -281,7 +318,7 @@ export async function sendEventUnsubscribeEmail({
     `,
     };
 
-    await sgMail.send(msg as any);
+    await sendEmail(msg);
 }
 
 export interface TripJoinPassengerEmail {
@@ -304,7 +341,7 @@ export async function sendTripJoinPassengerEmail({
     conductorTelefono,
 }: TripJoinPassengerEmail) {
     if (!apiKey) {
-        console.error("❌ No se puede enviar email de viaje (pasajero): falta SENDGRID_API_KEY");
+        console.error("❌ No se puede enviar email de viaje (pasajero): falta BREVO_API_KEY");
         return;
     }
 
@@ -327,7 +364,6 @@ export async function sendTripJoinPassengerEmail({
 
     const msg = {
         to,
-        from: FROM,
         subject: `Te has unido al viaje · ${origen} → ${destino}`,
         text: `${greeting} te has unido al viaje ${origen} → ${destino} el ${fechaStr}.${conductorLineText}\n\nSi no puedes asistir, por favor avisa al conductor.\n\n¡Gracias por usar Rural Connect!`,
         html: `
@@ -341,7 +377,7 @@ export async function sendTripJoinPassengerEmail({
     `,
     };
 
-    await sgMail.send(msg as any);
+    await sendEmail(msg);
 }
 
 export interface TripJoinDriverEmail {
@@ -366,7 +402,7 @@ export async function sendTripJoinDriverEmail({
     fecha,
 }: TripJoinDriverEmail) {
     if (!apiKey) {
-        console.error("No se puede enviar email de viaje (conductor): falta SENDGRID_API_KEY");
+        console.error("No se puede enviar email de viaje (conductor): falta BREVO_API_KEY");
         return;
     }
 
@@ -384,7 +420,6 @@ export async function sendTripJoinDriverEmail({
 
     const msg = {
         to,
-        from: FROM,
         subject: `Nuevo pasajero en tu viaje · ${origen} → ${destino}`,
         text: `${greeting} ${pasajeroNombreText} se ha unido a tu viaje ${origen} → ${destino} del ${fechaStr}.\n\nContacto del pasajero: ${pasajeroEmail}${telefonoLineaText}\n\nPor favor, ponte en contacto para coordinar el viaje.\n\nRural Connect`,
         html: `
@@ -398,7 +433,7 @@ export async function sendTripJoinDriverEmail({
     `,
     };
 
-    await sgMail.send(msg as any);
+    await sendEmail(msg);
 }
 
 export interface TripLeavePassengerEmail {
@@ -417,7 +452,7 @@ export async function sendTripLeavePassengerEmail({
     fecha,
 }: TripLeavePassengerEmail) {
     if (!apiKey) {
-        console.error("No se puede enviar email de viaje (baja pasajero): falta SENDGRID_API_KEY");
+        console.error("No se puede enviar email de viaje (baja pasajero): falta BREVO_API_KEY");
         return;
     }
 
@@ -431,7 +466,6 @@ export async function sendTripLeavePassengerEmail({
 
     const msg = {
         to,
-        from: FROM,
         subject: `Has cancelado tu plaza · ${origen} → ${destino}`,
         text: `${greeting} has cancelado tu plaza en el viaje ${origen} → ${destino} del ${fechaStr}.
 
@@ -448,7 +482,7 @@ Rural Connect`,
     `,
     };
 
-    await sgMail.send(msg as any);
+    await sendEmail(msg);
 }
 
 export interface TripLeaveDriverEmail {
@@ -473,7 +507,7 @@ export async function sendTripLeaveDriverEmail({
     fecha,
 }: TripLeaveDriverEmail) {
     if (!apiKey) {
-        console.error("No se puede enviar email de viaje (baja pasajero al conductor): falta SENDGRID_API_KEY");
+        console.error("No se puede enviar email de viaje (baja pasajero al conductor): falta BREVO_API_KEY");
         return;
     }
 
@@ -491,7 +525,6 @@ export async function sendTripLeaveDriverEmail({
 
     const msg = {
         to,
-        from: FROM,
         subject: `Un pasajero ha cancelado su plaza · ${origen} → ${destino}`,
         text: `${greeting} ${pasajeroNombreText} ha cancelado su plaza en tu viaje ${origen} → ${destino} del ${fechaStr}.
 
@@ -508,7 +541,7 @@ Rural Connect`,
     `,
     };
 
-    await sgMail.send(msg as any);
+    await sendEmail(msg);
 }
 
 export interface TripCancelledPassengerEmail {
@@ -529,7 +562,7 @@ export async function sendTripCancelledPassengerEmail({
     conductorNombre,
 }: TripCancelledPassengerEmail) {
     if (!apiKey) {
-        console.error("No se puede enviar email de viaje cancelado: falta SENDGRID_API_KEY");
+        console.error("No se puede enviar email de viaje cancelado: falta BREVO_API_KEY");
         return;
     }
 
@@ -545,7 +578,6 @@ export async function sendTripCancelledPassengerEmail({
 
     const msg = {
         to,
-        from: FROM,
         subject: `Viaje cancelado · ${origen} → ${destino}`,
         text: `${greeting} lamentamos informarte que ${conductorText} ha cancelado el viaje ${origen} → ${destino} del ${fechaStr}.
 
@@ -565,7 +597,7 @@ Rural Connect`,
     `,
     };
 
-    await sgMail.send(msg as any);
+    await sendEmail(msg);
 }
 
 export interface TripCancelledDriverEmail {
@@ -584,7 +616,7 @@ export async function sendTripCancelledDriverEmail({
     fecha,
 }: TripCancelledDriverEmail) {
     if (!apiKey) {
-        console.error("No se puede enviar email de confirmación de viaje cancelado al conductor: falta SENDGRID_API_KEY");
+        console.error("No se puede enviar email de confirmación de viaje cancelado al conductor: falta BREVO_API_KEY");
         return;
     }
 
@@ -598,7 +630,6 @@ export async function sendTripCancelledDriverEmail({
 
     const msg = {
         to,
-        from: FROM,
         subject: `Has cancelado tu viaje · ${origen} → ${destino}`,
         text: `${greeting} has cancelado tu viaje ${origen} → ${destino} previsto para el ${fechaStr}.
 
@@ -615,6 +646,6 @@ Rural Connect`,
 	    `,
     };
 
-    await sgMail.send(msg as any);
+    await sendEmail(msg);
 }
 
