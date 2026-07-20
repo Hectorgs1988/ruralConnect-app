@@ -123,7 +123,8 @@ describe('CrearReserva page (componente / integración)', () => {
 
     expect(await screen.findByText('Reserva de espacios')).toBeInTheDocument();
 
-    const dayButton = await screen.findByRole('button', { name: '10' });
+    const todayDay = String(new Date().getDate());
+    const dayButton = await screen.findByRole('button', { name: todayDay });
     fireEvent.click(dayButton);
 
     expect(await screen.findByText(/Reservado por/i)).toBeInTheDocument();

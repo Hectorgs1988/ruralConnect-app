@@ -1,4 +1,4 @@
-import { useEffect, useState, type FC } from "react";
+import { useEffect, useMemo, useState, type FC } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import EventCard from "@/components/ui/EventCard";
@@ -6,6 +6,13 @@ import EventModal from "@/components/ui/EventModal";
 import { listEventos, getMyEventos, type ApiEvento } from "@/api/eventos";
 import { useAuth } from "@/context/AuthContext";
 import { CalendarClock } from "lucide-react";
+
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+function filterFutureAndRecentPast(events: ApiEvento[]) {
+  const cutoff = Date.now() - ONE_DAY_MS;
+  return events.filter((event) => new Date(event.fecha).getTime() >= cutoff);
+}
 
 const Eventos: FC = () => {
   const [showModal, setShowModal] = useState(false);
@@ -48,6 +55,16 @@ const Eventos: FC = () => {
     void loadMisEventos();
   }, [token]);
 
+  const eventosVisibles = useMemo(
+    () => filterFutureAndRecentPast(eventos),
+    [eventos]
+  );
+
+  const misEventosVisibles = useMemo(
+    () => filterFutureAndRecentPast(misEventos),
+    [misEventos]
+  );
+
   const handleOpenModal = (evento: ApiEvento) => {
     setSelectedEvent(evento);
     setShowModal(true);
@@ -68,7 +85,7 @@ const Eventos: FC = () => {
           Consulta todas las actividades de la peña y apúntate a las que te interesen.
         </p>
 
-        {user && misEventos.length > 0 && (
+        {user && misEventosVisibles.length > 0 && (
           <section className="rc-card-section">
             <h3 className="flex items-center text-lg font-semibold mb-4">
               <CalendarClock size={36} strokeWidth={2} className="mr-2" />
@@ -76,7 +93,7 @@ const Eventos: FC = () => {
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {misEventos.map((evento) => {
+              {misEventosVisibles.map((evento) => {
                 const fechaObj = new Date(evento.fecha);
                 const date = fechaObj.toLocaleDateString("es-ES", {
                   weekday: "long",
@@ -115,13 +132,13 @@ const Eventos: FC = () => {
           {loading && <p>Cargando eventos...</p>}
           {error && <p className="text-error">{error}</p>}
 
-          {!loading && !error && eventos.length === 0 && (
+          {!loading && !error && eventosVisibles.length === 0 && (
             <p>No hay eventos publicados por ahora.</p>
           )}
 
-          {!loading && !error && eventos.length > 0 && (
+          {!loading && !error && eventosVisibles.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {eventos.map((evento) => {
+              {eventosVisibles.map((evento) => {
                 const fechaObj = new Date(evento.fecha);
                 const date = fechaObj.toLocaleDateString("es-ES", {
                   weekday: "long",
