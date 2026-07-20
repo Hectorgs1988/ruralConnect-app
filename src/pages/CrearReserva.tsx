@@ -56,6 +56,10 @@ export function toIsoLocal(dateStr: string, timeStr: string) {
     return new Date(`${dateStr}T${timeStr}`).toISOString();
 }
 
+function isDateTimeInPast(dateStr: string, timeStr: string) {
+    return new Date(`${dateStr}T${timeStr}`) < new Date();
+}
+
 function getMonthRangeIso(monthDate: Date): { desde: string; hasta: string } {
 	const firstDay = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
 	const lastDay = new Date(
@@ -176,6 +180,7 @@ export default function CrearReserva() {
         null
     );
     const timeOptions = useMemo(() => buildTimeOptions(), []);
+    const todayKey = formatDateKey(new Date());
 
     async function reloadReservasDia(fechaStr: string, espacioId: string) {
         const desde = toIsoLocal(fechaStr, "00:00");
@@ -268,8 +273,16 @@ export default function CrearReserva() {
 
     const inicioOptions = useMemo(() => {
         const opts: string[] = [];
+        const now = new Date();
+        const isToday = fecha === todayKey;
+        const nowMinutes = now.getHours() * 60 + now.getMinutes();
+        const minStart = isToday
+            ? Math.ceil(nowMinutes / STEP_MIN) * STEP_MIN
+            : 0;
+
         for (const t of timeOptions) {
             const start = toMinutes(t);
+            if (start < minStart) continue;
             const nextBlock = intervals.find((iv) => iv.s > start);
             const until = nextBlock ? nextBlock.s : 24 * 60;
             const insideBlock = intervals.some((iv) => start >= iv.s && start < iv.e);
@@ -278,7 +291,7 @@ export default function CrearReserva() {
             }
         }
         return opts;
-    }, [timeOptions, intervals]);
+    }, [timeOptions, intervals, fecha, todayKey]);
 
     const finOptions = useMemo(() => {
         const minEnd = addMinutes(inicio, MIN_DURATION);
@@ -327,6 +340,11 @@ export default function CrearReserva() {
             return;
         }
 
+        if (isDateTimeInPast(fecha, inicio)) {
+            setError("No puedes reservar una fecha pasada");
+            return;
+        }
+
         setShowConfirmModal(true);
     }
 
@@ -355,7 +373,8 @@ export default function CrearReserva() {
             await reloadReservasDia(fecha, espacio.id);
             await reloadMisReservas(espacio.id);
         } catch (err: any) {
-            setError(err?.message ?? "Error creando la reserva");
+            const message = String(err?.message ?? "");
+            setError(message || "Error creando la reserva");
         } finally {
             setLoading(false);
         }
@@ -390,6 +409,11 @@ export default function CrearReserva() {
 
     const noHayHueco = !!fecha && !loadingSlots && !inicioOptions.length;
     const submitDisabled = loading || noHayHueco;
+
+    function closeConfirmModal() {
+        if (loading) return;
+        setShowConfirmModal(false);
+    }
 
     // Datos derivados para el calendario mensual
     const calendarYear = calendarMonth.getFullYear();
@@ -503,11 +527,15 @@ export default function CrearReserva() {
                                         const key = formatDateKey(date);
                                         const isSelected = fecha === key;
                                         const isFull = !!fullDays[key];
-                                        const isDisabled = isFull;
+                                        const isPast = key < todayKey;
+                                        const isDisabled = isFull || isPast;
 
                                         let className =
                                             "flex items-center justify-center rounded-full w-8 h-8 md:w-9 md:h-9 text-xs md:text-sm border-2 transition-colors ";
-                                        if (isFull) {
+                                        if (isPast) {
+                                            className +=
+                                                "border-gray-300 text-gray-400 bg-gray-100 cursor-not-allowed opacity-80";
+                                        } else if (isFull) {
                                             className +=
                                                 "border-red-500 text-red-600 bg-white cursor-not-allowed opacity-80";
                                         } else if (isSelected) {
@@ -538,6 +566,10 @@ export default function CrearReserva() {
                                 </div>
 
                                 <div className="flex flex-wrap gap-3 mt-4 text-[11px] text-muted">
+                                    <div className="flex items-center gap-1">
+                                        <span className="w-3 h-3 rounded-full bg-gray-200 border border-gray-300" />
+                                        <span>Pasado</span>
+                                    </div>
                                     <div className="flex items-center gap-1">
                                         <span className="w-3 h-3 rounded-full bg-primary" />
                                         <span>Disponible</span>
@@ -791,7 +823,7 @@ export default function CrearReserva() {
                 {showConfirmModal && (
                     <div
                         className="rc-modal-overlay"
-                        onClick={() => !loading && setShowConfirmModal(false)}
+                        onClick={closeConfirmModal}
                     >
                         <div
                             className="rc-modal-panel max-w-md"
@@ -799,7 +831,7 @@ export default function CrearReserva() {
                         >
                             <button
                                 type="button"
-                                onClick={() => !loading && setShowConfirmModal(false)}
+                                onClick={closeConfirmModal}
                                 className="absolute top-4 right-4 text-muted hover:text-dark text-xl font-semibold"
                                 aria-label="Cerrar"
                             >
@@ -820,7 +852,7 @@ export default function CrearReserva() {
                             <div className="rc-modal-footer">
                                 <Button
                                     type="button"
-                                    onClick={() => !loading && setShowConfirmModal(false)}
+                                    onClick={closeConfirmModal}
                                     className="w-full md:w-auto rc-btn-secondary"
                                     disabled={loading}
                                 >
