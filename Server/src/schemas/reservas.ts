@@ -6,7 +6,15 @@ export const createReservaSchema = z.object({
     //fecha: z.coerce.date(),
     inicio: z.coerce.date(),
     fin: z.coerce.date()
-}).refine(v => v.fin > v.inicio, { message: 'fin debe ser posterior a inicio', path: ['fin'] });
+})
+    .refine(v => v.fin > v.inicio, {
+        message: 'fin debe ser posterior a inicio',
+        path: ['fin'],
+    })
+    .refine(v => v.inicio >= new Date(), {
+        message: 'inicio no puede estar en el pasado',
+        path: ['inicio'],
+    });
 
 //filtro de consulta con estado:
 export const listReservasQuerySchema = z.object({
