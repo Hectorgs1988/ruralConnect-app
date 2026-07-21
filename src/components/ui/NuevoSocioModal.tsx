@@ -60,7 +60,6 @@ const NuevoSocioModal: FC<NuevoSocioModalProps> = ({ onClose, onCreated }) => {
             await createUser(
                 {
                     email: email.trim(),
-                    password: "socio123",
                     name: fullName,
                     phone: phoneValue,
                     role: roleUpper as "ADMIN" | "SOCIO",
@@ -105,7 +104,7 @@ const NuevoSocioModal: FC<NuevoSocioModalProps> = ({ onClose, onCreated }) => {
                         id="new-member-modal-description"
                         className="rc-modal-subtitle"
                     >
-                        Introduce los datos del nuevo socio de la peña
+                        Introduce los datos del nuevo socio. Se enviara un email para crear su contraseña.
                     </p>
                 </div>
 

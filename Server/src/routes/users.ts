@@ -1,8 +1,13 @@
 // Server/src/routes/users.ts
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
+import { randomBytes } from 'crypto';
+import jwt from 'jsonwebtoken';
 import { prisma } from '../db/prisma.js';
 import { requireAuth, requireRole } from '../middlewares/auth.js';
+import { JWT_SECRET } from '../config/jwt.js';
+import { sendPasswordSetupEmail } from '../services/email.js';
+import { getPasswordPolicyError } from '../utils/password-policy.js';
 import {
     createUserSchema,
     createAdminSchema,
@@ -15,6 +20,7 @@ export const usersRouter = Router();
 
 // --- Constantes/reutilizables ------------------------------------------------
 const SALT_ROUNDS = 10;
+const APP_BASE_URL = process.env.APP_BASE_URL || 'http://localhost:5173';
 
 const USER_SELECT = {
     id: true,
@@ -30,6 +36,20 @@ const USER_SELECT = {
 const requireAdmin = requireRole('ADMIN');
 
 const toEmail = (v: string) => v.trim().toLowerCase();
+
+const buildSetupPasswordUrl = (userId: string) => {
+    const token = jwt.sign(
+        { sub: userId, type: 'setup-password' },
+        JWT_SECRET,
+        { expiresIn: '24h' }
+    );
+    return `${APP_BASE_URL}/reset-password?token=${encodeURIComponent(token)}`;
+};
+
+const createTemporaryPasswordHash = async () => {
+    const temporaryPassword = randomBytes(16).toString('hex');
+    return bcrypt.hash(temporaryPassword, SALT_ROUNDS);
+};
 
 const escapeCsvField = (value: unknown): string => {
     const s = value == null ? "" : String(value);
@@ -174,7 +194,7 @@ usersRouter.post('/', requireAuth, requireAdmin, async (req, res, next) => {
         const exists = await prisma.user.findUnique({ where: { email } });
         if (exists) return res.status(409).json({ error: 'Email already registered' });
 
-        const password = await bcrypt.hash(data.password, SALT_ROUNDS);
+        const password = await createTemporaryPasswordHash();
 
         const user = await prisma.user.create({
             data: {
@@ -182,9 +202,17 @@ usersRouter.post('/', requireAuth, requireAdmin, async (req, res, next) => {
                 name: data.name,
                 phone: data.phone ?? null,
                 password,
+                mustSetPassword: true,
                 role: 'SOCIO', // fuerza SOCIO en este endpoint
             },
             select: USER_SELECT,
+        });
+
+        const setupUrl = buildSetupPasswordUrl(user.id);
+        await sendPasswordSetupEmail({
+            to: user.email,
+            name: user.name,
+            setupUrl,
         });
 
         res.status(201).json(user);
@@ -202,7 +230,7 @@ usersRouter.post('/admin', requireAuth, requireAdmin, async (req, res, next) => 
         const exists = await prisma.user.findUnique({ where: { email } });
         if (exists) return res.status(409).json({ error: 'Email already registered' });
 
-        const password = await bcrypt.hash(data.password, SALT_ROUNDS);
+        const password = await createTemporaryPasswordHash();
 
         const user = await prisma.user.create({
             data: {
@@ -210,9 +238,17 @@ usersRouter.post('/admin', requireAuth, requireAdmin, async (req, res, next) => 
                 name: data.name,
                 phone: data.phone ?? null,
                 password,
+                mustSetPassword: true,
                 role: 'ADMIN', // fuerza ADMIN en este endpoint
             },
             select: USER_SELECT,
+        });
+
+        const setupUrl = buildSetupPasswordUrl(user.id);
+        await sendPasswordSetupEmail({
+            to: user.email,
+            name: user.name,
+            setupUrl,
         });
 
         res.status(201).json(user);
@@ -319,8 +355,8 @@ usersRouter.post('/import-csv', requireAuth, requireAdmin, async (req, res, next
             try {
                 const existing = await prisma.user.findUnique({ where: { email } });
                 if (!existing) {
-                    const password = await bcrypt.hash('socio123', SALT_ROUNDS);
-                    await prisma.user.create({
+                    const password = await createTemporaryPasswordHash();
+                    const createdUser = await prisma.user.create({
                         data: {
                             email,
                             name: row.name,
@@ -328,7 +364,15 @@ usersRouter.post('/import-csv', requireAuth, requireAdmin, async (req, res, next
                             password,
                             role: row.role,
                             isActive: true,
+                            mustSetPassword: true,
                         },
+                    });
+
+                    const setupUrl = buildSetupPasswordUrl(createdUser.id);
+                    await sendPasswordSetupEmail({
+                        to: createdUser.email,
+                        name: createdUser.name,
+                        setupUrl,
                     });
                     created++;
                 } else {
@@ -385,8 +429,9 @@ usersRouter.patch('/:id/password', requireAuth, async (req, res, next) => {
         const { oldPassword, newPassword } = req.body;
         const current = (req as any).user as { sub: string; role: 'ADMIN' | 'SOCIO' };
 
-        if (!newPassword || newPassword.length < 6) {
-            return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
+        const passwordError = newPassword ? getPasswordPolicyError(newPassword) : 'La nueva contraseña es requerida';
+        if (passwordError) {
+            return res.status(400).json({ error: passwordError });
         }
 
         // Si no es admin, solo puede cambiar su propia contraseña

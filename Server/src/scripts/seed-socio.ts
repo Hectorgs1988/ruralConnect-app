@@ -17,6 +17,7 @@ async function main() {
             name: 'Socio Ejemplo',
             role: 'SOCIO',
             isActive: true,
+            mustSetPassword: false,
         },
     });
 

@@ -182,6 +182,12 @@ export interface PasswordResetEmail {
     resetUrl: string;
 }
 
+export interface PasswordSetupEmail {
+    to: string;
+    name?: string | null;
+    setupUrl: string;
+}
+
 export async function sendPasswordResetEmail({ to, name, resetUrl }: PasswordResetEmail) {
     if (!apiKey) {
         console.error("No se puede enviar email de reset: falta BREVO_API_KEY");
@@ -202,6 +208,32 @@ export async function sendPasswordResetEmail({ to, name, resetUrl }: PasswordRes
         <p>Si has sido tú, haz clic en el siguiente enlace:</p>
         <p><a href="${resetUrl}" target="_blank" rel="noopener noreferrer">Restablecer contraseña</a></p>
         <p>Si no has solicitado este cambio, puedes ignorar este mensaje.</p>
+    `,
+    };
+
+    await sendEmail(msg);
+}
+
+export async function sendPasswordSetupEmail({ to, name, setupUrl }: PasswordSetupEmail) {
+    if (!apiKey) {
+        console.error("No se puede enviar email de activacion: falta BREVO_API_KEY");
+        return;
+    }
+
+    const displayName = name || "";
+    const greeting = displayName ? `Hola ${displayName},` : "Hola,";
+
+    const msg = {
+        to,
+        subject: "Activa tu cuenta · Rural Connect",
+        text: `${greeting} tu cuenta en Rural Connect ya está creada. Para activar tu acceso, crea tu contraseña aquí: ${setupUrl}`,
+        html: `
+        <h1>Activa tu cuenta</h1>
+        <p>${greeting}</p>
+        <p>Tu cuenta de Rural Connect ya está creada.</p>
+        <p>Para activar tu acceso, crea tu contraseña en el siguiente enlace:</p>
+        <p><a href="${setupUrl}" target="_blank" rel="noopener noreferrer">Crear contraseña</a></p>
+        <p>Si no esperabas este mensaje, puedes ignorarlo.</p>
     `,
     };
 
@@ -415,19 +447,19 @@ export async function sendTripJoinDriverEmail({
     });
 
     const pasajeroNombreText = pasajeroNombre || "Un socio";
-    const telefonoLineaText = pasajeroTelefono ? ` · Teléfono: ${pasajeroTelefono}` : "";
-    const telefonoLineaHtml = pasajeroTelefono ? ` · Teléfono: ${pasajeroTelefono}` : "";
+    const passengerPhone = pasajeroTelefono || "No disponible";
 
     const msg = {
         to,
         subject: `Nuevo pasajero en tu viaje · ${origen} → ${destino}`,
-        text: `${greeting} ${pasajeroNombreText} se ha unido a tu viaje ${origen} → ${destino} del ${fechaStr}.\n\nContacto del pasajero: ${pasajeroEmail}${telefonoLineaText}\n\nPor favor, ponte en contacto para coordinar el viaje.\n\nRural Connect`,
+        text: `${greeting} ${pasajeroNombreText} se ha unido a tu viaje ${origen} → ${destino} del ${fechaStr}.\n\nContacto del pasajero:\n- Email: ${pasajeroEmail}\n- Móvil: ${passengerPhone}\n\nPor favor, ponte en contacto para coordinar el viaje.\n\nRural Connect`,
         html: `
         <h1>Nuevo pasajero en tu viaje</h1>
         <p>${greeting}</p>
         <p><strong>${pasajeroNombreText}</strong> se ha unido a tu viaje <strong>${origen} → ${destino}</strong>.</p>
         <p><strong>Fecha y hora:</strong> ${fechaStr}</p>
-        <p><strong>Contacto del pasajero:</strong> ${pasajeroEmail}${telefonoLineaHtml}</p>
+        <p><strong>Contacto del pasajero:</strong></p>
+        <p><strong>Email:</strong> ${pasajeroEmail}<br/><strong>Móvil:</strong> ${passengerPhone}</p>
         <p>Por favor, ponte en contacto para coordinar el viaje.</p>
         <p>Rural Connect</p>
     `,
@@ -520,23 +552,25 @@ export async function sendTripLeaveDriverEmail({
     });
 
     const pasajeroNombreText = pasajeroNombre || "Un socio";
-    const telefonoLineaText = pasajeroTelefono ? ` · Teléfono: ${pasajeroTelefono}` : "";
-    const telefonoLineaHtml = pasajeroTelefono ? ` · Teléfono: ${pasajeroTelefono}` : "";
+    const passengerPhone = pasajeroTelefono || "No disponible";
 
     const msg = {
         to,
         subject: `Un pasajero ha cancelado su plaza · ${origen} → ${destino}`,
         text: `${greeting} ${pasajeroNombreText} ha cancelado su plaza en tu viaje ${origen} → ${destino} del ${fechaStr}.
 
-Contacto del pasajero: ${pasajeroEmail}${telefonoLineaText}
+    Contacto del pasajero:
+    - Email: ${pasajeroEmail}
+    - Móvil: ${passengerPhone}
 
-Rural Connect`,
+    Rural Connect`,
         html: `
         <h1>Un pasajero ha cancelado su plaza</h1>
         <p>${greeting}</p>
         <p><strong>${pasajeroNombreText}</strong> ha cancelado su plaza en tu viaje <strong>${origen} → ${destino}</strong>.</p>
         <p><strong>Fecha y hora:</strong> ${fechaStr}</p>
-        <p><strong>Contacto del pasajero:</strong> ${pasajeroEmail}${telefonoLineaHtml}</p>
+        <p><strong>Contacto del pasajero:</strong></p>
+        <p><strong>Email:</strong> ${pasajeroEmail}<br/><strong>Móvil:</strong> ${passengerPhone}</p>
         <p>Rural Connect</p>
     `,
     };
