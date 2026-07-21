@@ -17,6 +17,7 @@ async function main() {
             name: 'Admin Ejemplo',
             role: 'ADMIN',
             isActive: true,
+            mustSetPassword: false,
         },
     });
     console.log('Admin creado:', user.email);

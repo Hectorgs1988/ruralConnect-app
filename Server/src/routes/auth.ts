@@ -14,8 +14,13 @@ auth.post('/login', async (req, res, next) => {
         const { email, password } = req.body ?? {};
         if (!email || !password) return res.status(400).json({ error: 'Faltan credenciales' });
 
-        const user = await prisma.user.findUnique({ where: { email } });
+        const normalizedEmail = String(email).trim().toLowerCase();
+        const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
         if (!user) return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
+
+        if (user.mustSetPassword) {
+            return res.status(403).json({ error: 'Debes activar tu cuenta desde el enlace enviado al correo.' });
+        }
 
         const ok = await bcrypt.compare(password, user.password);
         if (!ok) return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
@@ -41,7 +46,8 @@ auth.post("/forgot-password", async (req, res, next) => {
             return res.status(400).json({ error: "Email requerido" });
         }
 
-        const user = await prisma.user.findUnique({ where: { email } });
+        const normalizedEmail = String(email).trim().toLowerCase();
+        const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
 
         // Para no filtrar si el email existe o no, respondemos siempre OK
         if (!user) {
@@ -92,7 +98,8 @@ auth.post("/reset-password", async (req, res, next) => {
                 .json({ error: "Token de recuperacion invalido o caducado" });
         }
 
-        if (payload?.type !== "reset-password" || !payload?.sub) {
+        const tokenType = payload?.type;
+        if ((tokenType !== "reset-password" && tokenType !== "setup-password") || !payload?.sub) {
             return res
                 .status(400)
                 .json({ error: "Token de recuperacion invalido" });
@@ -104,7 +111,7 @@ auth.post("/reset-password", async (req, res, next) => {
 
         await prisma.user.update({
             where: { id: userId },
-            data: { password: hashed },
+            data: { password: hashed, mustSetPassword: false },
         });
 
         res.json({ ok: true });

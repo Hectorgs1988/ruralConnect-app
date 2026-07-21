@@ -39,9 +39,12 @@ const RecuperarContrasena = () => {
         try {
             setLoading(true);
             await resetPassword(token, password);
-            setSuccess("Contraseña restablecida correctamente. Ya puedes iniciar sesión.");
+            setSuccess("Contraseña guardada correctamente. Te redirigiremos al login.");
             setPassword("");
             setConfirm("");
+            setTimeout(() => {
+                navigate("/login", { replace: true });
+            }, 1200);
         } catch (e: any) {
             console.error(e);
             setError(e?.message ?? "No se pudo restablecer la contraseña.");
@@ -54,12 +57,12 @@ const RecuperarContrasena = () => {
 
     return (
         <div className="min-h-screen flex flex-col justify-center items-center bg-background px-4">
-            <h1 className="text-2xl font-semibold text-center mb-4">Restablecer contraseña</h1>
+            <h1 className="text-2xl font-semibold text-center mb-4">Crear o restablecer contraseña</h1>
 
             {!token ? (
                 <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-sm text-center">
                     <p className="mb-4 text-sm text-muted">
-                        El enlace de recuperación no es válido o ha caducado.
+                        El enlace no es válido o ha caducado.
                     </p>
                     <Button onClick={goToLogin} className="w-full">
                         Volver al login
@@ -73,7 +76,7 @@ const RecuperarContrasena = () => {
                     <div className="w-full mb-4 relative">
                         <input
                             type={showPassword ? "text" : "password"}
-                            placeholder="Nueva contraseña"
+                            placeholder="Contraseña"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             className="w-full px-4 py-2 bg-surfaceMuted border text-sm border-borderSoft focus:outline-none focus:ring-2 focus:ring-primary/60 rounded-md pr-16"
@@ -90,7 +93,7 @@ const RecuperarContrasena = () => {
                     <div className="w-full mb-4 relative">
                         <input
                             type={showConfirm ? "text" : "password"}
-                            placeholder="Repite la nueva contraseña"
+                            placeholder="Repite la contraseña"
                             value={confirm}
                             onChange={(e) => setConfirm(e.target.value)}
                             className="w-full px-4 py-2 bg-surfaceMuted border text-sm border-borderSoft focus:outline-none focus:ring-2 focus:ring-primary/60 rounded-md pr-16"
@@ -114,7 +117,7 @@ const RecuperarContrasena = () => {
                     )}
 
                     <Button type="submit" className="w-full" disabled={loading}>
-                        {loading ? "Guardando..." : "Cambiar contraseña"}
+                        {loading ? "Guardando..." : "Guardar contraseña"}
                     </Button>
 
                     <button

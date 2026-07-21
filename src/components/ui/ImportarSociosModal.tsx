@@ -91,7 +91,7 @@ const ImportarSociosModal: FC<ImportarSociosModalProps> = ({ onClose, onImported
           <h2 className="rc-modal-title">Importar socios desde CSV</h2>
           <p className="rc-modal-subtitle text-xs md:text-sm">
             El archivo debe tener cabecera con las columnas: <strong>email, name, phone, role</strong>.
-            &nbsp;Los usuarios nuevos se crean con contraseña por defecto <code>socio123</code>
+            &nbsp;Los usuarios nuevos recibiran un email con enlace para crear su contraseña
             &nbsp;y los existentes se actualizan.
           </p>
         </div>

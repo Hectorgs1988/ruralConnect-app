@@ -57,7 +57,6 @@ export async function listUsers(
 
 interface CreateUserInput {
     email: string;
-    password: string;
     name: string;
     phone?: string;
     role: "ADMIN" | "SOCIO";
@@ -70,7 +69,6 @@ export async function createUser(input: CreateUserInput, token: string): Promise
 
     const body = {
         email: input.email,
-        password: input.password,
         name: input.name,
         phone: input.phone ?? null,
     };

@@ -182,6 +182,12 @@ export interface PasswordResetEmail {
     resetUrl: string;
 }
 
+export interface PasswordSetupEmail {
+    to: string;
+    name?: string | null;
+    setupUrl: string;
+}
+
 export async function sendPasswordResetEmail({ to, name, resetUrl }: PasswordResetEmail) {
     if (!apiKey) {
         console.error("No se puede enviar email de reset: falta BREVO_API_KEY");
@@ -202,6 +208,32 @@ export async function sendPasswordResetEmail({ to, name, resetUrl }: PasswordRes
         <p>Si has sido tú, haz clic en el siguiente enlace:</p>
         <p><a href="${resetUrl}" target="_blank" rel="noopener noreferrer">Restablecer contraseña</a></p>
         <p>Si no has solicitado este cambio, puedes ignorar este mensaje.</p>
+    `,
+    };
+
+    await sendEmail(msg);
+}
+
+export async function sendPasswordSetupEmail({ to, name, setupUrl }: PasswordSetupEmail) {
+    if (!apiKey) {
+        console.error("No se puede enviar email de activacion: falta BREVO_API_KEY");
+        return;
+    }
+
+    const displayName = name || "";
+    const greeting = displayName ? `Hola ${displayName},` : "Hola,";
+
+    const msg = {
+        to,
+        subject: "Activa tu cuenta · Rural Connect",
+        text: `${greeting} tu cuenta en Rural Connect ya está creada. Para activar tu acceso, crea tu contraseña aquí: ${setupUrl}`,
+        html: `
+        <h1>Activa tu cuenta</h1>
+        <p>${greeting}</p>
+        <p>Tu cuenta de Rural Connect ya está creada.</p>
+        <p>Para activar tu acceso, crea tu contraseña en el siguiente enlace:</p>
+        <p><a href="${setupUrl}" target="_blank" rel="noopener noreferrer">Crear contraseña</a></p>
+        <p>Si no esperabas este mensaje, puedes ignorarlo.</p>
     `,
     };
 
