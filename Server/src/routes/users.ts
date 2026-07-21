@@ -7,6 +7,7 @@ import { prisma } from '../db/prisma.js';
 import { requireAuth, requireRole } from '../middlewares/auth.js';
 import { JWT_SECRET } from '../config/jwt.js';
 import { sendPasswordSetupEmail } from '../services/email.js';
+import { getPasswordPolicyError } from '../utils/password-policy.js';
 import {
     createUserSchema,
     createAdminSchema,
@@ -428,8 +429,9 @@ usersRouter.patch('/:id/password', requireAuth, async (req, res, next) => {
         const { oldPassword, newPassword } = req.body;
         const current = (req as any).user as { sub: string; role: 'ADMIN' | 'SOCIO' };
 
-        if (!newPassword || newPassword.length < 6) {
-            return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
+        const passwordError = newPassword ? getPasswordPolicyError(newPassword) : 'La nueva contraseña es requerida';
+        if (passwordError) {
+            return res.status(400).json({ error: passwordError });
         }
 
         // Si no es admin, solo puede cambiar su propia contraseña

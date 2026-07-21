@@ -1,5 +1,6 @@
 // Server/src/schemas/users.ts
 import { z } from "zod";
+import { getPasswordPolicyError, PASSWORD_POLICY_HINT } from "../utils/password-policy.js";
 
 export const createUserSchema = z.object({
     email: z.string().email(),
@@ -15,5 +16,10 @@ export const updateUserSchema = z.object({
     phone: z.string().optional(),
     role: z.enum(["ADMIN", "SOCIO"]).optional(),
     isActive: z.boolean().optional(),
-    password: z.string().min(6).optional(),
+    password: z
+        .string()
+        .optional()
+        .refine((value) => !value || !getPasswordPolicyError(value), {
+            message: PASSWORD_POLICY_HINT,
+        }),
 });

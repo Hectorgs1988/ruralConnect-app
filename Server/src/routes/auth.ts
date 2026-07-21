@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../config/jwt.js";
 import { sendPasswordResetEmail } from "../services/email.js";
+import { getPasswordPolicyError } from "../utils/password-policy.js";
 
 const APP_BASE_URL = process.env.APP_BASE_URL || "http://localhost:5173";
 const auth = Router();
@@ -83,10 +84,9 @@ auth.post("/reset-password", async (req, res, next) => {
                 .status(400)
                 .json({ error: "Token y nueva contraseña son requeridos" });
         }
-        if (password.length < 6) {
-            return res.status(400).json({
-                error: "La nueva contraseña debe tener al menos 6 caracteres",
-            });
+        const passwordError = getPasswordPolicyError(password);
+        if (passwordError) {
+            return res.status(400).json({ error: passwordError });
         }
 
         let payload: any;
