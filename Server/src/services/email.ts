@@ -447,19 +447,19 @@ export async function sendTripJoinDriverEmail({
     });
 
     const pasajeroNombreText = pasajeroNombre || "Un socio";
-    const telefonoLineaText = pasajeroTelefono ? ` · Teléfono: ${pasajeroTelefono}` : "";
-    const telefonoLineaHtml = pasajeroTelefono ? ` · Teléfono: ${pasajeroTelefono}` : "";
+    const passengerPhone = pasajeroTelefono || "No disponible";
 
     const msg = {
         to,
         subject: `Nuevo pasajero en tu viaje · ${origen} → ${destino}`,
-        text: `${greeting} ${pasajeroNombreText} se ha unido a tu viaje ${origen} → ${destino} del ${fechaStr}.\n\nContacto del pasajero: ${pasajeroEmail}${telefonoLineaText}\n\nPor favor, ponte en contacto para coordinar el viaje.\n\nRural Connect`,
+        text: `${greeting} ${pasajeroNombreText} se ha unido a tu viaje ${origen} → ${destino} del ${fechaStr}.\n\nContacto del pasajero:\n- Email: ${pasajeroEmail}\n- Móvil: ${passengerPhone}\n\nPor favor, ponte en contacto para coordinar el viaje.\n\nRural Connect`,
         html: `
         <h1>Nuevo pasajero en tu viaje</h1>
         <p>${greeting}</p>
         <p><strong>${pasajeroNombreText}</strong> se ha unido a tu viaje <strong>${origen} → ${destino}</strong>.</p>
         <p><strong>Fecha y hora:</strong> ${fechaStr}</p>
-        <p><strong>Contacto del pasajero:</strong> ${pasajeroEmail}${telefonoLineaHtml}</p>
+        <p><strong>Contacto del pasajero:</strong></p>
+        <p><strong>Email:</strong> ${pasajeroEmail}<br/><strong>Móvil:</strong> ${passengerPhone}</p>
         <p>Por favor, ponte en contacto para coordinar el viaje.</p>
         <p>Rural Connect</p>
     `,
@@ -552,23 +552,25 @@ export async function sendTripLeaveDriverEmail({
     });
 
     const pasajeroNombreText = pasajeroNombre || "Un socio";
-    const telefonoLineaText = pasajeroTelefono ? ` · Teléfono: ${pasajeroTelefono}` : "";
-    const telefonoLineaHtml = pasajeroTelefono ? ` · Teléfono: ${pasajeroTelefono}` : "";
+    const passengerPhone = pasajeroTelefono || "No disponible";
 
     const msg = {
         to,
         subject: `Un pasajero ha cancelado su plaza · ${origen} → ${destino}`,
         text: `${greeting} ${pasajeroNombreText} ha cancelado su plaza en tu viaje ${origen} → ${destino} del ${fechaStr}.
 
-Contacto del pasajero: ${pasajeroEmail}${telefonoLineaText}
+    Contacto del pasajero:
+    - Email: ${pasajeroEmail}
+    - Móvil: ${passengerPhone}
 
-Rural Connect`,
+    Rural Connect`,
         html: `
         <h1>Un pasajero ha cancelado su plaza</h1>
         <p>${greeting}</p>
         <p><strong>${pasajeroNombreText}</strong> ha cancelado su plaza en tu viaje <strong>${origen} → ${destino}</strong>.</p>
         <p><strong>Fecha y hora:</strong> ${fechaStr}</p>
-        <p><strong>Contacto del pasajero:</strong> ${pasajeroEmail}${telefonoLineaHtml}</p>
+        <p><strong>Contacto del pasajero:</strong></p>
+        <p><strong>Email:</strong> ${pasajeroEmail}<br/><strong>Móvil:</strong> ${passengerPhone}</p>
         <p>Rural Connect</p>
     `,
     };
