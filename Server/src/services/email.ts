@@ -6,6 +6,17 @@ const FROM_EMAIL =
 const FROM_NAME =
     process.env.EMAIL_FROM_NAME || "Rural Connect";
 
+const RESERVATION_EMAIL_TIME_ZONE =
+    process.env.RESERVATION_EMAIL_TIME_ZONE || "Europe/Madrid";
+
+export function formatReservationEmailDateTime(date: Date): string {
+    return new Intl.DateTimeFormat("es-ES", {
+        dateStyle: "short",
+        timeStyle: "short",
+        timeZone: RESERVATION_EMAIL_TIME_ZONE,
+    }).format(date);
+}
+
 interface EmailMessage {
     to: string;
     subject: string;
@@ -89,15 +100,9 @@ export async function sendReservationConfirmationEmail({
         return;
     }
 
-    const inicioStr = inicio.toLocaleString("es-ES", {
-        dateStyle: "short",
-        timeStyle: "short",
-    });
+    const inicioStr = formatReservationEmailDateTime(inicio);
     const finStr = fin
-        ? fin.toLocaleString("es-ES", {
-            dateStyle: "short",
-            timeStyle: "short",
-        })
+        ? formatReservationEmailDateTime(fin)
         : "";
     const textFin = finStr ? ` a ${finStr}` : "";
     const htmlFin = finStr ? `<br/><strong>Hasta:</strong> ${finStr}` : "";
@@ -143,15 +148,9 @@ export async function sendReservationCancelledEmail({
         return;
     }
 
-    const inicioStr = inicio.toLocaleString("es-ES", {
-        dateStyle: "short",
-        timeStyle: "short",
-    });
+    const inicioStr = formatReservationEmailDateTime(inicio);
     const finStr = fin
-        ? fin.toLocaleString("es-ES", {
-            dateStyle: "short",
-            timeStyle: "short",
-        })
+        ? formatReservationEmailDateTime(fin)
         : "";
     const textFin = finStr ? ` a ${finStr}` : "";
     const htmlFin = finStr ? `<br/><strong>Hasta:</strong> ${finStr}` : "";
