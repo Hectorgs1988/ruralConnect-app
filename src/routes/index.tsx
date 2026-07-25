@@ -15,6 +15,7 @@ import GestionEventos from '../pages/GestionEventos'
 import ResumenGeneral from '../pages/ResumenGeneral'
 import AsociacionMosquitos from '../pages/AsociacionMosquitos'
 import GestionEspacios from '../pages/GestionEspacios'
+import Despensa from '../pages/Despensa'
 import PrivateRoute, { RoleGuard } from "@/components/guards/PrivateRoute";
 
 const router = createBrowserRouter([
@@ -32,6 +33,7 @@ const router = createBrowserRouter([
     { path: "/CrearReserva", element: (<PrivateRoute><CrearReserva /></PrivateRoute>), },
     { path: "/CompartirCoche", element: (<PrivateRoute><CompartirCoche /></PrivateRoute>), },
     { path: "/OfrecerViaje", element: (<PrivateRoute><OfrecerViaje /></PrivateRoute>), },
+    { path: "/Despensa", element: (<PrivateRoute><Despensa /></PrivateRoute>), },
 
     // solo ADMIN
     { path: "/PanelAdmin", element: (<RoleGuard role="ADMIN"><PanelAdmin /></RoleGuard>), },
