@@ -167,6 +167,16 @@ const GestionSocio: FC = () => {
                                 <Button
                                     type="button"
                                     className="flex items-center justify-center gap-2"
+                                    onClick={() => setReloadFlag((v) => v + 1)}
+                                    disabled={loading}
+                                    title="Refrescar datos desde la base de datos"
+                                >
+                                    <span>{loading ? "..." : "↻"}</span>
+                                    <span>Refrescar</span>
+                                </Button>
+                                <Button
+                                    type="button"
+                                    className="flex items-center justify-center gap-2"
                                     onClick={handleExportCsv}
                                     disabled={exporting}
                                 >
