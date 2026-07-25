@@ -9,6 +9,7 @@ const navItems = [
     { to: "/Eventos", label: "Eventos" },
     { to: "/ReservarEspacio", label: "Reservar Espacio" },
     { to: "/CompartirCoche", label: "Compartir Coche" },
+    { to: "/Despensa", label: "Despensa" },
     { to: "/AsociacionMosquitos", label: "Descubre Rural Connect" },
 ];
 
