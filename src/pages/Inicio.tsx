@@ -2,7 +2,7 @@ import type { FC } from "react";
 import Header from "@/components/Header";
 import ActionCard from "@/components/ui/ActionCard";
 import Footer from "@/components/Footer";
-import { HousePlus, CarFront, Home, CalendarClock } from "lucide-react";
+import { HousePlus, CarFront, Home, CalendarClock, ShoppingBasket } from "lucide-react";
 
 
 const Inicio: FC = () => {
@@ -46,6 +46,13 @@ const Inicio: FC = () => {
 						description="Descubre Rural Connect"
 						buttonText="Descubre Rural Connect"
 						href="/AsociacionMosquitos"
+					/>
+					<ActionCard
+						icon={<ShoppingBasket size={36} className="text-black/90" />}
+						title="Despensa"
+						description="Gestiona los productos de la despensa"
+						buttonText="Ver Despensa"
+						href="/Despensa"
 					/>
 				</div>
 			</main>
