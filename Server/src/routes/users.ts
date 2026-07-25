@@ -399,7 +399,7 @@ usersRouter.post('/import-csv', requireAuth, requireAdmin, async (req, res, next
     }
 });
 
-// --- DELETE /api/usuarios/:id  (soft delete) --------------------------------
+// --- DELETE /api/usuarios/:id  (hard delete) --------------------------------
 usersRouter.delete('/:id', requireAuth, requireAdmin, async (req, res, next) => {
     try {
         const targetId = req.params.id;
@@ -408,12 +408,11 @@ usersRouter.delete('/:id', requireAuth, requireAdmin, async (req, res, next) => 
         if (current.sub === targetId) {
             return res
                 .status(400)
-                .json({ error: 'No puedes desactivar tu propia cuenta' });
+                .json({ error: 'No puedes eliminar tu propia cuenta' });
         }
 
-        await prisma.user.update({
+        await prisma.user.delete({
             where: { id: targetId },
-            data: { isActive: false },
         });
 
         res.status(204).end();
