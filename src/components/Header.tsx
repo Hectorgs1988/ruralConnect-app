@@ -1,24 +1,38 @@
-import { type FC, useState } from "react";
+import { type FC, useState, useRef, useEffect } from "react";
 import logo from "@/assets/RC.png";
-import { Menu, X } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Menu, X, ChevronDown } from "lucide-react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 
 const navItems = [
     { to: "/inicio", label: "Inicio" },
     { to: "/Eventos", label: "Eventos" },
-    { to: "/ReservarEspacio", label: "Reservar Espacio" },
-    { to: "/CompartirCoche", label: "Compartir Coche" },
+    { to: "/ReservarEspacio", label: "Reservas" },
+    { to: "/CompartirCoche", label: "Compartir coche" },
+    { to: "/Despensa", label: "Despensa" },
+];
+
+const mobileNavItems = [
+    { to: "/inicio", label: "Inicio" },
+    { to: "/Eventos", label: "Eventos" },
+    { to: "/ReservarEspacio", label: "Espacios" },
+    { to: "/CompartirCoche", label: "Viajes" },
     { to: "/Despensa", label: "Despensa" },
     { to: "/AsociacionMosquitos", label: "Descubre Rural Connect" },
 ];
 
 const Header: FC = () => {
     const [isOpen, setIsOpen] = useState(false);
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+    const profileRef = useRef<HTMLDivElement>(null);
 
     const firstName = user?.name?.split(" ")[0] ?? "";
+    const initials = user?.name
+        ? user.name.split(" ").slice(0, 2).map((n: string) => n[0]).join("").toUpperCase()
+        : "";
 
     const toggleMenu = () => setIsOpen((prev) => !prev);
     const closeMenu = () => setIsOpen(false);
@@ -28,132 +42,162 @@ const Header: FC = () => {
         navigate("/");
     };
 
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+                setIsProfileOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
     return (
-        <header className="w-full">
-            <div className="rc-shell py-3 relative">
-                {/* DESKTOP: logo + saludo + menú + logout */}
-                <div className="hidden md:flex items-center justify-between">
-                    {/* Logo + saludo */}
-                    <div className="flex items-center gap-4">
-                        <Link to="/inicio" className="flex items-center gap-2 shrink-0">
-                            <img
-                                src={logo}
-                                alt="Logo"
-                                className="w-11 h-11 object-contain"
-                            />
-                        </Link>
+        <header className="w-full bg-surface border-b border-borderSoft relative">
+            <div className="rc-shell h-[72px] flex items-center justify-between">
 
-                        <div className="ml-3 text-xs text-muted whitespace-nowrap">
-                            {user && firstName && (
-                                <>
-                                    <span className="text-base font-bold">Hola,</span>{" "}
-                                    <span className="text-base font-bold">{firstName}</span>
-                                </>
-                            )}
-                        </div>
+                {/* Logo */}
+                <Link to="/inicio" className="flex items-center shrink-0">
+                    <img src={logo} alt="Logo" className="w-10 h-10 object-contain" />
+                </Link>
 
-                    </div>
-
-                    {/* Menú centro */}
-                    <div className="flex items-center space-x-3 lg:space-x-4">
-                        {navItems.map((item) => (
+                {/* DESKTOP nav – centrado */}
+                <nav className="hidden md:flex items-center gap-1">
+                    {navItems.map((item) => {
+                        const isActive = location.pathname === item.to;
+                        return (
                             <Link
                                 key={item.to}
                                 to={item.to}
-                                className="px-4 py-2 rounded-full text-base font-bold text-muted hover:text-dark hover:bg-primarySoft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primaryStrong/70 focus-visible:bg-primarySoft whitespace-nowrap"
+                                className={`relative px-3 pb-1 pt-1 text-sm font-semibold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 rounded-sm ${
+                                    isActive ? "text-dark" : "text-muted hover:text-dark"
+                                }`}
+                            >
+                                {item.label}
+                                {isActive && (
+                                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4/5 h-[2px] bg-primary rounded-full" />
+                                )}
+                            </Link>
+                        );
+                    })}
+                </nav>
+
+                {/* DESKTOP derecha – avatar + dropdown */}
+                <div className="hidden md:flex items-center">
+                    {user && (
+                        <div ref={profileRef} className="relative">
+                            <button
+                                onClick={() => setIsProfileOpen((p) => !p)}
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-primarySoft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
+                            >
+                                <span className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-sm font-bold text-dark select-none">
+                                    {initials}
+                                </span>
+                                <span className="text-sm font-semibold text-dark">{firstName}</span>
+                                <ChevronDown
+                                    size={14}
+                                    className={`text-muted transition-transform duration-200 ${isProfileOpen ? "rotate-180" : ""}`}
+                                />
+                            </button>
+
+                            {isProfileOpen && (
+                                <div className="absolute right-0 top-full mt-2 w-56 bg-surface border border-borderSoft rounded-2xl shadow-soft z-30 overflow-hidden">
+                                    {/* Info usuario */}
+                                    <div className="px-4 py-3 border-b border-borderSoft">
+                                        <p className="text-sm font-bold text-dark">{user.name}</p>
+                                        <p className="text-xs text-muted">
+                                            {user.role === "ADMIN" ? "Administrador" : "Socio"}
+                                        </p>
+                                    </div>
+
+                                    {/* Acciones */}
+                                    <div className="py-1">
+                                        {user.role === "ADMIN" && (
+                                            <Link
+                                                to="/PanelAdmin"
+                                                onClick={() => setIsProfileOpen(false)}
+                                                className="block px-4 py-2 text-sm font-medium text-dark hover:bg-primarySoft"
+                                            >
+                                                Panel de administración
+                                            </Link>
+                                        )}
+                                        <Link
+                                            to="/AsociacionMosquitos"
+                                            onClick={() => setIsProfileOpen(false)}
+                                            className="block px-4 py-2 text-sm font-medium text-dark hover:bg-primarySoft"
+                                        >
+                                            Descubre Rural Connect
+                                        </Link>
+                                    </div>
+
+                                    {/* Logout */}
+                                    <div className="border-t border-borderSoft py-1">
+                                        <button
+                                            onClick={() => { setIsProfileOpen(false); handleLogout(); }}
+                                            className="w-full text-left px-4 py-2 text-sm font-medium text-error hover:bg-surfaceMuted"
+                                        >
+                                            Cerrar sesión
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* MOBILE: hamburguesa */}
+                <button onClick={toggleMenu} className="md:hidden text-dark p-1">
+                    {isOpen ? <X size={24} /> : <Menu size={24} />}
+                </button>
+            </div>
+
+            {/* MOBILE drawer */}
+            {isOpen && (
+                <div className="md:hidden absolute top-[72px] left-0 w-full bg-surface border-b border-borderSoft shadow-soft z-20">
+                    <div className="rc-shell py-4 flex flex-col gap-1">
+                        {user && (
+                            <p className="px-4 py-2 text-sm font-bold text-muted">
+                                Hola, {firstName}
+                            </p>
+                        )}
+
+                        {mobileNavItems.map((item) => (
+                            <Link
+                                key={item.to}
+                                to={item.to}
+                                onClick={closeMenu}
+                                className="py-2 px-4 rounded-full text-base font-semibold text-dark hover:bg-primarySoft"
                             >
                                 {item.label}
                             </Link>
                         ))}
 
                         {user?.role === "ADMIN" && (
-                            <Link
-                                to="/PanelAdmin"
-                                className="px-4 py-2 rounded-full text-base font-bold text-dark bg-primary/80 hover:bg-primaryStrong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primaryStrong/80"
-                            >
-                                Admin
-                            </Link>
+                            <>
+                                <div className="my-1 border-t border-borderSoft" />
+                                <Link
+                                    to="/PanelAdmin"
+                                    onClick={closeMenu}
+                                    className="py-2 px-4 rounded-full text-base font-semibold text-dark hover:bg-primarySoft"
+                                >
+                                    Administración
+                                </Link>
+                            </>
                         )}
-                    </div>
 
-                    {/* Botón logout derecha */}
-                    <div>
+                        <div className="my-1 border-t border-borderSoft" />
+
                         {user && (
                             <button
-                                onClick={handleLogout}
-                                className="text-xs md:text-base font-bold px-3 py-1 rounded-full border border-borderSoft text-muted hover:bg-surfaceMuted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primaryStrong/70 whitespace-nowrap"
+                                onClick={() => { handleLogout(); closeMenu(); }}
+                                className="py-2 px-4 rounded-full text-base font-semibold text-error hover:bg-surfaceMuted text-left"
                             >
                                 Cerrar sesión
                             </button>
                         )}
                     </div>
                 </div>
-
-                {/* MOBILE: logo + saludo + icono menú */}
-                <div className="flex items-center justify-between md:hidden">
-                    <Link to="/inicio" className="flex items-center gap-2">
-                        <img
-                            src={logo}
-                            alt="Logo"
-                            className="w-10 h-10 object-contain"
-                        />
-                    </Link>
-
-                    <div className="flex-1 ml-3 text-xs text-muted">
-                        {user && firstName && (
-                            <>
-                                <span className="text-base font-bold">Hola,</span>{" "}
-                                <span className="text-base font-bold">{firstName}</span>
-                            </>
-                        )}
-                    </div>
-
-
-                    <button onClick={toggleMenu} className="text-dark">
-                        {isOpen ? <X size={24} /> : <Menu size={24} />}
-                    </button>
-                </div>
-
-                {/* Menú móvil desplegable */}
-                {isOpen && (
-                    <div className="md:hidden absolute top-14 left-0 w-full bg-surface shadow-soft border border-borderSoft rounded-2xl z-10">
-                        <div className="flex flex-col space-y-2 p-4">
-                            {navItems.map((item) => (
-                                <Link
-                                    key={item.to}
-                                    to={item.to}
-                                    onClick={closeMenu}
-                                    className="py-2 px-4 rounded-full text-base font-bold text-muted hover:text-dark hover:bg-primarySoft"
-                                >
-                                    {item.label}
-                                </Link>
-                            ))}
-
-                            {user?.role === "ADMIN" && (
-                                <Link
-                                    to="/PanelAdmin"
-                                    onClick={closeMenu}
-                                    className="py-2 px-4 rounded-full text-sm font-semibold text-dark bg-primary/80 hover:bg-primaryStrong"
-                                >
-                                    Admin
-                                </Link>
-                            )}
-
-                            {user && (
-                                <button
-                                    onClick={() => {
-                                        handleLogout();
-                                        closeMenu();
-                                    }}
-                                    className="mt-2 py-2 px-4 rounded-full text-base font-bold text-error hover:bg-surfaceMuted text-left"
-                                >
-                                    Cerrar sesión
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                )}
-            </div>
+            )}
         </header>
     );
 };
