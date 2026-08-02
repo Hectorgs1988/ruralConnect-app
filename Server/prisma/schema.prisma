@@ -63,6 +63,7 @@ model User {
   SolicitudesCreadas   SolicitudViaje[] @relation("SolicitudesCreadas")
   SolicitudesAceptadas SolicitudViaje[] @relation("SolicitudesAceptadas")
   InscripcionEvento InscripcionEvento[]
+  ComprasDespensa   CompraDespensa[]
 }
 
 model Espacio {
@@ -76,6 +77,50 @@ model Espacio {
   Reservas    Reserva[]
 
   @@index([nombre])
+}
+
+model ProductoDespensa {
+  id                 String   @id @default(cuid())
+  nombre             String   @unique
+  descripcion        String?
+  precioCentimos     Int
+  unidadesDisponibles Int     @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @default(now()) @updatedAt
+  CompraItems        CompraDespensaItem[]
+
+  @@index([nombre])
+}
+
+model CompraDespensa {
+  id            String               @id @default(cuid())
+  userId        String
+  totalCentimos Int
+  estadoPago    String               @default("SIMULATED")
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @default(now()) @updatedAt
+
+  User  User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CompraDespensaItem[]
+
+  @@index([userId, createdAt])
+}
+
+model CompraDespensaItem {
+  id                     String            @id @default(cuid())
+  compraId               String
+  productoId             String?
+  nombreProducto         String
+  precioUnitarioCentimos Int
+  cantidad               Int
+  subtotalCentimos       Int
+  createdAt              DateTime          @default(now())
+
+  Compra   CompraDespensa    @relation(fields: [compraId], references: [id], onDelete: Cascade)
+  Producto ProductoDespensa? @relation(fields: [productoId], references: [id], onDelete: SetNull)
+
+  @@index([compraId])
+  @@index([productoId])
 }
 
 model Reserva {
