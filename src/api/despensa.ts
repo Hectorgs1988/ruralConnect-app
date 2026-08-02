@@ -4,6 +4,7 @@ import type {
     CompraDespensaAdmin,
     CheckoutDespensaItem,
     CheckoutDespensaResponse,
+    MovimientoInventarioDespensa,
     ProductoDespensa,
 } from '@/types/ProductoDespensa';
 
@@ -12,6 +13,27 @@ export interface SaveProductoDespensaInput {
     descripcion?: string | null;
     precioCentimos: number;
     unidadesDisponibles: number;
+    detalleMovimiento?: string | null;
+}
+
+export interface DespensaHistoryFilters {
+    q?: string;
+    from?: string;
+    to?: string;
+    tipo?: string;
+}
+
+function buildQuery(filters?: DespensaHistoryFilters): string {
+    if (!filters) return '';
+
+    const params = new URLSearchParams();
+
+    for (const [key, value] of Object.entries(filters)) {
+        if (value) params.set(key, value);
+    }
+
+    const query = params.toString();
+    return query ? `?${query}` : '';
 }
 
 export async function listProductosDespensa(token: string): Promise<ProductoDespensa[]> {
@@ -82,6 +104,44 @@ export async function listComprasDespensaAdmin(token: string): Promise<CompraDes
     }
 
     return (await res.json()) as CompraDespensaAdmin[];
+}
+
+export async function listComprasDespensaAdminFiltered(
+    token: string,
+    filters?: DespensaHistoryFilters
+): Promise<CompraDespensaAdmin[]> {
+    const res = await apiFetch(`/api/despensa/compras${buildQuery(filters)}`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    if (!res.ok) {
+        throw new Error(
+            await getErrorMessage(res, `Error ${res.status} al cargar las compras de la despensa`)
+        );
+    }
+
+    return (await res.json()) as CompraDespensaAdmin[];
+}
+
+export async function listMovimientosDespensaAdmin(
+    token: string,
+    filters?: DespensaHistoryFilters
+): Promise<MovimientoInventarioDespensa[]> {
+    const res = await apiFetch(`/api/despensa/movimientos${buildQuery(filters)}`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    if (!res.ok) {
+        throw new Error(
+            await getErrorMessage(res, `Error ${res.status} al cargar los movimientos de inventario`)
+        );
+    }
+
+    return (await res.json()) as MovimientoInventarioDespensa[];
 }
 
 export async function createProductoDespensa(

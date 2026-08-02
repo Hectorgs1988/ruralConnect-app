@@ -13,6 +13,8 @@ const formatEuro = (amountInCents: number) =>
         currency: "EUR",
     }).format(amountInCents / 100);
 
+const formatDateTime = (value: string) => new Date(value).toLocaleString("es-ES");
+
 const Despensa: FC = () => {
     const { token, user } = useAuth();
     const [productos, setProductos] = useState<ProductoDespensa[]>([]);
@@ -265,11 +267,37 @@ const Despensa: FC = () => {
                         </Button>
 
                         {lastCheckout && (
-                            <div className="rounded-2xl bg-surfaceMuted border border-borderSoft p-4 text-sm space-y-2">
-                                <p className="font-semibold text-dark">Última compra</p>
-                                <p className="text-muted">Referencia: {lastCheckout.compraId}</p>
-                                <p className="text-muted">Estado: pago simulado completado</p>
-                                <p className="text-muted">Importe: {formatEuro(lastCheckout.totalCentimos)}</p>
+                            <div className="rounded-[28px] border border-dashed border-primaryStrong/40 bg-white p-5 text-sm space-y-4 shadow-sm">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div>
+                                        <p className="text-xs uppercase tracking-[0.25em] text-muted">Ticket de compra</p>
+                                        <p className="font-semibold text-dark mt-1">Operación #{lastCheckout.compraId.slice(0, 8)}</p>
+                                    </div>
+                                    <span className="rc-pill">{lastCheckout.paymentStatus}</span>
+                                </div>
+
+                                <div className="grid gap-2 text-xs text-muted">
+                                    <p>Fecha: {formatDateTime(lastCheckout.createdAt)}</p>
+                                    <p>Comprador: {user?.name}</p>
+                                    <p>Pasarela: simulada</p>
+                                </div>
+
+                                <div className="border-t border-dashed border-borderSoft pt-3 space-y-2">
+                                    {lastCheckout.items.map((item) => (
+                                        <div key={item.productoId} className="flex items-center justify-between gap-3 text-sm">
+                                            <div>
+                                                <p className="font-medium text-dark">{item.nombre}</p>
+                                                <p className="text-muted">{item.cantidad} x {formatEuro(item.precioUnitarioCentimos)}</p>
+                                            </div>
+                                            <span className="font-semibold text-dark">{formatEuro(item.subtotalCentimos)}</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="border-t border-dashed border-borderSoft pt-3 flex items-center justify-between font-semibold text-dark">
+                                    <span>Total abonado</span>
+                                    <span>{formatEuro(lastCheckout.totalCentimos)}</span>
+                                </div>
                             </div>
                         )}
                     </aside>

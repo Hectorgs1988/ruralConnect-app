@@ -15,6 +15,7 @@ export interface CheckoutDespensaItem {
 
 export interface CheckoutDespensaResponse {
     compraId: string;
+    createdAt: string;
     paymentStatus: 'SIMULATED';
     totalCentimos: number;
     items: Array<{
@@ -53,4 +54,23 @@ export interface CompraDespensaAdmin extends CompraDespensa {
         name: string;
         email: string;
     };
+}
+
+export interface MovimientoInventarioDespensa {
+    id: string;
+    productoId?: string | null;
+    compraId?: string | null;
+    userId?: string | null;
+    tipo: 'ALTA' | 'COMPRA' | 'REPOSICION' | 'AJUSTE' | 'ELIMINACION';
+    nombreProducto: string;
+    deltaUnidades: number;
+    stockAnterior: number;
+    stockPosterior: number;
+    detalle?: string | null;
+    createdAt: string;
+    User?: {
+        id: string;
+        name: string;
+        email: string;
+    } | null;
 }

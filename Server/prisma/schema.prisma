@@ -45,6 +45,14 @@ enum EstadoSolicitudViaje {
   CANCELADA
 }
 
+enum TipoMovimientoDespensa {
+  ALTA
+  COMPRA
+  REPOSICION
+  AJUSTE
+  ELIMINACION
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -64,6 +72,7 @@ model User {
   SolicitudesAceptadas SolicitudViaje[] @relation("SolicitudesAceptadas")
   InscripcionEvento InscripcionEvento[]
   ComprasDespensa   CompraDespensa[]
+  MovimientosDespensa MovimientoInventarioDespensa[]
 }
 
 model Espacio {
@@ -88,6 +97,7 @@ model ProductoDespensa {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @default(now()) @updatedAt
   CompraItems        CompraDespensaItem[]
+  MovimientosInventario MovimientoInventarioDespensa[]
 
   @@index([nombre])
 }
@@ -102,6 +112,7 @@ model CompraDespensa {
 
   User  User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   items CompraDespensaItem[]
+  movimientos MovimientoInventarioDespensa[]
 
   @@index([userId, createdAt])
 }
@@ -121,6 +132,29 @@ model CompraDespensaItem {
 
   @@index([compraId])
   @@index([productoId])
+}
+
+model MovimientoInventarioDespensa {
+  id             String               @id @default(cuid())
+  productoId      String?
+  compraId        String?
+  userId          String?
+  tipo            TipoMovimientoDespensa
+  nombreProducto  String
+  deltaUnidades   Int
+  stockAnterior   Int
+  stockPosterior  Int
+  detalle         String?
+  createdAt       DateTime             @default(now())
+
+  Producto ProductoDespensa? @relation(fields: [productoId], references: [id], onDelete: SetNull)
+  Compra   CompraDespensa?   @relation(fields: [compraId], references: [id], onDelete: SetNull)
+  User     User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([productoId, createdAt])
+  @@index([compraId])
+  @@index([userId, createdAt])
+  @@index([tipo, createdAt])
 }
 
 model Reserva {
