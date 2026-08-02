@@ -7,6 +7,7 @@ import { eventosRouter } from './eventos.js';
 import { usersRouter } from "./users.js";
 import { dashboardRouter } from "./dashboard.js";
 import { solicitudesViajeRouter } from "./solicitudesViaje.js";
+import { despensaRouter } from './despensa.js';
 
 export const api = Router();
 
@@ -18,3 +19,4 @@ api.use('/eventos', eventosRouter);
 api.use('/users', usersRouter);
 api.use('/dashboard', dashboardRouter);
 api.use('/solicitudes-viaje', solicitudesViajeRouter);
+api.use('/despensa', despensaRouter);

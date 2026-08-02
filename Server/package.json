@@ -11,6 +11,7 @@
         "prisma": "prisma",
         "seed:admin": "tsx src/scripts/seed-admin.ts",
         "seed:socio": "tsx src/scripts/seed-socio.ts",
+        "seed:despensa": "tsx src/scripts/seed-despensa.ts",
         "test": "vitest"
     },
     "dependencies": {
