@@ -168,7 +168,7 @@ const NuevoSocioModal: FC<NuevoSocioModalProps> = ({ onClose, onCreated }) => {
                         </select>
                     </div>
 
-                    <div className="rc-modal-footer">
+                    <div className="rc-modal-footer rc-modal-footer-sticky">
                         <Button
                             type="button"
                             onClick={onClose}
