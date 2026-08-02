@@ -133,7 +133,7 @@ const NuevoEspacioModal: FC<NuevoEspacioModalProps> = ({ onClose, onCreated }) =
                         />
                     </div>
 
-                    <div className="rc-modal-footer">
+                    <div className="rc-modal-footer rc-modal-footer-sticky">
                         <Button
                             type="button"
                             onClick={onClose}

@@ -6,6 +6,11 @@
   body {
     @apply font-sans bg-background text-dark;
   }
+
+  html:has(.rc-modal-overlay),
+  body:has(.rc-modal-overlay) {
+    overflow: hidden;
+  }
 }
 
 @layer utilities {
@@ -48,12 +53,20 @@
   }
 
   .rc-modal-overlay {
-    @apply fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 py-4;
-    overflow-y: hidden;
+    @apply fixed inset-0 z-50 flex items-start md:items-center justify-center bg-black/40 backdrop-blur-sm px-4 py-4;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
 
   .rc-modal-panel {
-    @apply rc-card w-full max-w-lg md:max-w-xl p-4 md:p-6 lg:p-8 relative my-auto max-h-[90vh] overflow-y-auto;
+    @apply rc-card w-full max-w-lg md:max-w-xl p-4 md:p-6 lg:p-8 relative my-auto overflow-y-auto;
+    max-height: calc(100dvh - 2rem);
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
   }
 
   .rc-modal-title {
@@ -66,6 +79,13 @@
 
   .rc-modal-footer {
     @apply mt-4 md:mt-6 flex flex-col sm:flex-row gap-2 md:gap-3 justify-end;
+  }
+
+  .rc-modal-footer-sticky {
+    @apply sticky bottom-0 bg-surface pt-3 border-t border-borderSoft;
+    padding-bottom: max(0.25rem, env(safe-area-inset-bottom));
+    margin-bottom: calc(-1 * max(0.25rem, env(safe-area-inset-bottom)));
+    box-shadow: 0 -8px 20px -16px rgba(15, 23, 42, 0.45);
   }
 
   .rc-btn-secondary {

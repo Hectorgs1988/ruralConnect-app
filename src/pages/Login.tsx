@@ -88,7 +88,7 @@ export default function Login() {
             {error && <p className="text-error text-sm">{error}</p>}
 
             <Button type="submit" className="w-full mt-1">
-              Login
+              Entrar
             </Button>
 
             <button

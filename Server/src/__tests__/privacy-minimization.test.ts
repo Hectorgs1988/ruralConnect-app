@@ -153,6 +153,21 @@ describe("Privacy data minimization", () => {
         ]);
     });
 
+    it("GET /api/eventos/:id/respuestas bloquea acceso para SOCIO", async () => {
+        const token = makeToken({
+            sub: "user-1",
+            role: "SOCIO",
+            email: "socio@example.com",
+            name: "Socio",
+        });
+
+        const res = await request(app)
+            .get("/api/eventos/ev-1/respuestas")
+            .set("Authorization", `Bearer ${token}`);
+
+        expect(res.status).toBe(403);
+    });
+
     it("PATCH /api/reservas/:id bloquea cambios de usuarios no propietarios", async () => {
         mockedPrisma.reserva.findUnique.mockImplementation(async () => ({
             id: "res-1",

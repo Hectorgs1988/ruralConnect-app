@@ -6,7 +6,7 @@ import Textarea from "./TextArea";
 import DatePickerField from "./DatePickerField";
 import TimePickerField from "./TimePickerField";
 import { useAuth } from "@/context/AuthContext";
-import { createEvento } from "@/api/eventos";
+import { createEvento, type ApiEventoPreguntaTipo } from "@/api/eventos";
 
 interface NuevoEventoModalProps {
     onClose: () => void;
@@ -19,6 +19,29 @@ const ESTADOS_EVENTO = [
     { value: "CANCELADO", label: "Cancelado" },
 ];
 
+const TIPOS_PREGUNTA: Array<{ value: ApiEventoPreguntaTipo; label: string }> = [
+    { value: "TEXTO", label: "Texto" },
+    { value: "NUMERO", label: "Numero" },
+    { value: "OPCION_UNICA", label: "Seleccion unica" },
+    { value: "BOOLEANO", label: "Si/No" },
+];
+
+type PreguntaDraft = {
+    id: string;
+    texto: string;
+    tipo: ApiEventoPreguntaTipo;
+    esObligatoria: boolean;
+    opciones: string[];
+};
+
+const createPreguntaDraft = (): PreguntaDraft => ({
+    id: `q-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    texto: "",
+    tipo: "TEXTO",
+    esObligatoria: false,
+    opciones: ["", ""],
+});
+
 const NuevoEventoModal: FC<NuevoEventoModalProps> = ({ onClose, onCreated }) => {
     const { token } = useAuth();
 
@@ -29,6 +52,7 @@ const NuevoEventoModal: FC<NuevoEventoModalProps> = ({ onClose, onCreated }) => 
     const [aforo, setAforo] = useState("");
     const [descripcion, setDescripcion] = useState("");
     const [estado, setEstado] = useState("PUBLICADO");
+    const [preguntas, setPreguntas] = useState<PreguntaDraft[]>([]);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -87,6 +111,50 @@ const NuevoEventoModal: FC<NuevoEventoModalProps> = ({ onClose, onCreated }) => 
             body.estado = estado;
         }
 
+        if (preguntas.length > 0) {
+            const preguntasPayload: Array<{
+                texto: string;
+                tipo: ApiEventoPreguntaTipo;
+                esObligatoria: boolean;
+                opciones?: string[];
+            }> = [];
+
+            for (const pregunta of preguntas) {
+                const textoPregunta = pregunta.texto.trim();
+                if (!textoPregunta) {
+                    setError("Todas las preguntas deben tener enunciado.");
+                    return;
+                }
+
+                if (pregunta.tipo === "OPCION_UNICA") {
+                    const opciones = pregunta.opciones
+                        .map((opt) => opt.trim())
+                        .filter(Boolean);
+
+                    if (opciones.length < 2) {
+                        setError(`La pregunta \"${textoPregunta}\" debe tener al menos 2 opciones.`);
+                        return;
+                    }
+
+                    preguntasPayload.push({
+                        texto: textoPregunta,
+                        tipo: pregunta.tipo,
+                        esObligatoria: pregunta.esObligatoria,
+                        opciones,
+                    });
+                    continue;
+                }
+
+                preguntasPayload.push({
+                    texto: textoPregunta,
+                    tipo: pregunta.tipo,
+                    esObligatoria: pregunta.esObligatoria,
+                });
+            }
+
+            body.preguntas = preguntasPayload;
+        }
+
         try {
             setSubmitting(true);
             await createEvento(body, token);
@@ -105,6 +173,54 @@ const NuevoEventoModal: FC<NuevoEventoModalProps> = ({ onClose, onCreated }) => 
         if (!submitting) {
             onClose();
         }
+    };
+
+    const addPregunta = () => {
+        setPreguntas((prev) => [...prev, createPreguntaDraft()]);
+    };
+
+    const removePregunta = (id: string) => {
+        setPreguntas((prev) => prev.filter((p) => p.id !== id));
+    };
+
+    const updatePregunta = (id: string, patch: Partial<PreguntaDraft>) => {
+        setPreguntas((prev) =>
+            prev.map((p) => {
+                if (p.id !== id) return p;
+                const next = { ...p, ...patch };
+                if (patch.tipo && patch.tipo !== "OPCION_UNICA") {
+                    next.opciones = ["", ""];
+                }
+                return next;
+            })
+        );
+    };
+
+    const updateOpcion = (preguntaId: string, index: number, value: string) => {
+        setPreguntas((prev) =>
+            prev.map((p) => {
+                if (p.id !== preguntaId) return p;
+                const opciones = [...p.opciones];
+                opciones[index] = value;
+                return { ...p, opciones };
+            })
+        );
+    };
+
+    const addOpcion = (preguntaId: string) => {
+        setPreguntas((prev) =>
+            prev.map((p) => (p.id === preguntaId ? { ...p, opciones: [...p.opciones, ""] } : p))
+        );
+    };
+
+    const removeOpcion = (preguntaId: string, index: number) => {
+        setPreguntas((prev) =>
+            prev.map((p) => {
+                if (p.id !== preguntaId) return p;
+                const opciones = p.opciones.filter((_, i) => i !== index);
+                return { ...p, opciones: opciones.length === 0 ? [""] : opciones };
+            })
+        );
     };
 
     return (
@@ -215,7 +331,109 @@ const NuevoEventoModal: FC<NuevoEventoModalProps> = ({ onClose, onCreated }) => 
                         </select>
                     </div>
 
-                    <div className="rc-modal-footer">
+                    <section className="space-y-3 rounded-lg border border-borderSoft bg-surfaceMuted/40 p-4">
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <h3 className="text-sm font-semibold text-dark">Preguntas de inscripcion</h3>
+                                <p className="text-xs text-muted">
+                                    Opcional: cada evento puede tener sus propias preguntas.
+                                </p>
+                            </div>
+                            <Button
+                                type="button"
+                                onClick={addPregunta}
+                                className="rc-btn-secondary px-3 py-1 text-xs"
+                                disabled={submitting}
+                            >
+                                + Añadir pregunta
+                            </Button>
+                        </div>
+
+                        {preguntas.length === 0 && (
+                            <p className="text-xs text-muted">Este evento no tiene preguntas adicionales.</p>
+                        )}
+
+                        {preguntas.map((pregunta, index) => (
+                            <div
+                                key={pregunta.id}
+                                className="space-y-3 rounded-lg border border-borderSoft bg-white p-3"
+                            >
+                                <div className="flex items-center justify-between gap-2">
+                                    <p className="text-xs font-semibold text-muted">Pregunta {index + 1}</p>
+                                    <button
+                                        type="button"
+                                        onClick={() => removePregunta(pregunta.id)}
+                                        className="text-xs text-error hover:underline"
+                                        disabled={submitting}
+                                    >
+                                        Eliminar
+                                    </button>
+                                </div>
+
+                                <Input
+                                    value={pregunta.texto}
+                                    onChange={(e) => updatePregunta(pregunta.id, { texto: e.target.value })}
+                                    placeholder="Escribe la pregunta"
+                                />
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <select
+                                        className="w-full px-3 py-2 rounded-md bg-surfaceMuted border border-borderSoft focus:outline-none focus:ring-2 focus:ring-primary/60 text-sm"
+                                        value={pregunta.tipo}
+                                        onChange={(e) => updatePregunta(pregunta.id, { tipo: e.target.value as ApiEventoPreguntaTipo })}
+                                    >
+                                        {TIPOS_PREGUNTA.map((opt) => (
+                                            <option key={opt.value} value={opt.value}>
+                                                {opt.label}
+                                            </option>
+                                        ))}
+                                    </select>
+
+                                    <label className="inline-flex items-center gap-2 text-sm text-dark">
+                                        <input
+                                            type="checkbox"
+                                            checked={pregunta.esObligatoria}
+                                            onChange={(e) => updatePregunta(pregunta.id, { esObligatoria: e.target.checked })}
+                                        />
+                                        Respuesta obligatoria
+                                    </label>
+                                </div>
+
+                                {pregunta.tipo === "OPCION_UNICA" && (
+                                    <div className="space-y-2">
+                                        <p className="text-xs text-muted">Opciones (minimo 2)</p>
+                                        {pregunta.opciones.map((opcion, opcionIndex) => (
+                                            <div key={`${pregunta.id}-opt-${opcionIndex}`} className="flex items-center gap-2">
+                                                <Input
+                                                    value={opcion}
+                                                    onChange={(e) => updateOpcion(pregunta.id, opcionIndex, e.target.value)}
+                                                    placeholder={`Opcion ${opcionIndex + 1}`}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeOpcion(pregunta.id, opcionIndex)}
+                                                    className="text-xs text-error hover:underline"
+                                                    disabled={submitting}
+                                                >
+                                                    Quitar
+                                                </button>
+                                            </div>
+                                        ))}
+                                        <Button
+                                            type="button"
+                                            onClick={() => addOpcion(pregunta.id)}
+                                            className="rc-btn-secondary px-3 py-1 text-xs"
+                                            disabled={submitting}
+                                        >
+                                            + Añadir opcion
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </section>
+
+                    <div className="rc-modal-footer rc-modal-footer-sticky">
                         <Button
                             type="button"
                             onClick={handleCancel}

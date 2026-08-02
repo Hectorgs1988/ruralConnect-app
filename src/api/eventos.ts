@@ -1,5 +1,15 @@
 import {apiFetch, getErrorMessage } from "./client";
 
+export type ApiEventoPreguntaTipo = "TEXTO" | "NUMERO" | "OPCION_UNICA" | "BOOLEANO";
+
+export type ApiEventoPregunta = {
+    id: string;
+    texto: string;
+    tipo: ApiEventoPreguntaTipo;
+    esObligatoria: boolean;
+    opciones: string[];
+};
+
 export type ApiEvento = {
     id: string;
     titulo: string;
@@ -11,6 +21,7 @@ export type ApiEvento = {
     apuntados?: number;
     isJoined?: boolean;
     misAsistentes?: number;
+    preguntas?: ApiEventoPregunta[];
 };
 
 export type ApiEventoApuntado = {
@@ -59,6 +70,12 @@ export interface CreateEventoInput {
     aforo?: number;
     descripcion?: string;
     estado?: "BORRADOR" | "PUBLICADO" | "CANCELADO";
+    preguntas?: {
+        texto: string;
+        tipo: ApiEventoPreguntaTipo;
+        esObligatoria?: boolean;
+        opciones?: string[];
+    }[];
 }
 
 export async function createEvento(
@@ -128,6 +145,13 @@ export async function deleteEvento(id: string, token: string): Promise<void> {
 
 export interface JoinEventoInput {
     asistentes: number;
+    respuestas?: {
+        preguntaId: string;
+        valorTexto?: string;
+        valorNumero?: number;
+        valorBooleano?: boolean;
+        valorOpcion?: string;
+    }[];
 }
 
 export async function joinEvento(
@@ -206,4 +230,49 @@ export async function getEventoApuntados(
     }
 
     return (await res.json()) as ApiEventoApuntado[];
+}
+
+export type ApiEventoRespuesta = {
+    preguntaId: string;
+    pregunta: string;
+    tipo: ApiEventoPreguntaTipo;
+    valorTexto: string | null;
+    valorNumero: number | null;
+    valorBooleano: boolean | null;
+    valorOpcion: string | null;
+};
+
+export type ApiEventoInscripcionRespuestas = {
+    userId: string;
+    name: string;
+    asistentes: number;
+    respuestas: ApiEventoRespuesta[];
+};
+
+export type ApiEventoRespuestasAdmin = {
+    evento: {
+        id: string;
+        titulo: string;
+        preguntas: ApiEventoPregunta[];
+    };
+    inscripciones: ApiEventoInscripcionRespuestas[];
+};
+
+export async function getEventoRespuestasAdmin(
+    eventId: string,
+    token: string
+): Promise<ApiEventoRespuestasAdmin> {
+    const res = await apiFetch(`/api/eventos/${eventId}/respuestas`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    if (!res.ok) {
+        throw new Error(
+            await getErrorMessage(res, `Error ${res.status} al cargar respuestas del evento`)
+        );
+    }
+
+    return (await res.json()) as ApiEventoRespuestasAdmin;
 }
