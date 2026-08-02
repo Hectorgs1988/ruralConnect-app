@@ -512,7 +512,7 @@ const EventModal: FC<EventModalProps> = ({ onClose, onUpdate, event }) => {
 										}}
 									/>
 
-									<div className="rc-modal-footer">
+									<div className="rc-modal-footer rc-modal-footer-sticky">
 										<Button
 											type="button"
 											onClick={() => {
@@ -634,7 +634,7 @@ const EventModal: FC<EventModalProps> = ({ onClose, onUpdate, event }) => {
 								</div>
 							)}
 
-							<div className="rc-modal-footer">
+							<div className="rc-modal-footer rc-modal-footer-sticky">
 								<Button
 									type="button"
 									onClick={handleClose}

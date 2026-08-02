@@ -135,7 +135,7 @@ const RequestTravelModal: FC<Props> = ({ onClose, onSubmit }) => {
                     </div>
 
                     {/* FOOTER */}
-                    <div className="rc-modal-footer">
+                    <div className="rc-modal-footer rc-modal-footer-sticky">
                         <Button
                             variant="secondary"
                             type="button"

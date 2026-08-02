@@ -433,7 +433,7 @@ const NuevoEventoModal: FC<NuevoEventoModalProps> = ({ onClose, onCreated }) => 
                         ))}
                     </section>
 
-                    <div className="rc-modal-footer">
+                    <div className="rc-modal-footer rc-modal-footer-sticky">
                         <Button
                             type="button"
                             onClick={handleCancel}
