@@ -32,6 +32,13 @@ enum EstadoEvento {
   CANCELADO
 }
 
+enum TipoPreguntaEvento {
+  TEXTO
+  NUMERO
+  OPCION_UNICA
+  BOOLEANO
+}
+
 enum EstadoSolicitudViaje {
   ABIERTA
   ACEPTADA
@@ -165,6 +172,7 @@ model Evento {
   updatedAt   DateTime     @updatedAt
 
   Inscripciones InscripcionEvento[]
+  Preguntas     EventoPregunta[]
 
   @@index([fecha])
   @@index([estado, fecha])
@@ -180,7 +188,58 @@ model InscripcionEvento {
 
   Evento Evento @relation(fields: [eventId], references: [id], onDelete: Cascade)
   User   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Respuestas RespuestaEvento[]
 
   @@unique([eventId, userId])
   @@index([userId])
+}
+
+model EventoPregunta {
+  id           String            @id @default(cuid())
+  eventId       String
+  texto         String
+  tipo          TipoPreguntaEvento
+  esObligatoria Boolean           @default(false)
+  orden         Int
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  Evento     Evento                @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  Opciones   EventoPreguntaOpcion[]
+  Respuestas RespuestaEvento[]
+
+  @@index([eventId])
+  @@unique([eventId, orden])
+}
+
+model EventoPreguntaOpcion {
+  id         String   @id @default(cuid())
+  preguntaId String
+  valor      String
+  orden      Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  Pregunta EventoPregunta @relation(fields: [preguntaId], references: [id], onDelete: Cascade)
+
+  @@index([preguntaId])
+  @@unique([preguntaId, orden])
+}
+
+model RespuestaEvento {
+  id           String   @id @default(cuid())
+  inscripcionId String
+  preguntaId    String
+  valorTexto    String?
+  valorNumero   Int?
+  valorBooleano Boolean?
+  valorOpcion   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  Inscripcion InscripcionEvento @relation(fields: [inscripcionId], references: [id], onDelete: Cascade)
+  Pregunta    EventoPregunta    @relation(fields: [preguntaId], references: [id], onDelete: Cascade)
+
+  @@unique([inscripcionId, preguntaId])
+  @@index([preguntaId])
 }

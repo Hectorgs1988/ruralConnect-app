@@ -9,6 +9,7 @@ import {
 	joinEvento,
 	leaveEvento,
 	type ApiEventoApuntado,
+	type ApiEventoPregunta,
 } from "@/api/eventos";
 
 interface EventModalProps {
@@ -23,8 +24,16 @@ interface EventModalProps {
 		aforo?: number | null;
 		isJoined?: boolean;
 		misAsistentes?: number;
+		preguntas?: ApiEventoPregunta[];
 	};
 }
+
+type RespuestaDraft = {
+	valorTexto?: string;
+	valorNumero?: number;
+	valorBooleano?: boolean;
+	valorOpcion?: string;
+};
 
 type CountValidationMessages = {
 	empty: string;
@@ -75,6 +84,7 @@ const EventModal: FC<EventModalProps> = ({ onClose, onUpdate, event }) => {
 	const [showConfirmUpdate, setShowConfirmUpdate] = useState(false);
 	const [showConfirmLeave, setShowConfirmLeave] = useState(false);
 	const [isEditing, setIsEditing] = useState(false);
+	const [respuestas, setRespuestas] = useState<Record<string, RespuestaDraft>>({});
 	const [apuntadosLista, setApuntadosLista] = useState<ApiEventoApuntado[]>([]);
 	const [loadingApuntados, setLoadingApuntados] = useState(false);
 	const [apuntadosError, setApuntadosError] = useState<string | null>(null);
@@ -88,6 +98,10 @@ const EventModal: FC<EventModalProps> = ({ onClose, onUpdate, event }) => {
 			setName(user.name);
 		}
 	}, [user]);
+
+	useEffect(() => {
+		setRespuestas({});
+	}, [event.id]);
 
 	useEffect(() => {
 		if (!token || !event.id) {
@@ -167,6 +181,43 @@ const EventModal: FC<EventModalProps> = ({ onClose, onUpdate, event }) => {
 				setConfirmStep(false);
 				return;
 			}
+
+			for (const pregunta of event.preguntas ?? []) {
+				const respuesta = respuestas[pregunta.id];
+
+				if (!respuesta) {
+					if (pregunta.esObligatoria) {
+						setError(`Falta responder la pregunta obligatoria: ${pregunta.texto}`);
+						setConfirmStep(false);
+						return;
+					}
+					continue;
+				}
+
+				if (pregunta.tipo === "TEXTO" && pregunta.esObligatoria && !respuesta.valorTexto?.trim()) {
+					setError(`Falta responder la pregunta obligatoria: ${pregunta.texto}`);
+					setConfirmStep(false);
+					return;
+				}
+
+				if (pregunta.tipo === "NUMERO" && pregunta.esObligatoria && !Number.isInteger(respuesta.valorNumero)) {
+					setError(`Falta responder la pregunta obligatoria: ${pregunta.texto}`);
+					setConfirmStep(false);
+					return;
+				}
+
+				if (pregunta.tipo === "BOOLEANO" && pregunta.esObligatoria && typeof respuesta.valorBooleano !== "boolean") {
+					setError(`Falta responder la pregunta obligatoria: ${pregunta.texto}`);
+					setConfirmStep(false);
+					return;
+				}
+
+				if (pregunta.tipo === "OPCION_UNICA" && pregunta.esObligatoria && !respuesta.valorOpcion) {
+					setError(`Falta responder la pregunta obligatoria: ${pregunta.texto}`);
+					setConfirmStep(false);
+					return;
+				}
+			}
 	
 			// Mostrar modal de confirmación en lugar de mensaje dentro del mismo modal
 			setConfirmStep(false);
@@ -189,7 +240,36 @@ const EventModal: FC<EventModalProps> = ({ onClose, onUpdate, event }) => {
 	
 			try {
 				setSubmitting(true);
-				await joinEvento(event.id, { asistentes: count }, token);
+				const respuestasPayload = (event.preguntas ?? [])
+					.map((pregunta) => {
+						const respuesta = respuestas[pregunta.id];
+						if (!respuesta) return null;
+
+						if (pregunta.tipo === "TEXTO") {
+							const valor = respuesta.valorTexto?.trim();
+							if (!valor) return null;
+							return { preguntaId: pregunta.id, valorTexto: valor };
+						}
+
+						if (pregunta.tipo === "NUMERO") {
+							if (!Number.isInteger(respuesta.valorNumero)) return null;
+							return { preguntaId: pregunta.id, valorNumero: respuesta.valorNumero };
+						}
+
+						if (pregunta.tipo === "BOOLEANO") {
+							if (typeof respuesta.valorBooleano !== "boolean") return null;
+							return { preguntaId: pregunta.id, valorBooleano: respuesta.valorBooleano };
+						}
+
+						if (!respuesta.valorOpcion) return null;
+						return { preguntaId: pregunta.id, valorOpcion: respuesta.valorOpcion };
+					})
+					.filter((item): item is NonNullable<typeof item> => item !== null);
+
+				await joinEvento(event.id, {
+					asistentes: count,
+					respuestas: respuestasPayload,
+				}, token);
 				if (onUpdate) onUpdate();
 				setShowConfirmJoin(false);
 				onClose();
@@ -251,6 +331,49 @@ const EventModal: FC<EventModalProps> = ({ onClose, onUpdate, event }) => {
 	const handleClose = () => {
 		if (submitting) return;
 		onClose();
+	};
+
+	const setRespuestaTexto = (preguntaId: string, value: string) => {
+		setRespuestas((prev) => ({
+			...prev,
+			[preguntaId]: { valorTexto: value },
+		}));
+	};
+
+	const setRespuestaNumero = (preguntaId: string, value: string) => {
+		if (!value.trim()) {
+			setRespuestas((prev) => ({
+				...prev,
+				[preguntaId]: {},
+			}));
+			return;
+		}
+
+		const parsed = Number(value);
+		setRespuestas((prev) => ({
+			...prev,
+			[preguntaId]: Number.isFinite(parsed)
+				? { valorNumero: Math.trunc(parsed) }
+				: {},
+		}));
+	};
+
+	const setRespuestaBooleano = (preguntaId: string, value: string) => {
+		setRespuestas((prev) => ({
+			...prev,
+			[preguntaId]: value === "si"
+				? { valorBooleano: true }
+				: value === "no"
+					? { valorBooleano: false }
+					: {},
+		}));
+	};
+
+	const setRespuestaOpcion = (preguntaId: string, value: string) => {
+		setRespuestas((prev) => ({
+			...prev,
+			[preguntaId]: value ? { valorOpcion: value } : {},
+		}));
 	};
 
 	return (
@@ -446,6 +569,70 @@ const EventModal: FC<EventModalProps> = ({ onClose, onUpdate, event }) => {
 									setConfirmStep(false);
 								}}
 							/>
+
+							{(event.preguntas ?? []).length > 0 && (
+								<div className="space-y-3 rounded-lg border border-borderSoft bg-surfaceMuted/40 p-3">
+									<p className="text-sm font-semibold text-dark">Preguntas del evento</p>
+									{(event.preguntas ?? []).map((pregunta) => (
+										<div key={pregunta.id} className="space-y-1">
+											<label className="text-sm text-dark block">
+												{pregunta.texto}
+												{pregunta.esObligatoria ? " *" : ""}
+											</label>
+
+											{pregunta.tipo === "TEXTO" && (
+												<Input
+													placeholder="Tu respuesta"
+													value={respuestas[pregunta.id]?.valorTexto ?? ""}
+													onChange={(e) => setRespuestaTexto(pregunta.id, e.target.value)}
+												/>
+											)}
+
+											{pregunta.tipo === "NUMERO" && (
+												<Input
+													type="number"
+													placeholder="Numero"
+													value={respuestas[pregunta.id]?.valorNumero ?? ""}
+													onChange={(e) => setRespuestaNumero(pregunta.id, e.target.value)}
+												/>
+											)}
+
+											{pregunta.tipo === "BOOLEANO" && (
+												<select
+													className="w-full px-3 py-2 rounded-md bg-surfaceMuted border border-borderSoft focus:outline-none focus:ring-2 focus:ring-primary/60 text-sm"
+													value={
+														typeof respuestas[pregunta.id]?.valorBooleano === "boolean"
+															? respuestas[pregunta.id]?.valorBooleano
+																? "si"
+																: "no"
+															: ""
+													}
+													onChange={(e) => setRespuestaBooleano(pregunta.id, e.target.value)}
+												>
+													<option value="">Selecciona una opcion</option>
+													<option value="si">Si</option>
+													<option value="no">No</option>
+												</select>
+											)}
+
+											{pregunta.tipo === "OPCION_UNICA" && (
+												<select
+													className="w-full px-3 py-2 rounded-md bg-surfaceMuted border border-borderSoft focus:outline-none focus:ring-2 focus:ring-primary/60 text-sm"
+													value={respuestas[pregunta.id]?.valorOpcion ?? ""}
+													onChange={(e) => setRespuestaOpcion(pregunta.id, e.target.value)}
+												>
+													<option value="">Selecciona una opcion</option>
+													{pregunta.opciones.map((opcion) => (
+														<option key={`${pregunta.id}-${opcion}`} value={opcion}>
+															{opcion}
+														</option>
+													))}
+												</select>
+											)}
+										</div>
+									))}
+								</div>
+							)}
 
 							<div className="rc-modal-footer">
 								<Button

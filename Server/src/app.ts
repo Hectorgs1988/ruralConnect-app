@@ -9,6 +9,7 @@ import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import fs from "node:fs";
 
 // Necesario para obtener __dirname en ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -18,8 +19,19 @@ const __dirname = path.dirname(__filename);
 export const app = express();
 
 // --- Swagger ---
-const swaggerPath = path.join(__dirname, "doc", "APIruralconnect.yaml");
-const swaggerDocument = YAML.load(swaggerPath);
+const swaggerCandidates = [
+    path.join(__dirname, "doc", "APIruralconnect.yaml"),
+    path.join(__dirname, "..", "src", "doc", "APIruralconnect.yaml"),
+];
+
+const swaggerPath = swaggerCandidates.find((candidate) => fs.existsSync(candidate));
+const swaggerDocument = swaggerPath
+    ? YAML.load(swaggerPath)
+    : {
+        openapi: "3.0.3",
+        info: { title: "RuralConnect API", version: "1.0.0" },
+        paths: {},
+    };
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 // -----------------

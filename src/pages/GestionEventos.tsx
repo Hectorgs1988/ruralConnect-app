@@ -7,6 +7,7 @@ import Button from "@/components/ui/button";
 import NuevoEventoModal from "@/components/ui/NuevoEventoModal";
 import EditarEventoModal from "@/components/ui/EditarEventoModal";
 import EliminarEventoModal from "@/components/ui/EliminarEventoModal";
+import RespuestasEventoModal from "@/components/ui/RespuestasEventoModal";
 import { useAuth } from "@/context/AuthContext";
 import { listEventos } from "@/api/eventos";
 
@@ -36,6 +37,7 @@ const GestionEventos: FC = () => {
     const [reloadFlag, setReloadFlag] = useState(0);
     const [editingEvento, setEditingEvento] = useState<Evento | null>(null);
     const [deletingEvento, setDeletingEvento] = useState<Evento | null>(null);
+    const [respuestasEvento, setRespuestasEvento] = useState<Evento | null>(null);
 
     useEffect(() => {
         if (!token) {
@@ -172,6 +174,13 @@ const GestionEventos: FC = () => {
                                             </button>
                                             <button
                                                 type="button"
+                                                className="text-xs text-primaryStrong hover:underline mr-2"
+                                                onClick={() => setRespuestasEvento(evento)}
+                                            >
+                                                Ver respuestas
+                                            </button>
+                                            <button
+                                                type="button"
                                                 className="text-xs text-error hover:underline"
                                                 onClick={() => setDeletingEvento(evento)}
                                             >
@@ -183,7 +192,7 @@ const GestionEventos: FC = () => {
                                 {eventosFiltrados.length === 0 && (
                                     <tr>
                                         <td
-                                            colSpan={6}
+                                            colSpan={7}
                                             className="py-4 text-center text-muted text-sm"
                                         >
                                             No se han encontrado eventos con ese criterio de busqueda.
@@ -208,6 +217,13 @@ const GestionEventos: FC = () => {
                     evento={editingEvento}
                     onClose={() => setEditingEvento(null)}
                     onUpdated={() => setReloadFlag((v) => v + 1)}
+                />
+            )}
+            {respuestasEvento && (
+                <RespuestasEventoModal
+                    eventId={respuestasEvento.id}
+                    eventTitle={respuestasEvento.titulo}
+                    onClose={() => setRespuestasEvento(null)}
                 />
             )}
             {deletingEvento && (
