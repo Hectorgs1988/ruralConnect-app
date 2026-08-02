@@ -186,6 +186,7 @@ const Eventos: FC = () => {
             aforo: selectedEvent.aforo,
             isJoined: selectedEvent.isJoined,
             misAsistentes: selectedEvent.misAsistentes,
+            preguntas: selectedEvent.preguntas,
           }}
           onUpdate={handleUpdateEventos}
           onClose={() => {
