@@ -275,7 +275,7 @@ const OfferTravelModal: FC<OfferTravelModalProps> = ({ onClose, onSubmit, initia
 
                     {error && <p className="text-error text-sm">{error}</p>}
 
-                    <div className="rc-modal-footer">
+                    <div className="rc-modal-footer rc-modal-footer-sticky">
                         <Button
                             type="button"
                             onClick={onClose}

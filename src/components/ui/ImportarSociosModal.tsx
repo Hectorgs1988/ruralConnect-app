@@ -109,7 +109,7 @@ const ImportarSociosModal: FC<ImportarSociosModalProps> = ({ onClose, onImported
             }}
           />
 
-          <div className="rc-modal-footer">
+          <div className="rc-modal-footer rc-modal-footer-sticky">
             <Button
               type="button"
               onClick={onClose}

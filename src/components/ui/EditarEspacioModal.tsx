@@ -137,7 +137,7 @@ const EditarEspacioModal: FC<EditarEspacioModalProps> = ({ espacio, onClose, onU
                         />
                     </div>
 
-                    <div className="rc-modal-footer">
+                    <div className="rc-modal-footer rc-modal-footer-sticky">
                         <Button
                             type="button"
                             onClick={onClose}
