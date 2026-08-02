@@ -61,6 +61,10 @@ components:
       type: string
       enum: [BORRADOR, PUBLICADO, CANCELADO]
 
+    TipoPreguntaEvento:
+      type: string
+      enum: [TEXTO, NUMERO, OPCION_UNICA, BOOLEANO]
+
     EstadoSolicitudViaje:
       type: string
       enum: [ABIERTA, ACEPTADA, CANCELADA]
@@ -216,6 +220,9 @@ components:
           type: integer
           nullable: true
           description: Número de asistentes en la inscripción del usuario (si existe)
+        preguntas:
+          type: array
+          items: { $ref: "#/components/schemas/PreguntaEvento" }
       required: [id, titulo, fecha, estado, createdAt, updatedAt]
 
     EventoCreate:
@@ -228,6 +235,9 @@ components:
         lugar: { type: string, nullable: true }
         aforo: { type: integer, minimum: 1, nullable: true }
         estado: { $ref: "#/components/schemas/EstadoEvento" }
+        preguntas:
+          type: array
+          items: { $ref: "#/components/schemas/PreguntaEventoCreate" }
       additionalProperties: false
 
     EventoUpdate:
@@ -239,6 +249,30 @@ components:
         lugar: { type: string, nullable: true }
         aforo: { type: integer, minimum: 1, nullable: true }
         estado: { $ref: "#/components/schemas/EstadoEvento" }
+      additionalProperties: false
+
+    PreguntaEvento:
+      type: object
+      properties:
+        id: { type: string }
+        texto: { type: string }
+        tipo: { $ref: "#/components/schemas/TipoPreguntaEvento" }
+        esObligatoria: { type: boolean }
+        opciones:
+          type: array
+          items: { type: string }
+      required: [id, texto, tipo, esObligatoria, opciones]
+
+    PreguntaEventoCreate:
+      type: object
+      required: [texto, tipo]
+      properties:
+        texto: { type: string, minLength: 2 }
+        tipo: { $ref: "#/components/schemas/TipoPreguntaEvento" }
+        esObligatoria: { type: boolean, default: false }
+        opciones:
+          type: array
+          items: { type: string, minLength: 1 }
       additionalProperties: false
 
     InscripcionEvento:
@@ -259,7 +293,59 @@ components:
           minimum: 1
           maximum: 20
           default: 1
+        respuestas:
+          type: array
+          items: { $ref: "#/components/schemas/RespuestaEventoInput" }
       additionalProperties: false
+
+    RespuestaEventoInput:
+      type: object
+      required: [preguntaId]
+      properties:
+        preguntaId: { type: string }
+        valorTexto: { type: string }
+        valorNumero: { type: integer }
+        valorBooleano: { type: boolean }
+        valorOpcion: { type: string }
+      additionalProperties: false
+
+    RespuestaEventoAdmin:
+      type: object
+      properties:
+        preguntaId: { type: string }
+        pregunta: { type: string }
+        tipo: { $ref: "#/components/schemas/TipoPreguntaEvento" }
+        valorTexto: { type: string, nullable: true }
+        valorNumero: { type: integer, nullable: true }
+        valorBooleano: { type: boolean, nullable: true }
+        valorOpcion: { type: string, nullable: true }
+      required: [preguntaId, pregunta, tipo]
+
+    EventoRespuestasAdmin:
+      type: object
+      properties:
+        evento:
+          type: object
+          properties:
+            id: { type: string }
+            titulo: { type: string }
+            preguntas:
+              type: array
+              items: { $ref: "#/components/schemas/PreguntaEvento" }
+          required: [id, titulo, preguntas]
+        inscripciones:
+          type: array
+          items:
+            type: object
+            properties:
+              userId: { type: string }
+              name: { type: string }
+              asistentes: { type: integer }
+              respuestas:
+                type: array
+                items: { $ref: "#/components/schemas/RespuestaEventoAdmin" }
+            required: [userId, name, asistentes, respuestas]
+      required: [evento, inscripciones]
 
     Viaje:
       type: object
@@ -705,6 +791,25 @@ paths:
           schema: { type: string }
       responses:
         "204": { description: Inscripción eliminada }
+
+  /eventos/{id}/respuestas:
+    get:
+      tags: [Eventos]
+      summary: Ver respuestas de inscripción de un evento (admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Respuestas de los socios inscritos
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EventoRespuestasAdmin" }
+        "403": { description: No autorizado }
+        "404": { description: Evento no encontrado }
 
   /eventos/mis-eventos:
     get:
