@@ -63,7 +63,7 @@ complete flow before deployment.
   - No separate Caja credential store or frontend-only administrator secret
     is introduced.
 
-- **Status:** TODO
+- **Status:** DONE
 
 ### S2-02 — Connecting Caja to the shared product API
 

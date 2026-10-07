@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import RecoverPasswordModal from "@/components/ui/RecoverPasswordModal";
 import { useAuth } from "@/context/AuthContext";
 const bgHero = new URL("../assets/Campos.jpg", import.meta.url).href;
@@ -16,7 +16,14 @@ export default function Login() {
   const [showRecoverModal, setShowRecoverModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
+  const requestedPath = location.state?.from;
+  const returnPath = typeof requestedPath === "string"
+    && requestedPath.startsWith("/")
+    && !requestedPath.startsWith("//")
+    ? requestedPath
+    : "/inicio";
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +31,7 @@ export default function Login() {
 
     try {
       await login(username, password);
-      navigate("/inicio", { replace: true });
+      navigate(returnPath, { replace: true });
     } catch (err: any) {
       setError(err?.message ?? "Usuario o contraseña incorrectos");
     }
