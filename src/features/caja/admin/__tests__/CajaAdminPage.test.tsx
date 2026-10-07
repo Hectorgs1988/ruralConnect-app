@@ -3,9 +3,15 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import appRouter from "@/routes";
 import type { CajaProduct } from "@/features/caja/types/CajaProduct";
-import { validateCajaProductForm } from "../productForm";
+import { MAX_CAJA_PRICE_CENTS, validateCajaProductForm } from "../productForm";
 
-const mockListCajaProducts = vi.hoisted(() => vi.fn());
+const mockCajaApi = vi.hoisted(() => ({
+    listAdminCajaProducts: vi.fn(),
+    listCajaProducts: vi.fn(),
+    createCajaProduct: vi.fn(),
+    updateCajaProduct: vi.fn(),
+    deactivateCajaProduct: vi.fn(),
+}));
 const mockAuth = vi.hoisted(() => ({
     state: {
         user: {
@@ -22,7 +28,7 @@ const mockAuth = vi.hoisted(() => ({
 }));
 
 vi.mock("@/api/caja", () => ({
-    listCajaProducts: mockListCajaProducts,
+    ...mockCajaApi,
 }));
 
 vi.mock("@/context/AuthContext", () => ({
@@ -49,7 +55,8 @@ function renderAdminPage() {
 describe("Caja product administration UI", () => {
     beforeEach(() => {
         mockAuth.state.user.role = "ADMIN";
-        mockListCajaProducts.mockReset().mockResolvedValue([product]);
+        Object.values(mockCajaApi).forEach((mock) => mock.mockReset());
+        mockCajaApi.listAdminCajaProducts.mockResolvedValue([product]);
     });
 
     it("allows ADMIN users to access the page and displays product administration data", async () => {
@@ -62,8 +69,20 @@ describe("Caja product administration UI", () => {
         expect(screen.getByText("Bebida")).toBeInTheDocument();
         expect(screen.getByText(/1,50\s*€/)).toBeInTheDocument();
         expect(screen.getByText("Activo")).toBeInTheDocument();
-        expect(screen.getByText(/solo devuelve productos activos/i)).toBeInTheDocument();
-        expect(mockListCajaProducts).toHaveBeenCalledWith("rural-token");
+        expect(mockCajaApi.listAdminCajaProducts).toHaveBeenCalledWith("rural-token");
+    });
+
+    it("shows active and inactive products without offering reactivation", async () => {
+        const inactiveProduct = { ...product, id: "inactiva", name: "Producto inactivo", active: false };
+        mockCajaApi.listAdminCajaProducts.mockResolvedValue([product, inactiveProduct]);
+
+        renderAdminPage();
+
+        expect(await screen.findByText("Producto inactivo")).toBeInTheDocument();
+        expect(screen.getAllByText("Inactivo")).toHaveLength(1);
+        expect(screen.getByText(/no existe una acción de reactivación/i)).toBeInTheDocument();
+        expect(screen.getByText("Reactivación no disponible")).toBeInTheDocument();
+        expect(screen.getAllByRole("button", { name: "Desactivar" })).toHaveLength(1);
     });
 
     it("denies non-admin users using the existing role guard", () => {
@@ -72,7 +91,7 @@ describe("Caja product administration UI", () => {
 
         expect(screen.queryByRole("heading", { name: "Gestión de productos de Caja" }))
             .not.toBeInTheDocument();
-        expect(mockListCajaProducts).not.toHaveBeenCalled();
+        expect(mockCajaApi.listAdminCajaProducts).not.toHaveBeenCalled();
     });
 
     it("opens a creation form and validates required fields", async () => {
@@ -80,7 +99,7 @@ describe("Caja product administration UI", () => {
 
         fireEvent.click(await screen.findByRole("button", { name: "Crear producto" }));
         expect(screen.getByRole("heading", { name: "Crear producto" })).toBeInTheDocument();
-        fireEvent.click(screen.getByRole("button", { name: "Validar borrador" }));
+        fireEvent.click(screen.getByRole("button", { name: "Guardar producto" }));
 
         expect(screen.getByText("El ID es obligatorio.")).toBeInTheDocument();
         expect(screen.getByText("El nombre es obligatorio.")).toBeInTheDocument();
@@ -127,7 +146,70 @@ describe("Caja product administration UI", () => {
         }
     });
 
-    it("converts a valid EUR price to integer cents and keeps the form UI-only", async () => {
+    it("accepts prices up to the database integer maximum and rejects values above it", () => {
+        const commonValues = {
+            id: "precio",
+            name: "Producto",
+            category: "BEBIDA",
+        };
+        const maximumPrice = validateCajaProductForm({
+            ...commonValues,
+            priceEuros: "21474836.47",
+        }, "create");
+        expect(maximumPrice.valid).toBe(true);
+        if (maximumPrice.valid) {
+            expect(maximumPrice.draft.priceCents).toBe(MAX_CAJA_PRICE_CENTS);
+        }
+
+        const aboveMaximum = validateCajaProductForm({
+            ...commonValues,
+            priceEuros: "21474836.48",
+        }, "create");
+        expect(aboveMaximum.valid).toBe(false);
+        if (!aboveMaximum.valid) {
+            expect(aboveMaximum.errors.priceEuros).toMatch(/21\.474\.836,47/);
+        }
+
+        const normalPrice = validateCajaProductForm({
+            ...commonValues,
+            priceEuros: "1,50",
+        }, "create");
+        expect(normalPrice.valid).toBe(true);
+        if (normalPrice.valid) {
+            expect(normalPrice.draft.priceCents).toBe(150);
+        }
+    });
+
+    it("matches the backend maximum length for product IDs and names", () => {
+        const tooLongId = validateCajaProductForm({
+            id: "i".repeat(192),
+            name: "Producto",
+            category: "BEBIDA",
+            priceEuros: "1.00",
+        }, "create");
+        expect(tooLongId.valid).toBe(false);
+        if (!tooLongId.valid) {
+            expect(tooLongId.errors.id).toMatch(/191 caracteres/);
+        }
+
+        const tooLongName = validateCajaProductForm({
+            id: "producto",
+            name: "n".repeat(192),
+            category: "BEBIDA",
+            priceEuros: "1.00",
+        }, "create");
+        expect(tooLongName.valid).toBe(false);
+        if (!tooLongName.valid) {
+            expect(tooLongName.errors.name).toMatch(/191 caracteres/);
+        }
+    });
+
+    it("creates a product using the integer-cent payload and refreshes the admin list", async () => {
+        const created = { ...product, id: "nuevo", name: "Nuevo", category: "COMIDA" as const, priceCents: 125 };
+        mockCajaApi.createCajaProduct.mockResolvedValue(created);
+        mockCajaApi.listAdminCajaProducts
+            .mockResolvedValueOnce([product])
+            .mockResolvedValueOnce([product, created]);
         const validation = validateCajaProductForm({
             id: "nuevo",
             name: "Nuevo",
@@ -143,23 +225,121 @@ describe("Caja product administration UI", () => {
         fireEvent.change(screen.getByLabelText("Nombre"), { target: { value: "Nuevo" } });
         fireEvent.change(screen.getByLabelText("Categoría"), { target: { value: "COMIDA" } });
         fireEvent.change(screen.getByLabelText("Precio (EUR)"), { target: { value: "1,25" } });
-        fireEvent.click(screen.getByRole("button", { name: "Validar borrador" }));
+        fireEvent.click(screen.getByRole("button", { name: "Guardar producto" }));
 
         expect(await screen.findByRole("status"))
-            .toHaveTextContent("Borrador validado (nuevo: 125 céntimos). No se ha guardado");
-        expect(screen.queryByText("Nuevo")).not.toBeInTheDocument();
-        expect(mockListCajaProducts).toHaveBeenCalledTimes(1);
+            .toHaveTextContent("Producto nuevo creado.");
+        expect(mockCajaApi.createCajaProduct).toHaveBeenCalledWith("rural-token", {
+            id: "nuevo", name: "Nuevo", category: "COMIDA", priceCents: 125,
+        });
+        expect(await screen.findByText("Nuevo")).toBeInTheDocument();
+        expect(mockCajaApi.listAdminCajaProducts).toHaveBeenCalledTimes(2);
     });
 
-    it("offers deactivation intent but no hard-delete or independent admin credentials", async () => {
+    it("shows create API errors without refreshing or adding the product", async () => {
+        mockCajaApi.createCajaProduct.mockRejectedValue(new Error("El ID ya existe"));
+        renderAdminPage();
+        fireEvent.click(await screen.findByRole("button", { name: "Crear producto" }));
+        fireEvent.change(screen.getByLabelText("ID"), { target: { value: "cerveza" } });
+        fireEvent.change(screen.getByLabelText("Nombre"), { target: { value: "Duplicado" } });
+        fireEvent.change(screen.getByLabelText("Categoría"), { target: { value: "BEBIDA" } });
+        fireEvent.change(screen.getByLabelText("Precio (EUR)"), { target: { value: "1,50" } });
+        fireEvent.click(screen.getByRole("button", { name: "Guardar producto" }));
+
+        expect(await screen.findByRole("alert")).toHaveTextContent("El ID ya existe");
+        expect(mockCajaApi.listAdminCajaProducts).toHaveBeenCalledTimes(1);
+    });
+
+    it("edits a product and refreshes the list while keeping the ID immutable", async () => {
+        const updated = { ...product, name: "Cerveza especial", priceCents: 200 };
+        mockCajaApi.updateCajaProduct.mockResolvedValue(updated);
+        mockCajaApi.listAdminCajaProducts
+            .mockResolvedValueOnce([product])
+            .mockResolvedValueOnce([updated]);
+        renderAdminPage();
+
+        fireEvent.click(await screen.findByRole("button", { name: "Editar" }));
+        fireEvent.change(screen.getByLabelText("Nombre"), { target: { value: "Cerveza especial" } });
+        fireEvent.change(screen.getByLabelText("Precio (EUR)"), { target: { value: "2,00" } });
+        fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+
+        expect(await screen.findByRole("status")).toHaveTextContent("Producto cerveza actualizado.");
+        expect(mockCajaApi.updateCajaProduct).toHaveBeenCalledWith("rural-token", "cerveza", {
+            name: "Cerveza especial", category: "BEBIDA", priceCents: 200,
+        });
+        expect(await screen.findByText("Cerveza especial")).toBeInTheDocument();
+        expect(mockCajaApi.listAdminCajaProducts).toHaveBeenCalledTimes(2);
+    });
+
+    it("shows edit API errors and does not refresh the list", async () => {
+        mockCajaApi.updateCajaProduct.mockRejectedValue(new Error("Producto no encontrado"));
+        renderAdminPage();
+        fireEvent.click(await screen.findByRole("button", { name: "Editar" }));
+        fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+
+        expect(await screen.findByRole("alert")).toHaveTextContent("Producto no encontrado");
+        expect(mockCajaApi.listAdminCajaProducts).toHaveBeenCalledTimes(1);
+    });
+
+    it("soft-deactivates products and refreshes them as inactive", async () => {
+        const inactiveProduct = { ...product, active: false };
+        mockCajaApi.deactivateCajaProduct.mockResolvedValue(inactiveProduct);
+        mockCajaApi.listAdminCajaProducts
+            .mockResolvedValueOnce([product])
+            .mockResolvedValueOnce([inactiveProduct]);
+        renderAdminPage();
+
+        fireEvent.click(await screen.findByRole("button", { name: "Desactivar" }));
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar desactivación" }));
+
+        expect(await screen.findByRole("status")).toHaveTextContent("Producto cerveza desactivado.");
+        expect(mockCajaApi.deactivateCajaProduct).toHaveBeenCalledWith("rural-token", "cerveza");
+        expect(await screen.findByText("Inactivo")).toBeInTheDocument();
+        expect(screen.getByText("Reactivación no disponible")).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: /reactivar/i })).not.toBeInTheDocument();
+        expect(mockCajaApi.listAdminCajaProducts).toHaveBeenCalledTimes(2);
+    });
+
+    it("shows deactivation API errors without refreshing", async () => {
+        mockCajaApi.deactivateCajaProduct.mockRejectedValue(new Error("No autorizado"));
+        renderAdminPage();
+        fireEvent.click(await screen.findByRole("button", { name: "Desactivar" }));
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar desactivación" }));
+
+        expect(await screen.findByRole("alert")).toHaveTextContent("No autorizado");
+        expect(mockCajaApi.listAdminCajaProducts).toHaveBeenCalledTimes(1);
+    });
+
+    it("prevents duplicate create submissions while the request is pending", async () => {
+        let resolveCreate!: (created: CajaProduct) => void;
+        mockCajaApi.createCajaProduct.mockReturnValue(new Promise((resolve) => {
+            resolveCreate = resolve;
+        }));
+        mockCajaApi.listAdminCajaProducts.mockResolvedValue([product]);
+        renderAdminPage();
+        fireEvent.click(await screen.findByRole("button", { name: "Crear producto" }));
+        fireEvent.change(screen.getByLabelText("ID"), { target: { value: "nuevo" } });
+        fireEvent.change(screen.getByLabelText("Nombre"), { target: { value: "Nuevo" } });
+        fireEvent.change(screen.getByLabelText("Categoría"), { target: { value: "COMIDA" } });
+        fireEvent.change(screen.getByLabelText("Precio (EUR)"), { target: { value: "1,25" } });
+
+        const submit = screen.getByRole("button", { name: "Guardar producto" });
+        fireEvent.click(submit);
+        expect(screen.getByRole("button", { name: "Guardando..." })).toBeDisabled();
+        fireEvent.click(screen.getByRole("button", { name: "Guardando..." }));
+        expect(mockCajaApi.createCajaProduct).toHaveBeenCalledTimes(1);
+
+        resolveCreate({ ...product, id: "nuevo", name: "Nuevo", priceCents: 125 });
+        expect(await screen.findByRole("status")).toHaveTextContent("Producto nuevo creado.");
+    });
+
+    it("offers deactivation but no hard-delete action or separate credentials", async () => {
         renderAdminPage();
 
         expect(await screen.findByRole("button", { name: "Desactivar" })).toBeInTheDocument();
         expect(screen.queryByRole("button", { name: /eliminar|borrar/i })).not.toBeInTheDocument();
         expect(screen.queryByLabelText(/contraseña|credenciales/i)).not.toBeInTheDocument();
 
-        fireEvent.click(screen.getByRole("button", { name: "Desactivar" }));
-        expect(await screen.findByText(/no se ha ejecutado.*S2-05/i)).toBeInTheDocument();
-        expect(screen.getByText("Activo")).toBeInTheDocument();
+        expect(mockCajaApi.deactivateCajaProduct).not.toHaveBeenCalled();
     });
 });

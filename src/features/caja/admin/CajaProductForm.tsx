@@ -10,8 +10,9 @@ import {
 
 interface CajaProductFormProps {
     product?: CajaProduct;
+    isSubmitting: boolean;
     onCancel: () => void;
-    onValidDraft: (draft: CajaProductDraft) => void;
+    onValidDraft: (draft: CajaProductDraft) => Promise<void>;
 }
 
 function initialValues(product?: CajaProduct): CajaProductFormValues {
@@ -25,6 +26,7 @@ function initialValues(product?: CajaProduct): CajaProductFormValues {
 
 export default function CajaProductForm({
     product,
+    isSubmitting,
     onCancel,
     onValidDraft,
 }: CajaProductFormProps) {
@@ -34,9 +36,10 @@ export default function CajaProductForm({
 
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
+        if (isSubmitting) return;
         const result = validateCajaProductForm(values, mode);
         setErrors(result.errors);
-        if (result.valid) onValidDraft(result.draft);
+        if (result.valid) void onValidDraft(result.draft);
     }
 
     function update<K extends keyof CajaProductFormValues>(
@@ -53,7 +56,7 @@ export default function CajaProductForm({
                 {product ? `Editar ${product.name}` : "Crear producto"}
             </h2>
             <p className="text-sm text-muted">
-                Formulario de preparación. Los cambios se conectarán a la API en S2-05.
+                Gestiona los datos del producto Caja.
             </p>
             <form className="grid gap-4 sm:grid-cols-2" onSubmit={submit} noValidate>
                 <label className="space-y-1">
@@ -112,10 +115,17 @@ export default function CajaProductForm({
                     )}
                 </label>
                 <div className="flex flex-wrap gap-2 sm:col-span-2">
-                    <button type="submit" className="rc-btn-primary">
-                        Validar borrador
+                    <button type="submit" className="rc-btn-primary" disabled={isSubmitting}>
+                        {isSubmitting
+                            ? "Guardando..."
+                            : mode === "create" ? "Guardar producto" : "Guardar cambios"}
                     </button>
-                    <button type="button" className="rc-btn-secondary" onClick={onCancel}>
+                    <button
+                        type="button"
+                        className="rc-btn-secondary"
+                        onClick={onCancel}
+                        disabled={isSubmitting}
+                    >
                         Cancelar
                     </button>
                 </div>

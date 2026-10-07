@@ -182,6 +182,83 @@ describe('GET /api/caja/products', () => {
         });
     });
 
+    describe('GET /api/caja/admin/products', () => {
+        beforeEach(() => {
+            vi.clearAllMocks();
+        });
+
+        it('rejects requests without Rural Connect authentication', async () => {
+            const response = await request(app).get('/api/caja/admin/products');
+
+            expect(response.status).toBe(401);
+            expect(mockedFindMany).not.toHaveBeenCalled();
+        });
+
+        it('rejects authenticated non-admin users', async () => {
+            const response = await request(app)
+                .get('/api/caja/admin/products')
+                .set('Authorization', `Bearer ${makeToken('SOCIO')}`);
+
+            expect(response.status).toBe(403);
+            expect(mockedFindMany).not.toHaveBeenCalled();
+        });
+
+        it('returns active and inactive products with deterministic order and the CajaProduct fields', async () => {
+            const createdAt = new Date('2026-10-07T10:00:00.000Z');
+            const updatedAt = new Date('2026-10-07T11:00:00.000Z');
+            const products = [
+                makeProduct({ id: 'fideua', name: 'Fideuá', category: 'COMIDA', active: false }),
+                makeProduct({ id: 'cerveza-z', name: 'Cerveza', active: true }),
+                makeProduct({ id: 'agua', name: 'Agua', active: false }),
+                makeProduct({ id: 'cerveza', name: 'Cerveza', active: true }),
+            ].map((product) => ({ ...product, createdAt, updatedAt }));
+            const databaseResult = [...products].sort((left, right) =>
+                left.category.localeCompare(right.category) ||
+                left.name.localeCompare(right.name) ||
+                left.id.localeCompare(right.id));
+            mockedFindMany.mockResolvedValue(databaseResult);
+
+            const response = await request(app)
+                .get('/api/caja/admin/products')
+                .set('Authorization', `Bearer ${makeToken('ADMIN')}`);
+
+            expect(response.status).toBe(200);
+            expect(response.body.map((product: { id: string }) => product.id)).toEqual([
+                'agua',
+                'cerveza',
+                'cerveza-z',
+                'fideua',
+            ]);
+            expect(response.body.map((product: { active: boolean }) => product.active))
+                .toEqual([false, true, true, false]);
+            expect(response.body[0]).toEqual({
+                id: 'agua',
+                name: 'Agua',
+                category: 'BEBIDA',
+                priceCents: 150,
+                active: false,
+                createdAt: createdAt.toISOString(),
+                updatedAt: updatedAt.toISOString(),
+            });
+            expect(mockedFindMany).toHaveBeenCalledWith({
+                orderBy: [
+                    { category: 'asc' },
+                    { name: 'asc' },
+                    { id: 'asc' },
+                ],
+                select: {
+                    id: true,
+                    name: true,
+                    category: true,
+                    priceCents: true,
+                    active: true,
+                    createdAt: true,
+                    updatedAt: true,
+                },
+            });
+        });
+    });
+
     describe('Caja product administration', () => {
         beforeEach(() => {
             vi.clearAllMocks();
@@ -242,6 +319,92 @@ describe('GET /api/caja/products', () => {
             expect(mockedCreate).toHaveBeenCalledWith({
                 data: { id: 'cerveza', name: 'Cerveza', category: 'BEBIDA', priceCents: 150 },
             });
+        });
+
+        it('accepts the maximum Prisma Int price on create and edit', async () => {
+            const maxPriceCents = 2_147_483_647;
+            mockedCreate.mockResolvedValue(makeProduct({ priceCents: maxPriceCents }));
+
+            const createResponse = await request(app)
+                .post('/api/caja/products')
+                .set('Authorization', `Bearer ${makeToken('ADMIN')}`)
+                .send({
+                    id: 'cerveza',
+                    name: 'Cerveza',
+                    category: 'BEBIDA',
+                    priceCents: maxPriceCents,
+                });
+
+            expect(createResponse.status).toBe(201);
+            expect(mockedCreate).toHaveBeenCalledWith({
+                data: {
+                    id: 'cerveza',
+                    name: 'Cerveza',
+                    category: 'BEBIDA',
+                    priceCents: maxPriceCents,
+                },
+            });
+
+            mockedUpdate.mockResolvedValue(makeProduct({ priceCents: maxPriceCents }));
+            const editResponse = await request(app)
+                .patch('/api/caja/products/cerveza')
+                .set('Authorization', `Bearer ${makeToken('ADMIN')}`)
+                .send({ priceCents: maxPriceCents });
+
+            expect(editResponse.status).toBe(200);
+            expect(mockedUpdate).toHaveBeenCalledWith({
+                where: { id: 'cerveza' },
+                data: { priceCents: maxPriceCents },
+            });
+        });
+
+        it.each(['create', 'edit'] as const)(
+            'rejects prices above the Prisma Int maximum on %s without persistence',
+            async (operation) => {
+                const response = operation === 'create'
+                    ? await request(app)
+                        .post('/api/caja/products')
+                        .set('Authorization', `Bearer ${makeToken('ADMIN')}`)
+                        .send({
+                            id: 'cerveza',
+                            name: 'Cerveza',
+                            category: 'BEBIDA',
+                            priceCents: 2_147_483_648,
+                        })
+                    : await request(app)
+                        .patch('/api/caja/products/cerveza')
+                        .set('Authorization', `Bearer ${makeToken('ADMIN')}`)
+                        .send({ priceCents: 2_147_483_648 });
+
+                expect(response.status).toBe(400);
+                expect(mockedCreate).not.toHaveBeenCalled();
+                expect(mockedUpdate).not.toHaveBeenCalled();
+            },
+        );
+
+        it.each([
+            ['negative', -1],
+            ['non-integer', 150.5],
+        ])('rejects %s prices on create and edit', async (_kind, priceCents) => {
+            const token = `Bearer ${makeToken('ADMIN')}`;
+            const createResponse = await request(app)
+                .post('/api/caja/products')
+                .set('Authorization', token)
+                .send({
+                    id: 'cerveza',
+                    name: 'Cerveza',
+                    category: 'BEBIDA',
+                    priceCents,
+                });
+            const editResponse = await request(app)
+                .patch('/api/caja/products/cerveza')
+                .set('Authorization', token)
+                .send({ priceCents });
+
+            expect(createResponse.status).toBe(400);
+            expect(editResponse.status).toBe(400);
+            expect(mockedCreate).not.toHaveBeenCalled();
+            expect(mockedUpdate).not.toHaveBeenCalled();
         });
 
         it('returns 409 when an ADMIN creates a duplicate product ID', async () => {
