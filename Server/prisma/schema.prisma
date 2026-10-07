@@ -53,6 +53,11 @@ enum TipoMovimientoDespensa {
   ELIMINACION
 }
 
+enum CajaProductCategory {
+  BEBIDA
+  COMIDA
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -100,6 +105,18 @@ model ProductoDespensa {
   MovimientosInventario MovimientoInventarioDespensa[]
 
   @@index([nombre])
+}
+
+model CajaProduct {
+  id         String             @id
+  name       String
+  category   CajaProductCategory
+  priceCents Int
+  active     Boolean            @default(true)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @default(now()) @updatedAt
+
+  @@index([category, active])
 }
 
 model CompraDespensa {
