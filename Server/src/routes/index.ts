@@ -8,6 +8,7 @@ import { usersRouter } from "./users.js";
 import { dashboardRouter } from "./dashboard.js";
 import { solicitudesViajeRouter } from "./solicitudesViaje.js";
 import { despensaRouter } from './despensa.js';
+import { cajaRouter } from './caja.js';
 
 export const api = Router();
 
@@ -20,3 +21,4 @@ api.use('/users', usersRouter);
 api.use('/dashboard', dashboardRouter);
 api.use('/solicitudes-viaje', solicitudesViajeRouter);
 api.use('/despensa', despensaRouter);
+api.use('/caja', cajaRouter);
