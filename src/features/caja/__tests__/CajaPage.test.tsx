@@ -152,6 +152,70 @@ describe("Caja product catalog", () => {
         expect(screen.getByLabelText("Total de la comanda")).toHaveTextContent(/0,00\s*€/);
     });
 
+    it("shows voucher guidance with the legacy default and switches voucher type", async () => {
+        mockListCajaProducts.mockResolvedValue([
+            makeProduct("producto", "Producto", "COMIDA", 125),
+        ]);
+
+        renderCaja();
+        fireEvent.click(await screen.findByRole("button", { name: "Añadir Producto a la comanda" }));
+        fireEvent.click(screen.getByRole("button", { name: "Pagar con vale" }));
+
+        expect(screen.getByRole("button", { name: "Vale 24 EUR" })).toHaveAttribute("aria-pressed", "true");
+        expect(screen.getByText((_, element) =>
+            element?.tagName === "P"
+            && element.textContent?.replace("•", "").replace(/\s+/g, " ").trim()
+                === "Total: 1,25 EUR - Tacha 4 de 30 + 1 de 5.",
+        )).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole("button", { name: "Vale 12 EUR" }));
+        expect(screen.getByRole("button", { name: "Vale 12 EUR" })).toHaveAttribute("aria-pressed", "true");
+        expect(screen.getByText((_, element) =>
+            element?.tagName === "P"
+            && element.textContent?.replace("•", "").replace(/\s+/g, " ").trim()
+                === "Total: 1,25 EUR - Tacha 1 fila + 1 de 5.",
+        )).toBeInTheDocument();
+    });
+
+    it("keeps voucher guidance hidden when the ticket total is zero", async () => {
+        mockListCajaProducts.mockResolvedValue([makeProduct("producto", "Producto", "COMIDA", 125)]);
+
+        renderCaja();
+
+        expect(await screen.findByRole("button", { name: "Pagar con vale" })).toBeDisabled();
+        expect(screen.queryByRole("group", { name: "Tipo de vale" })).not.toBeInTheDocument();
+    });
+
+    it("turns voucher mode off on clear while retaining the selected voucher type", async () => {
+        mockListCajaProducts.mockResolvedValue([makeProduct("producto", "Producto", "COMIDA", 125)]);
+
+        renderCaja();
+        fireEvent.click(await screen.findByRole("button", { name: "Añadir Producto a la comanda" }));
+        fireEvent.click(screen.getByRole("button", { name: "Pagar con vale" }));
+        fireEvent.click(screen.getByRole("button", { name: "Vale 12 EUR" }));
+        fireEvent.click(screen.getByRole("button", { name: "Vaciar" }));
+
+        expect(screen.queryByRole("group", { name: "Tipo de vale" })).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Pagar con vale" })).toHaveAttribute("aria-pressed", "false");
+
+        fireEvent.click(screen.getByRole("button", { name: "Añadir Producto a la comanda" }));
+        fireEvent.click(screen.getByRole("button", { name: "Pagar con vale" }));
+        expect(screen.getByRole("button", { name: "Vale 12 EUR" })).toHaveAttribute("aria-pressed", "true");
+    });
+
+    it("turns voucher mode off when completing the ticket", async () => {
+        mockListCajaProducts.mockResolvedValue([makeProduct("producto", "Producto", "COMIDA", 125)]);
+
+        renderCaja();
+        fireEvent.click(await screen.findByRole("button", { name: "Añadir Producto a la comanda" }));
+        fireEvent.click(screen.getByRole("button", { name: "Pagar con vale" }));
+        fireEvent.click(screen.getByRole("button", { name: "Completar ticket" }));
+
+        expect(await screen.findByRole("status")).toHaveTextContent("Ticket completado");
+        expect(screen.queryByRole("group", { name: "Tipo de vale" })).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Pagar con vale" })).toHaveAttribute("aria-pressed", "false");
+    });
+
     it("keeps an in-progress line snapshot unchanged when the API catalog refreshes", async () => {
         mockListCajaProducts
             .mockResolvedValueOnce([makeProduct("refresco-id", "Refresco antiguo", "BEBIDA", 19)])
@@ -187,6 +251,25 @@ describe("Caja product catalog", () => {
         expect(screen.getByText("×3")).toBeInTheDocument();
         expect(screen.getByLabelText("Número de artículos")).toHaveTextContent("3 artículos");
         expect(screen.getByLabelText("Total de la comanda")).toHaveTextContent(/4,80\s*€/);
+    });
+
+    it("calculates voucher guidance from snapshotted ticket prices after catalog refresh", async () => {
+        mockListCajaProducts
+            .mockResolvedValueOnce([makeProduct("cerveza-id", "Cerveza", "BEBIDA", 150)])
+            .mockResolvedValueOnce([makeProduct("cerveza-id", "Cerveza", "BEBIDA", 180)]);
+
+        renderCaja();
+        fireEvent.click(await screen.findByRole("button", { name: "Añadir Cerveza a la comanda" }));
+        fireEvent.click(screen.getByRole("button", { name: "Actualizar catálogo" }));
+        fireEvent.click(await screen.findByRole("button", { name: "Añadir Cerveza a la comanda" }));
+        fireEvent.click(screen.getByRole("button", { name: "Pagar con vale" }));
+
+        expect(screen.getByLabelText("Total de la comanda")).toHaveTextContent(/3,30\s*€/);
+        expect(screen.getByText((_, element) =>
+            element?.tagName === "P"
+            && element.textContent?.replace("•", "").replace(/\s+/g, " ").trim()
+                === "Total: 3,30 EUR - Tacha 2 filas + 1 de 30.",
+        )).toBeInTheDocument();
     });
 
     it("routes UI quantity and remove controls to the matching price-snapshot line", async () => {

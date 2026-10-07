@@ -1,8 +1,13 @@
 import type { CajaTicketLine } from "@/features/caja/domain/ticket";
+import { CAJA_VOUCHERS, type CajaVoucherType } from "@/features/caja/domain/voucher";
 
 const currencyFormatter = new Intl.NumberFormat("es-ES", {
     style: "currency",
     currency: "EUR",
+});
+const voucherTotalFormatter = new Intl.NumberFormat("es-ES", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
 });
 
 function formatCents(priceCents: number): string {
@@ -14,11 +19,17 @@ interface CajaTicketProps {
     itemCount: number;
     totalCents: number;
     completionMessage: string | null;
+    voucherModeActive: boolean;
+    voucherType: CajaVoucherType;
+    voucherInstruction: string | null;
+    voucherError: string | null;
     onIncrement: (lineId: string) => void;
     onDecrement: (lineId: string) => void;
     onRemove: (lineId: string) => void;
     onClear: () => void;
     onComplete: () => void;
+    onToggleVoucherMode: () => void;
+    onSelectVoucherType: (voucherType: CajaVoucherType) => void;
 }
 
 export default function CajaTicket({
@@ -26,11 +37,17 @@ export default function CajaTicket({
     itemCount,
     totalCents,
     completionMessage,
+    voucherModeActive,
+    voucherType,
+    voucherInstruction,
+    voucherError,
     onIncrement,
     onDecrement,
     onRemove,
     onClear,
     onComplete,
+    onToggleVoucherMode,
+    onSelectVoucherType,
 }: CajaTicketProps) {
     const hasItems = lines.length > 0;
 
@@ -102,6 +119,44 @@ export default function CajaTicket({
                     </button>
                 </div>
             </div>
+            <div className="flex justify-end">
+                <button
+                    type="button"
+                    className={`rc-btn-secondary ${voucherModeActive ? "is-active" : ""}`}
+                    onClick={onToggleVoucherMode}
+                    disabled={!hasItems}
+                    aria-pressed={voucherModeActive}
+                >
+                    Pagar con vale
+                </button>
+            </div>
+            {voucherModeActive && totalCents > 0 && (
+                <section className="rc-card space-y-3 p-4" aria-live="polite">
+                    <div className="flex flex-wrap gap-2" role="group" aria-label="Tipo de vale">
+                        {([CAJA_VOUCHERS["24"], CAJA_VOUCHERS["12"]]).map((voucher) => (
+                            <button
+                                key={voucher.id}
+                                type="button"
+                                className="rc-btn-secondary"
+                                aria-pressed={voucherType === voucher.id}
+                                onClick={() => onSelectVoucherType(voucher.id)}
+                            >
+                                {voucher.label}
+                            </button>
+                        ))}
+                    </div>
+                    {voucherError ? (
+                        <p role="alert" className="text-error">{voucherError}</p>
+                    ) : voucherInstruction ? (
+                        <p>
+                            <span className="mr-2" aria-hidden="true">•</span>
+                            Total: <strong>{voucherTotalFormatter.format(totalCents / 100)} EUR</strong>
+                            {" - "}
+                            {voucherInstruction}
+                        </p>
+                    ) : null}
+                </section>
+            )}
             {completionMessage && <p role="status">{completionMessage}</p>}
         </section>
     );

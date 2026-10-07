@@ -9,6 +9,10 @@ import {
     getCajaTicketItemCount,
     getCajaTicketTotalCents,
 } from "@/features/caja/domain/ticket";
+import {
+    calculateCajaVoucher,
+    type CajaVoucherType,
+} from "@/features/caja/domain/voucher";
 
 const priceFormatter = new Intl.NumberFormat("es-ES", {
     style: "currency",
@@ -23,6 +27,8 @@ export default function CajaPage() {
     const [ticketLines, dispatchTicket] = useReducer(cajaTicketReducer, []);
     const [refreshCatalog, setRefreshCatalog] = useState(0);
     const [completionMessage, setCompletionMessage] = useState<string | null>(null);
+    const [voucherModeActive, setVoucherModeActive] = useState(false);
+    const [voucherType, setVoucherType] = useState<CajaVoucherType>("24");
 
     useEffect(() => {
         let isMounted = true;
@@ -63,6 +69,17 @@ export default function CajaPage() {
     };
     const ticketItemCount = getCajaTicketItemCount(ticketLines);
     const ticketTotalCents = getCajaTicketTotalCents(ticketLines);
+    let voucherInstruction: string | null = null;
+    let voucherError: string | null = null;
+    if (voucherModeActive && ticketTotalCents > 0) {
+        try {
+            voucherInstruction = calculateCajaVoucher(ticketTotalCents, voucherType)?.instruction ?? null;
+        } catch (calculationError) {
+            voucherError = calculationError instanceof RangeError
+                ? "No se puede calcular la guía del vale porque el total excede el límite seguro."
+                : "No se pudo calcular la guía del vale.";
+        }
+    }
 
     function completeTicket() {
         if (ticketLines.length === 0) return;
@@ -71,6 +88,7 @@ export default function CajaPage() {
             currency: "EUR",
         }).format(ticketTotalCents / 100);
         setCompletionMessage(`Ticket completado: ${completedTotal}. No se ha guardado un pedido.`);
+        setVoucherModeActive(false);
         dispatchTicket({ type: "clear" });
     }
 
@@ -87,14 +105,21 @@ export default function CajaPage() {
                     itemCount={ticketItemCount}
                     totalCents={ticketTotalCents}
                     completionMessage={completionMessage}
+                    voucherModeActive={voucherModeActive}
+                    voucherType={voucherType}
+                    voucherInstruction={voucherInstruction}
+                    voucherError={voucherError}
                     onIncrement={(lineId) => dispatchTicket({ type: "increment", lineId })}
                     onDecrement={(lineId) => dispatchTicket({ type: "decrement", lineId })}
                     onRemove={(lineId) => dispatchTicket({ type: "remove", lineId })}
                     onClear={() => {
                         dispatchTicket({ type: "clear" });
+                        setVoucherModeActive(false);
                         setCompletionMessage(null);
                     }}
                     onComplete={completeTicket}
+                    onToggleVoucherMode={() => setVoucherModeActive((active) => !active)}
+                    onSelectVoucherType={setVoucherType}
                 />
                 {loading ? (
                     <p role="status" className="text-center text-muted">Cargando productos...</p>
