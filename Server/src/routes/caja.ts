@@ -55,6 +55,30 @@ cajaRouter.get('/products', requireAuth, async (_req, res, next) => {
     }
 });
 
+cajaRouter.get('/admin/products', requireAuth, requireAdmin, async (_req, res, next) => {
+    try {
+        const products = await prisma.cajaProduct.findMany({
+            orderBy: [
+                { category: 'asc' },
+                { name: 'asc' },
+                { id: 'asc' },
+            ],
+            select: {
+                id: true,
+                name: true,
+                category: true,
+                priceCents: true,
+                active: true,
+                createdAt: true,
+                updatedAt: true,
+            },
+        });
+        res.json(products);
+    } catch (error) {
+        next(error);
+    }
+});
+
 cajaRouter.post('/products', requireAuth, requireAdmin, async (req, res, next) => {
     try {
         const body = createCajaProductSchema.parse(req.body);

@@ -1,5 +1,7 @@
 import type { CajaProductCategory } from "@/features/caja/types/CajaProduct";
 
+export const MAX_CAJA_PRICE_CENTS = 2_147_483_647;
+
 export interface CajaProductFormValues {
     id: string;
     name: string;
@@ -46,12 +48,16 @@ export function validateCajaProductForm(
     const priceCents = parseEurosToCents(values.priceEuros);
 
     if (mode === "create" && !id) errors.id = "El ID es obligatorio.";
+    if (id.length > 191) errors.id = "El ID no puede superar 191 caracteres.";
     if (!name) errors.name = "El nombre es obligatorio.";
+    else if (name.length > 191) errors.name = "El nombre no puede superar 191 caracteres.";
     if (values.category !== "BEBIDA" && values.category !== "COMIDA") {
         errors.category = "Selecciona Bebida o Comida.";
     }
     if (priceCents === null) {
         errors.priceEuros = "Introduce un precio no negativo con hasta dos decimales.";
+    } else if (priceCents > MAX_CAJA_PRICE_CENTS) {
+        errors.priceEuros = "El precio no puede superar 21.474.836,47 €.";
     }
 
     if (Object.keys(errors).length > 0 || priceCents === null

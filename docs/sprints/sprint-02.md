@@ -153,7 +153,7 @@ complete flow before deployment.
     cannot provide them, the gap is confirmed with the backend owner and any
     added read capability is admin-authorized and separately tested.
 
-- **Status:** TODO
+- **Status:** DONE
 
 ### S2-06 — Validating voucher behavior after migration
 

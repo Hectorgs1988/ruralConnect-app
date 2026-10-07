@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { listCajaProducts } from "@/api/caja";
+import {
+    createCajaProduct,
+    deactivateCajaProduct,
+    listAdminCajaProducts,
+    updateCajaProduct,
+} from "@/api/caja";
 import { useAuth } from "@/context/AuthContext";
 import type { CajaProduct } from "@/features/caja/types/CajaProduct";
 import CajaProductForm from "./CajaProductForm";
@@ -18,62 +23,100 @@ export default function CajaAdminPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [formProduct, setFormProduct] = useState<CajaProduct | null | undefined>(undefined);
-    const [draftNotice, setDraftNotice] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
+    const [mutationError, setMutationError] = useState<string | null>(null);
+    const [saving, setSaving] = useState(false);
+    const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
     const [deactivationProduct, setDeactivationProduct] = useState<CajaProduct | null>(null);
 
-    useEffect(() => {
-        let isMounted = true;
+    async function loadProducts(): Promise<CajaProduct[]> {
+        if (!token) throw new Error("No se pudo validar la sesión para cargar los productos.");
+        return listAdminCajaProducts(token);
+    }
 
-        async function loadProducts() {
-            if (!token) {
-                setProducts([]);
-                setError("No se pudo validar la sesión para cargar los productos.");
-                setLoading(false);
-                return;
-            }
-
-            setLoading(true);
-            setError(null);
-            try {
-                const catalog = await listCajaProducts(token);
-                if (isMounted) setProducts(catalog);
-            } catch (loadError) {
-                if (isMounted) {
-                    setError(loadError instanceof Error
-                        ? loadError.message
-                        : "No se pudieron cargar los productos de Caja.");
-                }
-            } finally {
-                if (isMounted) setLoading(false);
-            }
+    async function refreshProducts() {
+        setLoading(true);
+        setError(null);
+        try {
+            setProducts(await loadProducts());
+        } catch (loadError) {
+            setError(loadError instanceof Error
+                ? loadError.message
+                : "No se pudieron cargar los productos de Caja.");
+        } finally {
+            setLoading(false);
         }
+    }
 
-        void loadProducts();
-        return () => {
-            isMounted = false;
-        };
+    useEffect(() => {
+        void refreshProducts();
     }, [token]);
 
     function openCreateForm() {
-        setDraftNotice(null);
+        setSuccess(null);
+        setMutationError(null);
         setDeactivationProduct(null);
         setFormProduct(null);
     }
 
     function openEditForm(product: CajaProduct) {
-        setDraftNotice(null);
+        setSuccess(null);
+        setMutationError(null);
         setDeactivationProduct(null);
         setFormProduct(product);
     }
 
-    function acceptDraft(draft: CajaProductDraft) {
-        setDraftNotice(
-            `Borrador validado (${draft.id}: ${draft.priceCents} céntimos). No se ha guardado; la escritura se integrará en S2-05.`,
-        );
+    async function saveProduct(draft: CajaProductDraft) {
+        if (!token || saving) return;
+        setSaving(true);
+        setMutationError(null);
+        setSuccess(null);
+        try {
+            if (formProduct) {
+                await updateCajaProduct(token, formProduct.id, {
+                    name: draft.name,
+                    category: draft.category,
+                    priceCents: draft.priceCents,
+                });
+                setSuccess(`Producto ${formProduct.id} actualizado.`);
+            } else {
+                await createCajaProduct(token, draft);
+                setSuccess(`Producto ${draft.id} creado.`);
+            }
+            setFormProduct(undefined);
+            await refreshProducts();
+        } catch (saveError) {
+            setMutationError(saveError instanceof Error
+                ? saveError.message
+                : "No se pudo guardar el producto de Caja.");
+        } finally {
+            setSaving(false);
+        }
     }
 
     function cancelForm() {
+        if (saving) return;
         setFormProduct(undefined);
+    }
+
+    async function confirmDeactivation() {
+        if (!token || !deactivationProduct || deactivatingId) return;
+        const productToDeactivate = deactivationProduct;
+        setDeactivatingId(productToDeactivate.id);
+        setMutationError(null);
+        setSuccess(null);
+        try {
+            await deactivateCajaProduct(token, productToDeactivate.id);
+            setDeactivationProduct(null);
+            setSuccess(`Producto ${productToDeactivate.id} desactivado.`);
+            await refreshProducts();
+        } catch (deactivateError) {
+            setMutationError(deactivateError instanceof Error
+                ? deactivateError.message
+                : "No se pudo desactivar el producto de Caja.");
+        } finally {
+            setDeactivatingId(null);
+        }
     }
 
     return (
@@ -91,48 +134,68 @@ export default function CajaAdminPage() {
                     </button>
                 </div>
 
-                {draftNotice && (
-                    <p role="status" className="rc-card p-4">{draftNotice}</p>
+                {success && (
+                    <p role="status" className="rc-card p-4">{success}</p>
+                )}
+                {mutationError && (
+                    <p role="alert" className="rc-card p-4 text-error">{mutationError}</p>
                 )}
 
                 {formProduct !== undefined && (
                     <CajaProductForm
                         key={formProduct?.id ?? "new"}
                         product={formProduct ?? undefined}
+                        isSubmitting={saving}
                         onCancel={cancelForm}
-                        onValidDraft={acceptDraft}
+                        onValidDraft={saveProduct}
                     />
                 )}
 
                 {deactivationProduct && (
                     <section className="rc-card space-y-3 p-4" aria-labelledby="caja-deactivation-title">
                         <h2 id="caja-deactivation-title" className="font-semibold">
-                            Desactivar {deactivationProduct.name}
+                            Confirmar desactivación: {deactivationProduct.name}
                         </h2>
-                        <p role="status">
-                            La desactivación no se ha ejecutado. Se conectará a la API en S2-05.
+                        <p>
+                            El producto se conservará, pero dejará de aparecer en el catálogo activo.
                         </p>
                         <button
                             type="button"
-                            className="rc-btn-secondary"
-                            onClick={() => setDeactivationProduct(null)}
+                            className="rc-btn-primary"
+                            disabled={deactivatingId !== null}
+                            onClick={() => void confirmDeactivation()}
                         >
-                            Cerrar
+                            {deactivatingId === deactivationProduct.id ? "Desactivando..." : "Confirmar desactivación"}
                         </button>
+                        <button
+                            type="button"
+                            className="rc-btn-secondary"
+                            disabled={deactivatingId !== null}
+                            onClick={() => setDeactivationProduct(null)}
+                        >Cancelar</button>
                     </section>
                 )}
 
                 <p className="text-sm text-muted">
-                    El catálogo disponible actualmente solo devuelve productos activos. Los inactivos
-                    no se pueden listar hasta que S2-05 incorpore un endpoint de administración.
+                    Los productos inactivos se muestran como tales. No existe una acción de reactivación
+                    disponible en la API actual.
                 </p>
 
                 {loading ? (
                     <p role="status" className="text-center text-muted">Cargando productos de Caja...</p>
                 ) : error ? (
-                    <p role="alert" className="text-center text-error">{error}</p>
+                    <div className="space-y-3 text-center">
+                        <p role="alert" className="text-error">{error}</p>
+                        <button
+                            type="button"
+                            className="rc-btn-secondary"
+                            onClick={() => void refreshProducts()}
+                        >
+                            Reintentar
+                        </button>
+                    </div>
                 ) : products.length === 0 ? (
-                    <p className="text-center text-muted">No hay productos activos en el catálogo.</p>
+                    <p className="text-center text-muted">No hay productos en el catálogo de Caja.</p>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full border-collapse text-left">
@@ -162,6 +225,7 @@ export default function CajaAdminPage() {
                                             <button
                                                 type="button"
                                                 className="rc-btn-secondary"
+                                                disabled={saving || deactivatingId !== null}
                                                 onClick={() => openEditForm(product)}
                                             >
                                                 Editar
@@ -170,14 +234,21 @@ export default function CajaAdminPage() {
                                                 <button
                                                     type="button"
                                                     className="rc-btn-secondary"
+                                                    disabled={saving || deactivatingId !== null}
                                                     onClick={() => {
-                                                        setDraftNotice(null);
+                                                        setSuccess(null);
+                                                        setMutationError(null);
                                                         setFormProduct(undefined);
                                                         setDeactivationProduct(product);
                                                     }}
                                                 >
                                                     Desactivar
                                                 </button>
+                                            )}
+                                            {!product.active && (
+                                                <span className="text-sm text-muted">
+                                                    Reactivación no disponible
+                                                </span>
                                             )}
                                         </td>
                                     </tr>
