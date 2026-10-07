@@ -12,6 +12,7 @@
         "seed:admin": "tsx src/scripts/seed-admin.ts",
         "seed:socio": "tsx src/scripts/seed-socio.ts",
         "seed:despensa": "tsx src/scripts/seed-despensa.ts",
+        "seed:caja": "tsx src/scripts/seed-caja.ts",
         "test": "vitest"
     },
     "dependencies": {

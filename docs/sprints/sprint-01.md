@@ -85,7 +85,9 @@ automated test baseline for the catalog work.
   - Re-running the seed does not create duplicate products or overwrite
     administrator changes unexpectedly.
   - The Rural Connect runtime does not depend on the legacy project.
-- **Status:** TODO
+- **Status:** DONE
+**RISKNODE:**
+- Verify seed rerun behavior against a safe development database before operational use.
 
 ### S1-05 — Exposing the Caja catalog read API
 
