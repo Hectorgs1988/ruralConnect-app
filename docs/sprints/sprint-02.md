@@ -84,7 +84,7 @@ complete flow before deployment.
   - Only products returned as active by the shared API are offered to the
     cashier.
 
-- **Status:** TODO
+- **Status:** DONE
 
 ### S2-03 — Preserving calculator and cart behavior with API products
 
