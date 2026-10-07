@@ -7,6 +7,9 @@ vi.mock('../db/prisma.js', () => ({
     prisma: {
         cajaProduct: {
             findMany: vi.fn(),
+            create: vi.fn(),
+            update: vi.fn(),
+            delete: vi.fn(),
         },
     },
 }));
@@ -16,9 +19,25 @@ import { prisma } from '../db/prisma.js';
 import { JWT_SECRET } from '../config/jwt.js';
 
 const mockedFindMany = vi.mocked(prisma.cajaProduct.findMany);
+const mockedCreate = vi.mocked(prisma.cajaProduct.create);
+const mockedUpdate = vi.mocked(prisma.cajaProduct.update);
+const mockedDelete = vi.mocked(prisma.cajaProduct.delete);
 
 function makeToken(role: 'ADMIN' | 'SOCIO') {
     return jwt.sign({ sub: 'user-1', role }, JWT_SECRET);
+}
+
+function makeProduct(overrides: Partial<CajaProduct> = {}): CajaProduct {
+    return {
+        id: 'cerveza',
+        name: 'Cerveza',
+        category: 'BEBIDA',
+        priceCents: 150,
+        active: true,
+        createdAt: new Date('2026-10-07T10:00:00.000Z'),
+        updatedAt: new Date('2026-10-07T11:00:00.000Z'),
+        ...overrides,
+    };
 }
 
 describe('GET /api/caja/products', () => {
@@ -91,6 +110,125 @@ describe('GET /api/caja/products', () => {
                 createdAt: true,
                 updatedAt: true,
             },
+        });
+    });
+
+    describe('Caja product administration', () => {
+        beforeEach(() => {
+            vi.clearAllMocks();
+        });
+
+        it('rejects unauthenticated writes', async () => {
+            const response = await request(app)
+                .post('/api/caja/products')
+                .send({ id: 'cerveza', name: 'Cerveza', category: 'BEBIDA', priceCents: 150 });
+
+            expect(response.status).toBe(401);
+            expect(mockedCreate).not.toHaveBeenCalled();
+        });
+
+        it('rejects writes from authenticated non-admin users', async () => {
+            const response = await request(app)
+                .post('/api/caja/products')
+                .set('Authorization', `Bearer ${makeToken('SOCIO')}`)
+                .send({ id: 'cerveza', name: 'Cerveza', category: 'BEBIDA', priceCents: 150 });
+
+            expect(response.status).toBe(403);
+            expect(mockedCreate).not.toHaveBeenCalled();
+        });
+
+        it('allows an ADMIN to create a product with a stable ID', async () => {
+            const product = makeProduct();
+            mockedCreate.mockResolvedValue(product);
+
+            const response = await request(app)
+                .post('/api/caja/products')
+                .set('Authorization', `Bearer ${makeToken('ADMIN')}`)
+                .send({ id: 'cerveza', name: 'Cerveza', category: 'BEBIDA', priceCents: 150 });
+
+            expect(response.status).toBe(201);
+            expect(response.body).toMatchObject({ id: 'cerveza', priceCents: 150 });
+            expect(mockedCreate).toHaveBeenCalledWith({
+                data: { id: 'cerveza', name: 'Cerveza', category: 'BEBIDA', priceCents: 150 },
+            });
+        });
+
+        it('allows an ADMIN to edit a product without changing its ID', async () => {
+            mockedUpdate.mockResolvedValue(makeProduct({ name: 'Cerveza especial', priceCents: 200 }));
+
+            const response = await request(app)
+                .patch('/api/caja/products/cerveza')
+                .set('Authorization', `Bearer ${makeToken('ADMIN')}`)
+                .send({ name: 'Cerveza especial', priceCents: 200 });
+
+            expect(response.status).toBe(200);
+            expect(response.body).toMatchObject({ id: 'cerveza', name: 'Cerveza especial', priceCents: 200 });
+            expect(mockedUpdate).toHaveBeenCalledWith({
+                where: { id: 'cerveza' },
+                data: { name: 'Cerveza especial', priceCents: 200 },
+            });
+        });
+
+        it('allows an ADMIN to deactivate a product without deleting it', async () => {
+            mockedUpdate.mockResolvedValue(makeProduct({ active: false }));
+
+            const response = await request(app)
+                .patch('/api/caja/products/cerveza/deactivate')
+                .set('Authorization', `Bearer ${makeToken('ADMIN')}`);
+
+            expect(response.status).toBe(200);
+            expect(response.body).toMatchObject({ id: 'cerveza', active: false });
+            expect(mockedUpdate).toHaveBeenCalledWith({
+                where: { id: 'cerveza' },
+                data: { active: false },
+            });
+            expect(mockedDelete).not.toHaveBeenCalled();
+        });
+
+        it('rejects an invalid category', async () => {
+            const response = await request(app)
+                .post('/api/caja/products')
+                .set('Authorization', `Bearer ${makeToken('ADMIN')}`)
+                .send({ id: 'cerveza', name: 'Cerveza', category: 'BEBIDAS', priceCents: 150 });
+
+            expect(response.status).toBe(400);
+            expect(mockedCreate).not.toHaveBeenCalled();
+        });
+
+        it('rejects negative prices', async () => {
+            const response = await request(app)
+                .post('/api/caja/products')
+                .set('Authorization', `Bearer ${makeToken('ADMIN')}`)
+                .send({ id: 'cerveza', name: 'Cerveza', category: 'BEBIDA', priceCents: -1 });
+
+            expect(response.status).toBe(400);
+            expect(mockedCreate).not.toHaveBeenCalled();
+        });
+
+        it('rejects malformed create and update payloads', async () => {
+            const token = `Bearer ${makeToken('ADMIN')}`;
+            const malformedCreate = await request(app)
+                .post('/api/caja/products')
+                .set('Authorization', token)
+                .send({ name: 'Cerveza', category: 'BEBIDA', priceCents: 150 });
+            const malformedUpdate = await request(app)
+                .patch('/api/caja/products/cerveza')
+                .set('Authorization', token)
+                .send({ id: 'otra-id' });
+
+            expect(malformedCreate.status).toBe(400);
+            expect(malformedUpdate.status).toBe(400);
+            expect(mockedCreate).not.toHaveBeenCalled();
+            expect(mockedUpdate).not.toHaveBeenCalled();
+        });
+
+        it('does not expose a hard-delete endpoint', async () => {
+            const response = await request(app)
+                .delete('/api/caja/products/cerveza')
+                .set('Authorization', `Bearer ${makeToken('ADMIN')}`);
+
+            expect(response.status).toBe(404);
+            expect(mockedDelete).not.toHaveBeenCalled();
         });
     });
 });

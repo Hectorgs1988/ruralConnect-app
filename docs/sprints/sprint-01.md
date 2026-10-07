@@ -117,7 +117,7 @@ automated test baseline for the catalog work.
     requests are rejected.
   - Deactivation preserves the row; no hard-delete operation is exposed.
   - Invalid category, price, and malformed input are rejected with appropriate client errors.
-- **Status:** TODO
+- **Status:** DONE
 
 ### S1-07 — Testing the Caja catalog API
 
@@ -136,6 +136,11 @@ automated test baseline for the catalog work.
     JSON source products, with the confirmed `refresco` and `zumo` prices.
   - The backend test command completes successfully with the intended tests.
   - Verify active filtering and deterministic multi-product ordering with integration-level coverage where practical.
+  **Additional coverage for S1-07:**
+- Verify 401 and 403 behavior independently for create, edit and deactivate operations.
+- Exercise duplicate-ID 409 behavior.
+- Exercise missing-product 404 behavior for edit and deactivate.
+- Add database-backed integration coverage where practical.
 - **Status:** TODO
 
 ## Decisions already approved
