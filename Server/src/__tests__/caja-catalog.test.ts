@@ -40,6 +40,27 @@ function makeProduct(overrides: Partial<CajaProduct> = {}): CajaProduct {
     };
 }
 
+function writeRequest(operation: 'create' | 'edit' | 'deactivate', role?: 'ADMIN' | 'SOCIO') {
+    let testRequest;
+
+    if (operation === 'create') {
+        testRequest = request(app)
+            .post('/api/caja/products')
+            .send({ id: 'cerveza', name: 'Cerveza', category: 'BEBIDA', priceCents: 150 });
+    } else if (operation === 'edit') {
+        testRequest = request(app)
+            .patch('/api/caja/products/cerveza')
+            .send({ name: 'Cerveza especial' });
+    } else {
+        testRequest = request(app).patch('/api/caja/products/cerveza/deactivate');
+    }
+
+    if (role) {
+        testRequest.set('Authorization', ['Bearer', makeToken(role)].join(' '));
+    }
+    return testRequest;
+}
+
 describe('GET /api/caja/products', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -52,10 +73,28 @@ describe('GET /api/caja/products', () => {
         expect(mockedFindMany).not.toHaveBeenCalled();
     });
 
-    it('returns the active catalog fields in deterministic order', async () => {
+    it('returns active products in deterministic order with the catalog response shape', async () => {
         const createdAt = new Date('2026-10-07T10:00:00.000Z');
         const updatedAt = new Date('2026-10-07T11:00:00.000Z');
         const catalog: CajaProduct[] = [
+            {
+                id: 'montadito',
+                name: 'Montadito',
+                category: 'COMIDA',
+                priceCents: 300,
+                active: true,
+                createdAt,
+                updatedAt,
+            },
+            {
+                id: 'cerveza-z',
+                name: 'Cerveza',
+                category: 'BEBIDA',
+                priceCents: 150,
+                active: true,
+                createdAt,
+                updatedAt,
+            },
             {
                 id: 'cerveza',
                 name: 'Cerveza',
@@ -74,25 +113,55 @@ describe('GET /api/caja/products', () => {
                 createdAt,
                 updatedAt,
             },
+            {
+                id: 'agua',
+                name: 'Agua',
+                category: 'BEBIDA',
+                priceCents: 100,
+                active: true,
+                createdAt,
+                updatedAt,
+            },
         ];
-        mockedFindMany.mockResolvedValue(catalog.filter((product) => product.active));
+        const databaseResult = catalog
+            .filter((product) => product.active)
+            .sort((left, right) =>
+                left.category.localeCompare(right.category) ||
+                left.name.localeCompare(right.name) ||
+                left.id.localeCompare(right.id));
+        mockedFindMany.mockResolvedValue(databaseResult);
 
         const response = await request(app)
             .get('/api/caja/products')
             .set('Authorization', `Bearer ${makeToken('SOCIO')}`);
 
         expect(response.status).toBe(200);
-        expect(response.body).toEqual([
+        expect(response.body.map((product: { id: string }) => product.id)).toEqual([
+            'agua',
+            'cerveza',
+            'cerveza-z',
+            'montadito',
+        ]);
+        expect(response.body).toEqual(expect.arrayContaining([
             {
-                id: 'cerveza',
-                name: 'Cerveza',
+                id: 'agua',
+                name: 'Agua',
                 category: 'BEBIDA',
-                priceCents: 150,
+                priceCents: 100,
                 active: true,
                 createdAt: createdAt.toISOString(),
                 updatedAt: updatedAt.toISOString(),
             },
-        ]);
+            {
+                id: 'montadito',
+                name: 'Montadito',
+                category: 'COMIDA',
+                priceCents: 300,
+                active: true,
+                createdAt: createdAt.toISOString(),
+                updatedAt: updatedAt.toISOString(),
+            },
+        ]));
         expect(response.body.map((product: { id: string }) => product.id)).not.toContain('inactiva');
         expect(mockedFindMany).toHaveBeenCalledWith({
             where: { active: true },
@@ -117,6 +186,28 @@ describe('GET /api/caja/products', () => {
         beforeEach(() => {
             vi.clearAllMocks();
         });
+
+        it.each(['create', 'edit', 'deactivate'] as const)(
+            'rejects unauthenticated %s requests',
+            async (operation) => {
+                const response = await writeRequest(operation);
+
+                expect(response.status).toBe(401);
+                expect(mockedCreate).not.toHaveBeenCalled();
+                expect(mockedUpdate).not.toHaveBeenCalled();
+            },
+        );
+
+        it.each(['create', 'edit', 'deactivate'] as const)(
+            'rejects non-admin %s requests',
+            async (operation) => {
+                const response = await writeRequest(operation, 'SOCIO');
+
+                expect(response.status).toBe(403);
+                expect(mockedCreate).not.toHaveBeenCalled();
+                expect(mockedUpdate).not.toHaveBeenCalled();
+            },
+        );
 
         it('rejects unauthenticated writes', async () => {
             const response = await request(app)
@@ -153,6 +244,14 @@ describe('GET /api/caja/products', () => {
             });
         });
 
+        it('returns 409 when an ADMIN creates a duplicate product ID', async () => {
+            mockedCreate.mockRejectedValue(Object.assign(new Error('duplicate'), { code: 'P2002' }));
+
+            const response = await writeRequest('create', 'ADMIN');
+
+            expect(response.status).toBe(409);
+        });
+
         it('allows an ADMIN to edit a product without changing its ID', async () => {
             mockedUpdate.mockResolvedValue(makeProduct({ name: 'Cerveza especial', priceCents: 200 }));
 
@@ -169,6 +268,14 @@ describe('GET /api/caja/products', () => {
             });
         });
 
+        it('returns 404 when an ADMIN edits a missing product', async () => {
+            mockedUpdate.mockRejectedValue(Object.assign(new Error('missing'), { code: 'P2025' }));
+
+            const response = await writeRequest('edit', 'ADMIN');
+
+            expect(response.status).toBe(404);
+        });
+
         it('allows an ADMIN to deactivate a product without deleting it', async () => {
             mockedUpdate.mockResolvedValue(makeProduct({ active: false }));
 
@@ -183,6 +290,14 @@ describe('GET /api/caja/products', () => {
                 data: { active: false },
             });
             expect(mockedDelete).not.toHaveBeenCalled();
+        });
+
+        it('returns 404 when an ADMIN deactivates a missing product', async () => {
+            mockedUpdate.mockRejectedValue(Object.assign(new Error('missing'), { code: 'P2025' }));
+
+            const response = await writeRequest('deactivate', 'ADMIN');
+
+            expect(response.status).toBe(404);
         });
 
         it('rejects an invalid category', async () => {
