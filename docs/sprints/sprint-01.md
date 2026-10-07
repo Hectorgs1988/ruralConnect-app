@@ -1,4 +1,6 @@
 # Sprint 1 — Caja Product Catalog Foundation
+## Sprint status
+COMPLETED
 
 ## Sprint objective
 
@@ -141,7 +143,7 @@ automated test baseline for the catalog work.
 - Exercise duplicate-ID 409 behavior.
 - Exercise missing-product 404 behavior for edit and deactivate.
 - Add database-backed integration coverage where practical.
-- **Status:** TODO
+- **Status:** DONE
 
 ## Decisions already approved
 
@@ -177,6 +179,7 @@ automated test baseline for the catalog work.
   release signal.
 - API validation must reject negative priceCents values.
 - Verify seed rerun behavior against a safe development database before operational use.
+- Database-backed integration tests are still pending for Caja catalog filtering, persistence, duplicate handling, and seed rerun behavior.
 
 ## Out-of-scope items
 
