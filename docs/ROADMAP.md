@@ -19,6 +19,30 @@ The target architecture is:
 
 ---
 
+# Delivery status
+
+## Sprint 1 — COMPLETED
+
+Sprint 1 established the backend foundation for the Caja Susinos integration.
+
+Completed capabilities:
+
+- Separate `CajaProduct` domain model
+- Additive Prisma migration
+- Seeded Caja catalog
+- Authenticated Caja catalog read API
+- ADMIN create/edit/deactivate API
+- Backend validation
+- Automated backend coverage
+- Stable product IDs
+- Integer-cent pricing
+- No hard deletion
+- No runtime dependency on the legacy Caja backend/data source
+
+Remaining work is primarily frontend integration, authentication flow, administration UI, operational integration, and end-to-end delivery.
+
+---
+
 # Version 1 Scope
 
 Version 1 must preserve the existing Rural Connect functionality while integrating the current Caja Susinos calculator experience.
@@ -38,7 +62,7 @@ Version 1 includes:
 
 Version 1 does NOT include:
 
-- Real money payments
+- Real-money payments
 - Payment gateway integration
 - NFC payments
 - Wristbands/cards
@@ -65,11 +89,15 @@ Products used by Caja are stored in the database and exposed through the shared 
 - Analyze current Caja product structure
 - Define Caja product data model
 - Decide relationship with existing Despensa models
-- Avoid conflating Caja sales products with Despensa inventory unless appropriate
+- Keep Caja sales products separate from Despensa inventory unless a future requirement justifies integration
 - Create backend product API
 - Add validation and authorization
 - Seed initial products from the current Caja catalog
 - Preserve stable product identifiers where relevant
+
+## Status
+
+COMPLETED in Sprint 1.
 
 ---
 
@@ -83,16 +111,19 @@ Use Rural Connect authentication and permissions for Caja-related functionality.
 
 Users accessing Caja use the shared Rural Connect identity and authorization model.
 
+Direct access to Caja does not imply a separate authentication system.
+
 ## Main work
 
-- Reuse existing authentication
+- Reuse existing Rural Connect authentication
 - Define Caja access permissions if needed
 - Define administrator permissions
 - Ensure admin operations are enforced by the backend
 - Remove dependency on frontend-only Caja admin authentication
-- Support both:
+- Support:
   - access from Rural Connect
   - direct access to Caja
+- Preserve a single user identity across both access paths
 
 ---
 
@@ -104,11 +135,12 @@ Replace Caja Susinos static/local data dependencies with the Rural Connect backe
 
 ## Expected outcome
 
-Caja functionality no longer depends on:
+Caja functionality no longer depends at runtime on:
 
-- public/products.json
+- `public/products.json`
 - frontend-only administration
-- browser-local product data
+- duplicated fallback product catalogs
+- browser-local product data where shared persistence is required
 
 ## Main work
 
@@ -116,9 +148,9 @@ Caja functionality no longer depends on:
 - Preserve current calculator behavior
 - Preserve quantities and ticket calculations
 - Preserve voucher conversion behavior
-- Decide which calculations belong in frontend and which should be validated by backend
+- Decide which calculations remain frontend concerns and which should be validated by backend
 - Remove duplicated fallback product catalogs
-- Avoid new dependencies on legacy/CajaSusinos
+- Avoid new dependencies on `legacy/CajaSusinos`
 
 ---
 
@@ -130,7 +162,7 @@ Allow administrators to manage Caja products from the maintained application.
 
 ## Expected outcome
 
-An authorized administrator can manage the Caja product catalog from the application.
+An authorized administrator can manage the Caja product catalog using the shared backend.
 
 ## Main work
 
@@ -143,34 +175,40 @@ An authorized administrator can manage the Caja product catalog from the applica
 - Validate admin permissions
 - Connect administration UI to backend API
 
-Deletion should be avoided when deactivation is more appropriate for historical consistency.
+Product removal should use deactivation rather than hard deletion to preserve historical consistency.
 
 ---
 
-# Phase 5 - Rural Connect Integration
+# Phase 5 - Rural Connect and Direct Caja Access
 
 ## Goal
 
-Integrate Caja functionality into the Rural Connect user experience while preserving direct access.
+Make Caja accessible both from Rural Connect and through a direct user entry point.
 
 ## Expected outcome
 
 A user can access Caja:
 
 1. From Rural Connect
-2. Directly through a dedicated entry point
+2. Directly through a dedicated Caja entry point
 
-Both access methods use the same maintained implementation and backend.
+Both access paths must use:
+
+- the shared Rural Connect backend
+- shared authentication
+- the same Caja product data
+- the same business behavior
+
+The final frontend packaging/deployment model may remain separate or become more integrated, but duplicate maintained implementations should be avoided.
 
 ## Main work
 
 - Add Caja navigation/entry point in Rural Connect
-- Define Caja route or application entry point
+- Preserve direct Caja access
 - Reuse shared authentication
 - Reuse shared product API
-- Avoid maintaining duplicate Caja implementations
-
-Independent user access does not imply a separate repository.
+- Avoid maintaining duplicated business logic
+- Define the final maintained frontend/deployment structure
 
 ---
 
@@ -194,10 +232,12 @@ This is not a payment.
 - Store totals
 - Store relevant user/terminal information
 - Create backend endpoints
-- Add basic history if required
+- Add basic history where useful
 - Ensure totals are consistent between frontend and backend
 
-The current Caja localStorage behavior should be replaced where persistent shared history is required.
+The current Caja `localStorage` behavior should be replaced where persistent shared history is required.
+
+This phase remains part of Version 1 but is not required for the immediate Sprint 2 operational-delivery goal unless needed to preserve essential current behavior.
 
 ---
 
@@ -220,7 +260,7 @@ This behavior must have automated tests before the migration is considered compl
 
 # Testing Requirements
 
-The migration must introduce automated coverage for the important Caja behavior.
+The migration must introduce automated coverage for important Caja behavior.
 
 At minimum:
 
@@ -231,13 +271,21 @@ At minimum:
 - Ticket totals
 - Voucher calculations
 - Five-cent rounding
-- Order registration
 - API validation
 - API authorization
-- Persistence
+- Persistence where appropriate
 - Regression of existing Rural Connect functionality
 
+When order/comanda persistence is introduced:
+
+- order registration
+- stored totals
+- stored line prices
+- basic history behavior
+
 Where possible, compare migrated Caja behavior against the legacy implementation.
+
+Database-backed integration testing should be added when a clearly isolated and safe test database setup is available.
 
 ---
 
@@ -250,10 +298,45 @@ During migration:
 - Prefer existing Rural Connect architectural patterns
 - Move shared data and business rules to the backend when appropriate
 - Avoid large rewrites
-- Avoid duplicating business logic
+- Avoid duplicated business logic
 - Do not create a second backend
-- Do not create runtime dependencies on legacy/CajaSusinos
-- Treat legacy/CajaSusinos as reference code only
+- Do not create runtime dependencies on `legacy/CajaSusinos`
+- Treat `legacy/CajaSusinos` as migration/reference code
+- Prefer incremental migration with tests and human review
+- Keep Rural Connect as the source of truth for shared backend capabilities
+
+---
+
+# Current Delivery Priority
+
+The immediate priority is to make Caja Susinos operational end-to-end using the shared Rural Connect backend.
+
+The next sprint should focus on:
+
+- consuming Caja products from the shared backend
+- removing runtime dependency on the static Caja product JSON
+- preserving calculator/cart behavior
+- preserving voucher behavior
+- integrating shared Rural Connect authentication
+- providing product administration UI
+- connecting administration UI to the existing backend APIs
+- maintaining direct access to Caja Susinos
+- validating the complete user flow
+- deploying and smoke-testing the operational version
+
+The next sprint should NOT introduce:
+
+- payment gateways
+- real-money payments
+- NFC
+- wristbands/cards
+- wallet/balance
+- QR payments
+- online top-up
+- advanced reporting
+- advanced order analytics
+
+The immediate goal is operational delivery, not expansion of financial features.
 
 ---
 
@@ -264,15 +347,16 @@ Version 1 is complete when:
 - Existing Rural Connect functionality still works
 - Caja functionality is available from Rural Connect
 - Caja functionality is also directly accessible
-- Both access paths use the same maintained implementation
+- Both access paths use the shared Rural Connect backend
+- Both access paths use the same authentication model
 - Products are stored in the shared backend/database
 - Administrators can manage Caja products
-- Authentication and permissions use Rural Connect
 - Calculator behavior works
 - Voucher conversion works as expected
 - Orders/comandas can be stored without real payment
 - Critical Caja behavior has automated tests
-- No runtime dependency on legacy/CajaSusinos remains
+- No runtime dependency on `legacy/CajaSusinos` remains
+- No duplicate maintained product catalogs remain
 - No payment gateway exists
 - No NFC payment exists
 - No wallet/balance system exists
