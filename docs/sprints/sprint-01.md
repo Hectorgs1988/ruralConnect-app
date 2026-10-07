@@ -86,8 +86,6 @@ automated test baseline for the catalog work.
     administrator changes unexpectedly.
   - The Rural Connect runtime does not depend on the legacy project.
 - **Status:** DONE
-**RISKNODE:**
-- Verify seed rerun behavior against a safe development database before operational use.
 
 ### S1-05 — Exposing the Caja catalog read API
 
@@ -103,7 +101,7 @@ automated test baseline for the catalog work.
   - Requests without valid Rural Connect authentication are rejected.
   - Inactive products are not presented as available catalog items.
   - Existing Despensa endpoints and behavior remain unchanged.
-- **Status:** TODO
+- **Status:** DONE
 
 ### S1-06 — Adding admin Caja catalog operations
 
@@ -118,9 +116,7 @@ automated test baseline for the catalog work.
   - Authenticated non-admin users are denied write operations; unauthenticated
     requests are rejected.
   - Deactivation preserves the row; no hard-delete operation is exposed.
-  - Invalid category, price, and malformed input are rejected with appropriate
-    client errors.
-    - API validation must reject negative priceCents values.
+  - Invalid category, price, and malformed input are rejected with appropriate client errors.
 - **Status:** TODO
 
 ### S1-07 — Testing the Caja catalog API
@@ -139,6 +135,7 @@ automated test baseline for the catalog work.
   - Seed behavior is verified as repeatable and includes only the approved
     JSON source products, with the confirmed `refresco` and `zumo` prices.
   - The backend test command completes successfully with the intended tests.
+  - Verify active filtering and deterministic multi-product ordering with integration-level coverage where practical.
 - **Status:** TODO
 
 ## Decisions already approved
@@ -173,6 +170,8 @@ automated test baseline for the catalog work.
   direct-access UI/session flow.
 - Backend test discovery must be reliable before test results are used as a
   release signal.
+- API validation must reject negative priceCents values.
+- Verify seed rerun behavior against a safe development database before operational use.
 
 ## Out-of-scope items
 
