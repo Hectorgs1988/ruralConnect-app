@@ -130,7 +130,7 @@ complete flow before deployment.
   - The admin UI follows Rural Connect design, routing, and accessibility
   conventions.
 
-- **Status:** TODO
+- **Status:** DONE
 
 ### S2-05 — Connecting product administration to the Caja APIs
 
