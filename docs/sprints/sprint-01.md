@@ -66,7 +66,7 @@ automated test baseline for the catalog work.
   - `priceCents` is an integer and `active` supports deactivation.
   - The migration is additive and does not change or remove Despensa models.
   - Prisma client generation and schema validation succeed.
-- **Status:** TODO
+- **Status:** DONE
 
 ### S1-04 — Seeding the approved Caja catalog
 
@@ -118,6 +118,7 @@ automated test baseline for the catalog work.
   - Deactivation preserves the row; no hard-delete operation is exposed.
   - Invalid category, price, and malformed input are rejected with appropriate
     client errors.
+    - API validation must reject negative priceCents values.
 - **Status:** TODO
 
 ### S1-07 — Testing the Caja catalog API
