@@ -173,7 +173,7 @@ complete flow before deployment.
     boundaries and any supported partial-row scenarios.
   - Voucher behavior does not depend on the legacy application at runtime.
 
-- **Status:** TODO
+- **Status:** DONE
 
 ### S2-07 — Exercising Caja end-to-end flows
 
