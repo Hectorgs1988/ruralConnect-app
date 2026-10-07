@@ -42,7 +42,7 @@ complete flow before deployment.
     identity, shared backend, and maintained Caja implementation.
   - Any deployment, routing, API-origin, or authentication constraints are
     identified before dependent implementation begins.
-- **Status:** TODO
+- **Status:** DONE
 
 ### S2-01 — Integrating Rural Connect authentication for direct Caja access
 
@@ -202,7 +202,8 @@ complete flow before deployment.
 
 - **Objective:** Prepare and validate the operational deployment for both
   direct Caja access and access through Rural Connect.
-- **Responsible agent:** backend and frontend, coordinated with tester and human approval
+- **Responsible agent:** backend and frontend, coordinated with tester and
+  human approval
 - **Dependencies:** S2-00, S2-07
 - **Affected areas:** Frontend/backend deployment configuration, environment
   documentation, routing/proxy/CORS configuration as applicable, smoke tests
@@ -213,6 +214,12 @@ complete flow before deployment.
     the approved authentication flow and configured origins/routes.
   - A smoke test verifies direct Caja entry, sign-in, active catalog loading,
     and the Rural Connect entry path in the target environment.
+  - The existing `caja-susinos.vercel.app` deployment remains available during
+    migration; cutover occurs only after the maintained Rural Connect `/caja`
+    implementation passes its agreed validation.
+  - If project/domain control permits, configure the existing Caja domain to
+    redirect to the canonical Rural Connect `/caja` URL without resuming
+    product development in the frozen legacy repository.
   - Administrative writes are smoke-tested only with an authorized test
     account and an approved safe environment.
   - Deployment and rollback/recovery steps are documented; no unapproved
@@ -227,27 +234,44 @@ complete flow before deployment.
 - Caja remains directly accessible to users; direct access does not require a
   separate backend or identity system.
 - Rural Connect authentication and role authorization are reused.
+- The approved frontend architecture is Option B: maintain Caja inside the
+  Rural Connect frontend under `src/features/caja/`, using its existing
+  router, `AuthProvider`, role guards, and API configuration.
+- Caja is directly accessible through a protected route such as `/caja`, and
+  Rural Connect navigation points to that same maintained implementation.
+- Prefer redirecting `caja-susinos.vercel.app` to the canonical Rural Connect
+  `/caja` URL if domain and project control permit it. Do not serve a separate
+  Caja origin unless a concrete deployment requirement later justifies it.
+- Do not implement SSO or cross-domain token sharing in this sprint; revisit
+  only if a separately served Caja origin becomes necessary.
+- The Rural Connect frontend deploys automatically to Vercel from the Rural
+  Connect main branch, and the Rural Connect backend deploys automatically to
+  the project owner's server from that same main branch.
+- The legacy Caja frontend is currently deployed to Vercel from the legacy
+  Caja repository's main branch. That repository is frozen and receives no new
+  product development; all migration and maintenance work belongs in the
+  Rural Connect repository.
+- The legacy Caja deployment may remain available temporarily while migration
+  proceeds. Do not cut over `caja-susinos.vercel.app` until the maintained
+  Rural Connect `/caja` experience has been validated.
+- Prefer configuring the legacy Caja domain/project to redirect to the
+  canonical Rural Connect `/caja` URL if control permits, without resuming
+  development in the legacy repository.
 - `legacy/CajaSusinos` is a migration/reference source, not a runtime
   dependency.
 - Existing calculator, cart, ticket, and voucher behavior is preserved unless
   explicitly approved otherwise.
 - Avoid duplicate maintained frontend or business logic.
 - No real-money payment capability is introduced in this sprint.
-- The frontend packaging decision is intentionally unresolved. S2-00 must
-  record whether Caja remains a separately deployed frontend or becomes more
-  integrated before dependent implementation and deployment decisions.
 - The shared API remains the source of truth for products and prices. The
   frontend may calculate an in-progress ticket for display, but must use
   integer cents and must not introduce a competing maintained catalog.
 
 ## Risks / unknowns
 
-- The current Caja frontend's maintained location, framework, and migration
-  boundary must be confirmed before implementation; do not create a new
-  runtime dependency on the legacy project to bridge the gap.
-- The separate-versus-integrated frontend decision affects routing,
-  authentication handoff, API origins, CORS/proxy configuration, and release
-  ownership.
+- Confirm control over the legacy Caja Vercel project/domain and the redirect
+  mechanism before cutover; keep the existing deployment available until the
+  maintained Rural Connect implementation is validated.
 - Direct access requires a secure, user-friendly way to obtain and retain
   Rural Connect authentication. Token/session storage and expiration behavior
   must follow existing project security patterns.
@@ -259,9 +283,10 @@ complete flow before deployment.
   changing an already selected ticket.
 - The legacy voucher behavior may include edge cases that are not captured in
   documentation; characterize it with tests before migration.
-- Deployment environments, domains, routing, and safe test accounts/database
-  availability are not confirmed. Do not use production credentials or
-  perform unapproved database writes for tests.
+- Control over the legacy Caja Vercel project/domain and redirect capability
+  still needs confirmation before cutover. Safe test-account and isolated
+  database availability also need confirmation; do not use production
+  credentials or perform unapproved database writes for tests.
 - The current Caja browser-local order/ticket behavior must be distinguished
   from shared order/comanda persistence. This sprint does not add persistence
   unless required to preserve an essential existing behavior and explicitly
@@ -278,8 +303,9 @@ complete flow before deployment.
 - Advanced reporting or order analytics.
 - Order/comanda persistence unless strictly required to preserve essential
   current behavior and explicitly approved.
-- Changes to the legacy Caja Susinos application beyond read-only behavioral
-  reference or migration-time verification.
+- Any product development or maintenance changes in the frozen legacy Caja
+  repository/application; it is available only as a read-only behavioral
+  reference during migration.
 
 ## Recommended execution order
 
@@ -294,7 +320,9 @@ complete flow before deployment.
    S2-05, resolving the inactive-product visibility question without changing
    the public active-only catalog contract.
 6. Complete S2-07 end-to-end and relevant Rural Connect regression tests.
-7. Prepare deployment and run the safe smoke tests in S2-08.
+7. Prepare deployment and run the safe smoke tests in S2-08. Keep the legacy
+   Caja Vercel deployment live until the Rural Connect `/caja` route is
+   validated, then cut over by redirecting the legacy domain if possible.
 
 Tasks may proceed in parallel only where their listed dependencies are met
 and shared authentication, catalog, and packaging contracts remain stable.
