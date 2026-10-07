@@ -50,7 +50,7 @@ automated test baseline for the catalog work.
   - Stale compiled tests under `dist` are not run as source tests.
   - Existing source-test failures remain visible and are not suppressed.
   - The unchanged source test baseline is reported.
-- **Status:** TODO
+- **Status:** DONE
 
 ### S1-03 — Adding the Caja product database model
 
