@@ -1,13 +1,24 @@
 // src/components/guards/PrivateRoute.tsx
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import type { ReactNode } from "react";
 
 /** Protege rutas si NO hay usuario */
-export function PrivateRoute({ children }: { children: ReactNode }) {
+export function PrivateRoute({
+    children,
+    redirectToLogin = false,
+}: {
+    children: ReactNode;
+    redirectToLogin?: boolean;
+}) {
     const { user, loading } = useAuth();
+    const location = useLocation();
     if (loading) return null;
-    return user ? <>{children}</> : <Navigate to="/" replace />;
+    if (user) return <>{children}</>;
+    if (!redirectToLogin) return <Navigate to="/" replace />;
+
+    const from = `${location.pathname}${location.search}${location.hash}`;
+    return <Navigate to="/login" replace state={{ from }} />;
 }
 
 /** Protege rutas por rol (ADMIN | SOCIO) */
