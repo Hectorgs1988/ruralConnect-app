@@ -1,8 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import Header from "@/components/Header";
 import { useAuth } from "@/context/AuthContext";
 import { listCajaProducts } from "@/api/caja";
 import type { CajaProduct } from "@/features/caja/types/CajaProduct";
+import CajaTicket from "@/features/caja/components/CajaTicket";
+import {
+    cajaTicketReducer,
+    getCajaTicketItemCount,
+    getCajaTicketTotalCents,
+} from "@/features/caja/domain/ticket";
 
 const priceFormatter = new Intl.NumberFormat("es-ES", {
     style: "currency",
@@ -14,11 +20,15 @@ export default function CajaPage() {
     const [products, setProducts] = useState<CajaProduct[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [ticketLines, dispatchTicket] = useReducer(cajaTicketReducer, []);
+    const [refreshCatalog, setRefreshCatalog] = useState(0);
+    const [completionMessage, setCompletionMessage] = useState<string | null>(null);
 
     useEffect(() => {
         let isMounted = true;
 
         async function loadProducts() {
+            setProducts([]);
             if (!token) {
                 setError("No se pudo validar la sesión para cargar el catálogo.");
                 setLoading(false);
@@ -45,12 +55,24 @@ export default function CajaPage() {
         return () => {
             isMounted = false;
         };
-    }, [token]);
+    }, [token, refreshCatalog]);
 
     const productsByCategory = {
         BEBIDA: products.filter((product) => product.category === "BEBIDA"),
         COMIDA: products.filter((product) => product.category === "COMIDA"),
     };
+    const ticketItemCount = getCajaTicketItemCount(ticketLines);
+    const ticketTotalCents = getCajaTicketTotalCents(ticketLines);
+
+    function completeTicket() {
+        if (ticketLines.length === 0) return;
+        const completedTotal = new Intl.NumberFormat("es-ES", {
+            style: "currency",
+            currency: "EUR",
+        }).format(ticketTotalCents / 100);
+        setCompletionMessage(`Ticket completado: ${completedTotal}. No se ha guardado un pedido.`);
+        dispatchTicket({ type: "clear" });
+    }
 
     return (
         <div className="rc-page">
@@ -60,14 +82,46 @@ export default function CajaPage() {
                 <p className="text-center text-sm text-muted">
                     Sesión iniciada como {user?.name}
                 </p>
+                <CajaTicket
+                    lines={ticketLines}
+                    itemCount={ticketItemCount}
+                    totalCents={ticketTotalCents}
+                    completionMessage={completionMessage}
+                    onIncrement={(lineId) => dispatchTicket({ type: "increment", lineId })}
+                    onDecrement={(lineId) => dispatchTicket({ type: "decrement", lineId })}
+                    onRemove={(lineId) => dispatchTicket({ type: "remove", lineId })}
+                    onClear={() => {
+                        dispatchTicket({ type: "clear" });
+                        setCompletionMessage(null);
+                    }}
+                    onComplete={completeTicket}
+                />
                 {loading ? (
                     <p role="status" className="text-center text-muted">Cargando productos...</p>
                 ) : error ? (
-                    <p role="alert" className="text-center text-error">{error}</p>
+                    <div className="space-y-3 text-center">
+                        <p role="alert" className="text-error">{error}</p>
+                        <button
+                            type="button"
+                            className="rc-btn-secondary"
+                            onClick={() => setRefreshCatalog((attempt) => attempt + 1)}
+                        >
+                            Reintentar catálogo
+                        </button>
+                    </div>
                 ) : products.length === 0 ? (
                     <p className="text-center text-muted">No hay productos disponibles.</p>
                 ) : (
                     <div className="space-y-8" aria-label="Catálogo de Caja">
+                        <div className="flex justify-end">
+                            <button
+                                type="button"
+                                className="rc-btn-secondary"
+                                onClick={() => setRefreshCatalog((attempt) => attempt + 1)}
+                            >
+                                Actualizar catálogo
+                            </button>
+                        </div>
                         {(["BEBIDA", "COMIDA"] as const).map((category) => {
                             const categoryProducts = productsByCategory[category];
                             if (categoryProducts.length === 0) return null;
@@ -81,12 +135,29 @@ export default function CajaPage() {
                                         {categoryProducts.map((product) => (
                                             <li
                                                 key={product.id}
-                                                className="rc-card flex items-center justify-between gap-4 p-4"
+                                                className="rc-card"
                                             >
-                                                <span className="font-medium">{product.name}</span>
-                                                <span className="whitespace-nowrap">
-                                                    {priceFormatter.format(product.priceCents / 100)}
-                                                </span>
+                                                <button
+                                                    type="button"
+                                                    className="flex w-full items-center justify-between gap-4 p-4 text-left hover:bg-primarySoft"
+                                                    aria-label={`Añadir ${product.name} a la comanda`}
+                                                    onClick={() => {
+                                                        dispatchTicket({ type: "add", product });
+                                                        setCompletionMessage(null);
+                                                    }}
+                                                >
+                                                    <span className="font-medium">{product.name}</span>
+                                                    <span className="whitespace-nowrap">
+                                                        {priceFormatter.format(product.priceCents / 100)}
+                                                        {ticketLines.some((line) => line.productId === product.id) && (
+                                                            <span className="ml-2 text-sm text-muted">
+                                                                ×{ticketLines
+                                                                    .filter((line) => line.productId === product.id)
+                                                                    .reduce((total, line) => total + line.quantity, 0)}
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                </button>
                                             </li>
                                         ))}
                                     </ul>

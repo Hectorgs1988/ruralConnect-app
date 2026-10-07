@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import appRouter from "@/routes";
 import type { CajaProduct } from "@/features/caja/types/CajaProduct";
@@ -102,5 +102,141 @@ describe("Caja product catalog", () => {
         expect(await screen.findByRole("alert")).toHaveTextContent("Catálogo no disponible");
         expect(screen.queryByText("Cerveza")).not.toBeInTheDocument();
         expect(screen.queryByText("Refresco")).not.toBeInTheDocument();
+    });
+
+    it("adds API products to the ticket and increments repeated selections by stable product ID", async () => {
+        mockListCajaProducts.mockResolvedValue([
+            makeProduct("refresco-id", "Refresco", "BEBIDA", 19),
+        ]);
+
+        renderCaja();
+
+        fireEvent.click(await screen.findByRole("button", { name: "Añadir Refresco a la comanda" }));
+        fireEvent.click(screen.getByRole("button", { name: "Añadir Refresco a la comanda" }));
+
+        expect(screen.getByLabelText("Cantidad de Refresco")).toHaveTextContent("2");
+        expect(screen.getByLabelText("Número de artículos")).toHaveTextContent("2 artículos");
+        expect(screen.getByLabelText("Total de la comanda")).toHaveTextContent(/0,38\s*€/);
+    });
+
+    it("increments and decrements a line, removing it when quantity reaches zero", async () => {
+        mockListCajaProducts.mockResolvedValue([
+            makeProduct("refresco-id", "Refresco", "BEBIDA", 100),
+        ]);
+
+        renderCaja();
+
+        fireEvent.click(await screen.findByRole("button", { name: "Añadir Refresco a la comanda" }));
+        fireEvent.click(screen.getByRole("button", { name: "Sumar una unidad de Refresco a 1,00 €" }));
+        expect(screen.getByLabelText("Cantidad de Refresco")).toHaveTextContent("2");
+
+        fireEvent.click(screen.getByRole("button", { name: "Restar una unidad de Refresco a 1,00 €" }));
+        fireEvent.click(screen.getByRole("button", { name: "Restar una unidad de Refresco a 1,00 €" }));
+        expect(screen.queryByLabelText("Cantidad de Refresco")).not.toBeInTheDocument();
+        expect(screen.getByLabelText("Número de artículos")).toHaveTextContent("0 artículos");
+    });
+
+    it("clears the current ticket", async () => {
+        mockListCajaProducts.mockResolvedValue([
+            makeProduct("refresco-id", "Refresco", "BEBIDA", 100),
+            makeProduct("bocadillo-id", "Bocadillo", "COMIDA", 250),
+        ]);
+
+        renderCaja();
+
+        fireEvent.click(await screen.findByRole("button", { name: "Añadir Refresco a la comanda" }));
+        fireEvent.click(screen.getByRole("button", { name: "Añadir Bocadillo a la comanda" }));
+
+        fireEvent.click(screen.getByRole("button", { name: "Vaciar" }));
+        expect(screen.getByText("Aún no hay productos en la comanda.")).toBeInTheDocument();
+        expect(screen.getByLabelText("Total de la comanda")).toHaveTextContent(/0,00\s*€/);
+    });
+
+    it("keeps an in-progress line snapshot unchanged when the API catalog refreshes", async () => {
+        mockListCajaProducts
+            .mockResolvedValueOnce([makeProduct("refresco-id", "Refresco antiguo", "BEBIDA", 19)])
+            .mockResolvedValueOnce([makeProduct("refresco-id", "Refresco actualizado", "BEBIDA", 999)]);
+
+        renderCaja();
+        fireEvent.click(await screen.findByRole("button", { name: "Añadir Refresco antiguo a la comanda" }));
+        fireEvent.click(screen.getByRole("button", { name: "Actualizar catálogo" }));
+
+        expect(await screen.findByRole("button", { name: "Añadir Refresco actualizado a la comanda" }))
+            .toBeInTheDocument();
+        expect(screen.getByText("Refresco antiguo")).toBeInTheDocument();
+        expect(screen.getByLabelText("Total de la comanda")).toHaveTextContent(/0,19\s*€/);
+        expect(mockListCajaProducts).toHaveBeenCalledTimes(2);
+    });
+
+    it("aggregates the catalog quantity indicator across refreshed-price ticket lines", async () => {
+        mockListCajaProducts
+            .mockResolvedValueOnce([makeProduct("cerveza-id", "Cerveza", "BEBIDA", 150)])
+            .mockResolvedValueOnce([makeProduct("cerveza-id", "Cerveza", "BEBIDA", 180)]);
+
+        renderCaja();
+        fireEvent.click(await screen.findByRole("button", { name: "Añadir Cerveza a la comanda" }));
+        fireEvent.click(screen.getByRole("button", { name: "Añadir Cerveza a la comanda" }));
+        fireEvent.click(screen.getByRole("button", { name: "Actualizar catálogo" }));
+        fireEvent.click(await screen.findByRole("button", { name: "Añadir Cerveza a la comanda" }));
+
+        expect(screen.getAllByLabelText("Cantidad de Cerveza")).toHaveLength(2);
+        expect(screen.getAllByLabelText("Cantidad de Cerveza").map((node) => node.textContent))
+            .toEqual(["2", "1"]);
+        expect(screen.getByText(/2 × 1,50\s*€ = 3,00\s*€/)).toBeInTheDocument();
+        expect(screen.getByText(/1 × 1,80\s*€ = 1,80\s*€/)).toBeInTheDocument();
+        expect(screen.getByText("×3")).toBeInTheDocument();
+        expect(screen.getByLabelText("Número de artículos")).toHaveTextContent("3 artículos");
+        expect(screen.getByLabelText("Total de la comanda")).toHaveTextContent(/4,80\s*€/);
+    });
+
+    it("routes UI quantity and remove controls to the matching price-snapshot line", async () => {
+        mockListCajaProducts
+            .mockResolvedValueOnce([makeProduct("cerveza-id", "Cerveza", "BEBIDA", 150)])
+            .mockResolvedValueOnce([makeProduct("cerveza-id", "Cerveza", "BEBIDA", 180)]);
+
+        renderCaja();
+        fireEvent.click(await screen.findByRole("button", { name: "Añadir Cerveza a la comanda" }));
+        fireEvent.click(screen.getByRole("button", { name: "Actualizar catálogo" }));
+        fireEvent.click(await screen.findByRole("button", { name: "Añadir Cerveza a la comanda" }));
+        fireEvent.click(screen.getByRole("button", { name: "Sumar una unidad de Cerveza a 1,50 €" }));
+
+        expect(screen.getAllByLabelText("Cantidad de Cerveza").map((node) => node.textContent))
+            .toEqual(["2", "1"]);
+
+        fireEvent.click(screen.getByRole("button", { name: "Quitar Cerveza a 1,80 € de la comanda" }));
+        expect(screen.getAllByLabelText("Cantidad de Cerveza").map((node) => node.textContent))
+            .toEqual(["2"]);
+        expect(screen.getByLabelText("Total de la comanda")).toHaveTextContent(/3,00\s*€/);
+    });
+
+    it("completes the ticket locally without writing an order to local storage", async () => {
+        mockListCajaProducts.mockResolvedValue([
+            makeProduct("refresco-id", "Refresco", "BEBIDA", 180),
+        ]);
+        const storageWrite = vi.spyOn(Storage.prototype, "setItem");
+
+        renderCaja();
+        fireEvent.click(await screen.findByRole("button", { name: "Añadir Refresco a la comanda" }));
+        fireEvent.click(screen.getByRole("button", { name: "Completar ticket" }));
+
+        expect(await screen.findByRole("status")).toHaveTextContent("Ticket completado: 1,80");
+        expect(screen.getByText("Aún no hay productos en la comanda.")).toBeInTheDocument();
+        expect(storageWrite).not.toHaveBeenCalled();
+        expect(mockListCajaProducts).toHaveBeenCalledTimes(1);
+        storageWrite.mockRestore();
+    });
+
+    it("keeps the ticket while showing a catalog refresh error", async () => {
+        mockListCajaProducts
+            .mockResolvedValueOnce([makeProduct("refresco-id", "Refresco", "BEBIDA", 180)])
+            .mockRejectedValueOnce(new Error("Error de actualización"));
+
+        renderCaja();
+        fireEvent.click(await screen.findByRole("button", { name: "Añadir Refresco a la comanda" }));
+        fireEvent.click(screen.getByRole("button", { name: "Actualizar catálogo" }));
+
+        expect(await screen.findByRole("alert")).toHaveTextContent("Error de actualización");
+        expect(screen.getByLabelText("Cantidad de Refresco")).toHaveTextContent("1");
+        expect(screen.getByLabelText("Total de la comanda")).toHaveTextContent(/1,80\s*€/);
     });
 });

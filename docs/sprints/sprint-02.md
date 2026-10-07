@@ -107,7 +107,7 @@ complete flow before deployment.
   - Completing a ticket in Sprint 2 preserves the current local/user-flow behavior
   and does not introduce backend order/comanda persistence.
 
-- **Status:** TODO
+- **Status:** DONE
 
 ### S2-04 — Building the Caja product administration UI
 
