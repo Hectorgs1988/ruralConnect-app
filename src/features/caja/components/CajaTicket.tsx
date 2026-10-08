@@ -12,7 +12,6 @@ function formatCents(priceCents: number): string {
 interface CajaTicketProps {
     lines: CajaTicketLine[];
     itemCount: number;
-    totalCents: number;
     onIncrement: (lineId: string) => void;
     onDecrement: (lineId: string) => void;
     onClear: () => void;
@@ -21,7 +20,6 @@ interface CajaTicketProps {
 export default function CajaTicket({
     lines,
     itemCount,
-    totalCents,
     onIncrement,
     onDecrement,
     onClear,
@@ -30,7 +28,7 @@ export default function CajaTicket({
         <section aria-labelledby="caja-ticket-title">
             <div className="mb-2 flex items-center justify-between gap-2">
                 <h3 id="caja-ticket-title" className="font-semibold">Revisar comanda</h3>
-                <p className="text-sm text-muted">
+                <p aria-label="Número de artículos en revisión" className="text-sm text-muted">
                     {itemCount} {itemCount === 1 ? "artículo" : "artículos"}
                 </p>
             </div>
@@ -73,10 +71,7 @@ export default function CajaTicket({
                     ))}
                 </ul>
             )}
-            <div className="mt-3 flex items-center justify-between gap-3 border-t border-borderSoft pt-3">
-                <p className="font-semibold">
-                    Total: <span aria-label="Total revisado">{formatCents(totalCents)}</span>
-                </p>
+            <div className="mt-3 flex justify-end border-t border-borderSoft pt-3">
                 <button type="button" className="rc-btn-secondary min-h-11 px-4" onClick={onClear} disabled={lines.length === 0}>
                     Vaciar
                 </button>

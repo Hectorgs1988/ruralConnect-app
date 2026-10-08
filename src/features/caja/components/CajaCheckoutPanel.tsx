@@ -168,26 +168,20 @@ export default function CajaCheckoutPanel({
                 onKeyDown={handleKeyDown}
             >
                 <header className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-borderSoft bg-surface px-4 py-3">
-                    <div>
-                        <h2 id="caja-checkout-title" className="text-xl font-bold">Cobrar</h2>
-                        <p aria-label="Número de artículos en revisión" className="text-sm text-muted">
-                            {itemCount} {itemCount === 1 ? "artículo" : "artículos"}
-                        </p>
-                    </div>
+                    <h2 id="caja-checkout-title" className="text-xl font-bold">Cobrar</h2>
                     <button type="button" className="caja-touch-button" aria-label="Cerrar cobro" onClick={onClose}>
                         ×
                     </button>
                 </header>
 
                 <div ref={contentRef} className="caja-checkout-content space-y-4 px-4 py-4">
-                    <p className="text-center text-4xl font-bold tabular-nums" aria-label="Total a cobrar">
+                    <p className="text-center text-4xl font-bold tabular-nums" aria-label="Total revisado">
                         {formatCents(totalCents)}
                     </p>
 
                     <CajaTicket
                         lines={lines}
                         itemCount={itemCount}
-                        totalCents={totalCents}
                         onIncrement={onIncrement}
                         onDecrement={onDecrement}
                         onClear={onClear}
@@ -220,7 +214,18 @@ export default function CajaCheckoutPanel({
 
                     {paymentMethod === "cash" && (
                         <section ref={cashDetailsRef} className="space-y-3 scroll-mt-4" aria-label="Pago en efectivo">
-                            <p className="font-medium">Total exacto: {formatCents(totalCents)}</p>
+                            <button
+                                type="button"
+                                className={`rc-btn-secondary min-h-11 px-4 ${cashReceivedCents === totalCents ? "is-active" : ""}`}
+                                aria-pressed={cashReceivedCents === totalCents}
+                                onClick={() => {
+                                    onSelectCashPreset(totalCents);
+                                    previousChangeVisible.current = true;
+                                    window.requestAnimationFrame(() => scrollTargetIntoView(cashChangeRef.current));
+                                }}
+                            >
+                                Exacto
+                            </button>
                             <div className="flex flex-wrap gap-2" role="group" aria-label="Importes recibidos sugeridos">
                                 {cashPresets.map((amountCents) => (
                                     <button
@@ -239,7 +244,7 @@ export default function CajaCheckoutPanel({
                                 ))}
                             </div>
                             <label className="block space-y-1 font-medium" htmlFor="caja-cash-amount">
-                                Otro importe
+                                Importe recibido
                                 <input
                                     id="caja-cash-amount"
                                     className="w-full rounded-xl border border-borderSoft bg-surface px-4 py-3 text-lg text-dark"
@@ -252,9 +257,6 @@ export default function CajaCheckoutPanel({
                                     onChange={(event) => onCashInputChange(event.target.value)}
                                 />
                             </label>
-                            <p className="text-sm font-medium">
-                                Importe recibido: {cashReceivedCents === null ? "—" : formatCents(cashReceivedCents)}
-                            </p>
                             <div ref={cashChangeRef} id="caja-cash-feedback" aria-live="polite" className="min-h-6 scroll-mt-4">
                                 {cashError ? (
                                     <p role="alert" className="text-error">{cashError}</p>
@@ -285,7 +287,7 @@ export default function CajaCheckoutPanel({
 
                 <footer className="caja-checkout-footer">
                     <p className="mb-2 text-center text-xs text-muted">
-                        La confirmación solo completa el ticket en esta pantalla; no se guarda un pedido ni un pago.
+                        Solo se completa este ticket.
                     </p>
                     <div className="grid grid-cols-2 gap-2">
                         <button type="button" className="rc-btn-secondary min-h-12" onClick={onClose}>
