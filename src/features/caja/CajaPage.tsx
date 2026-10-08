@@ -65,6 +65,12 @@ export default function CajaPage() {
         };
     }, [refreshCatalog]);
 
+    useEffect(() => {
+        if (!completionMessage) return undefined;
+        const timeout = window.setTimeout(() => setCompletionMessage(null), 2500);
+        return () => window.clearTimeout(timeout);
+    }, [completionMessage]);
+
     const productsByCategory = {
         BEBIDA: products.filter((product) => product.category === "BEBIDA"),
         COMIDA: products.filter((product) => product.category === "COMIDA"),
@@ -130,8 +136,7 @@ export default function CajaPage() {
 
         completionInProgress.current = true;
         setIsCompleting(true);
-        const completedTotal = priceFormatter.format(ticketTotalCents / 100);
-        setCompletionMessage(`Ticket completado: ${completedTotal}. No se ha guardado un pedido ni un pago.`);
+        setCompletionMessage("Ticket completado");
         dispatchTicket({ type: "clear" });
         setCheckoutOpen(false);
         setPaymentMethod(null);
@@ -202,28 +207,45 @@ export default function CajaPage() {
                                             const selectedQuantity = selectedQuantities.get(product.id) ?? 0;
                                             return (
                                                 <li key={product.id} className="min-w-0">
-                                                <button
-                                                    type="button"
-                                                    className={`caja-product-button ${selectedQuantity > 0 ? "is-selected" : ""}`}
-                                                    aria-label={`Añadir ${product.name} a la comanda`}
-                                                    aria-pressed={selectedQuantity > 0}
-                                                    onClick={() => {
-                                                        dispatchTicket({ type: "add", product });
-                                                        setCompletionMessage(null);
-                                                    }}
-                                                >
-                                                    <span className="line-clamp-2 min-w-0 break-words font-medium" title={product.name}>
-                                                        {product.name}
-                                                    </span>
-                                                    <span className="flex items-center justify-between gap-1">
-                                                        {priceFormatter.format(product.priceCents / 100)}
-                                                        {selectedQuantity > 0 && (
-                                                            <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-bold" aria-hidden="true">
-                                                                ×{selectedQuantity}
+                                                    <div className={`caja-product-card ${selectedQuantity > 0 ? "is-selected" : ""}`}>
+                                                        <button
+                                                            type="button"
+                                                            className="caja-product-button"
+                                                            aria-label={`Añadir ${product.name} a la comanda`}
+                                                            aria-pressed={selectedQuantity > 0}
+                                                            onClick={() => {
+                                                                dispatchTicket({ type: "add", product });
+                                                                setCompletionMessage(null);
+                                                            }}
+                                                        >
+                                                            <span className="line-clamp-2 min-w-0 break-words font-medium" title={product.name}>
+                                                                {product.name}
                                                             </span>
+                                                            <span className="font-semibold">
+                                                                {priceFormatter.format(product.priceCents / 100)}
+                                                            </span>
+                                                        </button>
+                                                        {selectedQuantity > 0 && (
+                                                            <div className="caja-catalog-quantity" aria-label={`Ajustar cantidad de ${product.name}`}>
+                                                                <button
+                                                                    type="button"
+                                                                    className="caja-touch-button"
+                                                                    aria-label={`Restar una unidad de ${product.name}`}
+                                                                    onClick={() => {
+                                                                        const line = ticketLines.find((ticketLine) =>
+                                                                            ticketLine.productId === product.id,
+                                                                        );
+                                                                        if (line) dispatchTicket({ type: "decrement", lineId: line.lineId });
+                                                                    }}
+                                                                >
+                                                                    −
+                                                                </button>
+                                                                <span aria-label={`Cantidad seleccionada de ${product.name}`}>
+                                                                    ×{selectedQuantity}
+                                                                </span>
+                                                            </div>
                                                         )}
-                                                    </span>
-                                                </button>
+                                                    </div>
                                                 </li>
                                             );
                                         })}
@@ -280,7 +302,6 @@ export default function CajaPage() {
                     onSelectCashPreset={(amountCents) => setCashInput(formatCajaCashInput(amountCents))}
                     onIncrement={(lineId) => dispatchTicket({ type: "increment", lineId })}
                     onDecrement={(lineId) => dispatchTicket({ type: "decrement", lineId })}
-                    onRemove={(lineId) => dispatchTicket({ type: "remove", lineId })}
                     onClear={() => {
                         dispatchTicket({ type: "clear" });
                         closeCheckout();

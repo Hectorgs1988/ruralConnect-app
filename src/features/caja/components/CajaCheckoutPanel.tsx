@@ -1,4 +1,4 @@
-import { useEffect, useRef, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, type KeyboardEvent } from "react";
 import type { CajaTicketLine } from "@/features/caja/domain/ticket";
 import { CAJA_VOUCHERS, type CajaVoucherType } from "@/features/caja/domain/voucher";
 import CajaTicket from "@/features/caja/components/CajaTicket";
@@ -25,7 +25,6 @@ interface CajaCheckoutPanelProps {
     onSelectCashPreset: (amountCents: number) => void;
     onIncrement: (lineId: string) => void;
     onDecrement: (lineId: string) => void;
-    onRemove: (lineId: string) => void;
     onClear: () => void;
     onConfirm: () => void;
 }
@@ -63,17 +62,65 @@ export default function CajaCheckoutPanel({
     onSelectCashPreset,
     onIncrement,
     onDecrement,
-    onRemove,
     onClear,
     onConfirm,
 }: CajaCheckoutPanelProps) {
     const dialogRef = useRef<HTMLDivElement>(null);
+    const contentRef = useRef<HTMLDivElement>(null);
+    const cashDetailsRef = useRef<HTMLElement>(null);
+    const cashChangeRef = useRef<HTMLDivElement>(null);
+    const voucherDetailsRef = useRef<HTMLElement>(null);
+    const previousChangeVisible = useRef(changeCents !== null);
+
+    const scrollTargetIntoView = useCallback((target: HTMLElement | null) => {
+        const container = contentRef.current;
+        if (!container || !target) return;
+        const containerRect = container.getBoundingClientRect();
+        const targetRect = target.getBoundingClientRect();
+        const relativeTop = container.scrollTop + targetRect.top - containerRect.top;
+        const relativeBottom = relativeTop + targetRect.height;
+        let top = container.scrollTop;
+        if (targetRect.height > container.clientHeight) {
+            top = relativeTop - 16;
+        } else if (relativeBottom > container.scrollTop + container.clientHeight) {
+            top += relativeBottom - (container.scrollTop + container.clientHeight) + 16;
+        } else if (relativeTop < container.scrollTop) {
+            top = relativeTop - 16;
+        }
+        top = Math.max(0, top);
+        if (typeof container.scrollTo === "function") {
+            container.scrollTo({ top, behavior: "smooth" });
+        } else {
+            container.scrollTop = top;
+        }
+    }, []);
 
     useEffect(() => {
         dialogRef.current?.focus();
 
         return () => returnFocus()?.focus();
     }, [returnFocus]);
+
+    useEffect(() => {
+        const target = paymentMethod === "cash"
+            ? cashDetailsRef.current
+            : paymentMethod === "24" || paymentMethod === "12"
+                ? voucherDetailsRef.current
+                : null;
+        if (!target) return undefined;
+
+        const frame = window.requestAnimationFrame(() => scrollTargetIntoView(target));
+        return () => window.cancelAnimationFrame(frame);
+    }, [paymentMethod, scrollTargetIntoView]);
+
+    useEffect(() => {
+        const becameVisible = !previousChangeVisible.current && changeCents !== null;
+        previousChangeVisible.current = changeCents !== null;
+        if (!becameVisible || paymentMethod !== "cash") return undefined;
+
+        const frame = window.requestAnimationFrame(() => scrollTargetIntoView(cashChangeRef.current));
+        return () => window.cancelAnimationFrame(frame);
+    }, [cashInput, changeCents, paymentMethod, scrollTargetIntoView]);
 
     function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
         if (event.key === "Escape") {
@@ -132,7 +179,7 @@ export default function CajaCheckoutPanel({
                     </button>
                 </header>
 
-                <div className="caja-checkout-content space-y-4 px-4 py-4">
+                <div ref={contentRef} className="caja-checkout-content space-y-4 px-4 py-4">
                     <p className="text-center text-4xl font-bold tabular-nums" aria-label="Total a cobrar">
                         {formatCents(totalCents)}
                     </p>
@@ -143,7 +190,6 @@ export default function CajaCheckoutPanel({
                         totalCents={totalCents}
                         onIncrement={onIncrement}
                         onDecrement={onDecrement}
-                        onRemove={onRemove}
                         onClear={onClear}
                     />
 
@@ -173,7 +219,7 @@ export default function CajaCheckoutPanel({
                     </fieldset>
 
                     {paymentMethod === "cash" && (
-                        <section className="space-y-3" aria-label="Pago en efectivo">
+                        <section ref={cashDetailsRef} className="space-y-3 scroll-mt-4" aria-label="Pago en efectivo">
                             <p className="font-medium">Total exacto: {formatCents(totalCents)}</p>
                             <div className="flex flex-wrap gap-2" role="group" aria-label="Importes recibidos sugeridos">
                                 {cashPresets.map((amountCents) => (
@@ -182,7 +228,11 @@ export default function CajaCheckoutPanel({
                                         type="button"
                                         className={`rc-btn-secondary min-h-11 px-4 ${cashReceivedCents === amountCents ? "is-active" : ""}`}
                                         aria-pressed={cashReceivedCents === amountCents}
-                                        onClick={() => onSelectCashPreset(amountCents)}
+                                        onClick={() => {
+                                            onSelectCashPreset(amountCents);
+                                            previousChangeVisible.current = true;
+                                            window.requestAnimationFrame(() => scrollTargetIntoView(cashChangeRef.current));
+                                        }}
                                     >
                                         {formatCents(amountCents)}
                                     </button>
@@ -205,7 +255,7 @@ export default function CajaCheckoutPanel({
                             <p className="text-sm font-medium">
                                 Importe recibido: {cashReceivedCents === null ? "—" : formatCents(cashReceivedCents)}
                             </p>
-                            <div id="caja-cash-feedback" aria-live="polite" className="min-h-6">
+                            <div ref={cashChangeRef} id="caja-cash-feedback" aria-live="polite" className="min-h-6 scroll-mt-4">
                                 {cashError ? (
                                     <p role="alert" className="text-error">{cashError}</p>
                                 ) : changeCents !== null ? (
@@ -218,7 +268,7 @@ export default function CajaCheckoutPanel({
                     )}
 
                     {(paymentMethod === "24" || paymentMethod === "12") && (
-                        <section className="rounded-xl bg-primarySoft p-3" aria-live="polite">
+                        <section ref={voucherDetailsRef} className="rounded-xl bg-primarySoft p-3 scroll-mt-4" aria-live="polite">
                             <h3 className="font-semibold">{CAJA_VOUCHERS[paymentMethod].label}</h3>
                             {voucherError ? (
                                 <p role="alert" className="text-error">{voucherError}</p>
