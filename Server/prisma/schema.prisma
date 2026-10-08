@@ -111,12 +111,14 @@ model CajaProduct {
   id         String             @id
   name       String
   category   CajaProductCategory
+  sortOrder  Int                @default(0)
   priceCents Int
   active     Boolean            @default(true)
   createdAt  DateTime           @default(now())
   updatedAt  DateTime           @default(now()) @updatedAt
 
   @@index([category, active])
+  @@index([category, sortOrder])
 }
 
 model CompraDespensa {

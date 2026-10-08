@@ -1,16 +1,24 @@
 import { readFile } from 'node:fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockCreateMany, mockDisconnect } = vi.hoisted(() => ({
+const { mockCreateMany, mockFindMany, mockDisconnect } = vi.hoisted(() => ({
     mockCreateMany: vi.fn(),
+    mockFindMany: vi.fn(),
     mockDisconnect: vi.fn(),
 }));
 
 vi.mock('../db/prisma.js', () => ({
     prisma: {
         cajaProduct: {
+            findMany: mockFindMany,
             createMany: mockCreateMany,
         },
+        $transaction: (callback: (transaction: unknown) => Promise<unknown>) => callback({
+            cajaProduct: {
+                findMany: mockFindMany,
+                createMany: mockCreateMany,
+            },
+        }),
         $disconnect: mockDisconnect,
     },
 }));
@@ -21,6 +29,7 @@ type SourceCatalog = { bebida: SourceProduct[]; comida: SourceProduct[] };
 describe('Caja catalog seed', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockFindMany.mockResolvedValue([]);
         mockCreateMany.mockResolvedValue({ count: 37 });
         mockDisconnect.mockResolvedValue(undefined);
     });
@@ -30,23 +39,28 @@ describe('Caja catalog seed', () => {
             await readFile(new URL('../../../legacy/CajaSusinos/public/products.json', import.meta.url), 'utf8'),
         ) as SourceCatalog;
         const expectedProducts = [
-            ...source.bebida.map(({ id, name, price }) => ({
+            ...source.bebida.map(({ id, name, price }, sortOrder) => ({
                 id,
                 name,
                 category: 'BEBIDA',
                 priceCents: Math.round(price * 100),
+                sortOrder,
             })),
-            ...source.comida.map(({ id, name, price }) => ({
+            ...source.comida.map(({ id, name, price }, sortOrder) => ({
                 id,
                 name,
                 category: 'COMIDA',
                 priceCents: Math.round(price * 100),
+                sortOrder,
             })),
         ];
 
         await import('../scripts/seed-caja.js');
         await vi.waitFor(() => expect(mockDisconnect).toHaveBeenCalledTimes(1));
 
+        expect(mockFindMany).toHaveBeenCalledWith({
+            select: { id: true, category: true, sortOrder: true },
+        });
         expect(mockCreateMany).toHaveBeenCalledWith({
             data: expectedProducts,
             skipDuplicates: true,
@@ -57,6 +71,11 @@ describe('Caja catalog seed', () => {
 
         vi.resetModules();
         vi.clearAllMocks();
+        mockFindMany.mockResolvedValue(expectedProducts.map(({ id, category, sortOrder }) => ({
+            id,
+            category,
+            sortOrder,
+        })));
         mockCreateMany.mockResolvedValue({ count: 0 });
         mockDisconnect.mockResolvedValue(undefined);
 
@@ -64,7 +83,7 @@ describe('Caja catalog seed', () => {
         await vi.waitFor(() => expect(mockDisconnect).toHaveBeenCalledTimes(1));
 
         expect(mockCreateMany).toHaveBeenCalledWith({
-            data: expectedProducts,
+            data: [],
             skipDuplicates: true,
         });
     });

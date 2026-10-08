@@ -191,6 +191,36 @@ test("ADMIN can manage Caja products and permanently delete them from the mobile
   expect(cajaApi.handledRequests).toContain("DELETE /api/caja/products/producto-e2e");
 });
 
+test("ADMIN can reorder Caja products without numeric positions and public Caja reflects the saved order", async ({ page, cajaApi }) => {
+  await signIn(page, "admin");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/GestionCajaProductos");
+  await page.getByRole("button", { name: "Ordenar productos" }).click();
+
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByLabel("Categoría")).toHaveValue("BEBIDA");
+  await expect(dialog.getByText("Cerveza E2E")).toBeVisible();
+  await expect(dialog.getByText("Agua E2E")).toBeVisible();
+  await dialog.getByRole("button", { name: "Bajar Cerveza E2E" }).click();
+  await expect(dialog.locator("li").first()).toContainText("Agua E2E");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth))
+    .toBe(true);
+  expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+  await dialog.getByRole("button", { name: "Guardar orden" }).click();
+
+  await expect(page.getByRole("status")).toHaveText("Orden de productos guardada.");
+  expect(cajaApi.reorderRequests).toEqual([{
+    category: "BEBIDA",
+    orderedIds: ["agua-e2e", "cerveza-e2e"],
+  }]);
+  expect(cajaApi.handledRequests).toContain("PUT /api/caja/admin/products/order");
+
+  await page.goto("/caja");
+  const drinkCards = page.locator(".caja-product-card");
+  await expect(drinkCards.nth(0)).toContainText("Agua E2E");
+  await expect(drinkCards.nth(1)).toContainText("Cerveza E2E");
+});
+
 test("SOCIO is denied Caja administration by the existing role guard", async ({ page }) => {
   await signIn(page, "socio");
   await page.goto("/GestionCajaProductos");

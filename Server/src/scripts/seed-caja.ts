@@ -42,9 +42,30 @@ const productos: Prisma.CajaProductCreateManyInput[] = [
 ];
 
 async function main() {
-    const result = await prisma.cajaProduct.createMany({
-        data: productos,
-        skipDuplicates: true,
+    const result = await prisma.$transaction(async (transaction) => {
+        const currentProducts = await transaction.cajaProduct.findMany({
+            select: { id: true, category: true, sortOrder: true },
+        });
+        const existingIds = new Set(currentProducts.map((product) => product.id));
+        const nextPosition = {
+            BEBIDA: currentProducts
+                .filter((product) => product.category === 'BEBIDA')
+                .reduce((next, product) => Math.max(next, product.sortOrder + 1), 0),
+            COMIDA: currentProducts
+                .filter((product) => product.category === 'COMIDA')
+                .reduce((next, product) => Math.max(next, product.sortOrder + 1), 0),
+        };
+        const missingProducts = productos
+            .filter((product) => !existingIds.has(product.id))
+            .map((product) => ({
+                ...product,
+                sortOrder: nextPosition[product.category]++,
+            }));
+
+        return transaction.cajaProduct.createMany({
+            data: missingProducts,
+            skipDuplicates: true,
+        });
     });
 
     console.log(`Productos de Caja añadidos: ${result.count}`);

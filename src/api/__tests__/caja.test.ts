@@ -5,6 +5,7 @@ import {
     deactivateCajaProduct,
     listAdminCajaProducts,
     listCajaProducts,
+    reorderCajaProducts,
     reactivateCajaProduct,
     updateCajaProduct,
 } from "../caja";
@@ -52,6 +53,31 @@ describe("listCajaProducts", () => {
             expect(mockApiFetch).toHaveBeenCalledWith("/api/caja/admin/products", {
                 headers: { Authorization: "Bearer admin-token" },
             });
+        });
+
+        it("saves a complete category order with the admin bearer token", async () => {
+            const order = { category: "BEBIDA" as const, orderedIds: ["agua", "refresco"] };
+            mockApiFetch.mockResolvedValue({ ok: true, json: vi.fn().mockResolvedValue(order) });
+
+            await expect(reorderCajaProducts("admin-token", order)).resolves.toEqual(order);
+            expect(mockApiFetch).toHaveBeenCalledWith("/api/caja/admin/products/order", expect.objectContaining({
+                method: "PUT",
+                headers: expect.objectContaining({
+                    Authorization: "Bearer admin-token",
+                    "Content-Type": "application/json",
+                }),
+                body: JSON.stringify(order),
+            }));
+        });
+
+        it("surfaces reorder API errors", async () => {
+            mockApiFetch.mockResolvedValue({ ok: false, status: 409 });
+            mockGetErrorMessage.mockResolvedValue("El catálogo cambió");
+
+            await expect(reorderCajaProducts("admin-token", {
+                category: "COMIDA",
+                orderedIds: ["pincho"],
+            })).rejects.toThrow("El catálogo cambió");
         });
 
         it("creates products with integer-cent payloads", async () => {
