@@ -2,7 +2,6 @@ import { expect, signIn, test } from "./fixtures/caja";
 import { E2E_API_URL } from "./config";
 
 test("Caja catalog and ticket support quantity changes, removal, totals and clear", async ({ page }) => {
-  await signIn(page, "socio");
   await page.goto("/caja");
 
   const beer = page.getByRole("button", { name: "Añadir Cerveza E2E a la comanda" });
@@ -36,7 +35,6 @@ test("Caja catalog and ticket support quantity changes, removal, totals and clea
 });
 
 test("voucher guidance preserves legacy totals, rounding, selection and reset behavior", async ({ page }) => {
-  await signIn(page, "socio");
   await page.goto("/caja");
   await page.getByRole("button", { name: "Añadir Pincho E2E a la comanda" }).click();
   await page.getByRole("button", { name: "Pagar con vale" }).click();
@@ -62,10 +60,7 @@ test("voucher guidance preserves legacy totals, rounding, selection and reset be
 
 test("ADMIN can create, edit and soft-deactivate a Caja product without exposing it in the cashier catalog", async ({ page, cajaApi }) => {
   await signIn(page, "admin");
-  await page.getByRole("link", { name: "Caja Susinos" }).click();
-  await page.getByRole("button", { name: /Admin/ }).click();
-  await page.getByRole("link", { name: "Panel de administración" }).click();
-  await page.getByRole("link", { name: "Acceder" }).last().click();
+  await page.goto("/GestionCajaProductos");
 
   await expect(page.getByRole("heading", { name: "Gestión de productos de Caja" })).toBeVisible();
   await expect(page.getByRole("row").filter({ hasText: "Inactivo E2E" })).toContainText("Inactivo");
@@ -109,10 +104,10 @@ test("ADMIN can create, edit and soft-deactivate a Caja product without exposing
   await expect(page.getByRole("button", { name: "Añadir Producto Editado E2E a la comanda" }))
     .toBeVisible();
 
-  expect(cajaApi.authorizedRequests).toContain("POST /api/caja/products");
-  expect(cajaApi.authorizedRequests).toContain("PATCH /api/caja/products/producto-e2e");
-  expect(cajaApi.authorizedRequests).toContain("PATCH /api/caja/products/producto-e2e/deactivate");
-  expect(cajaApi.authorizedRequests).toContain("PATCH /api/caja/products/producto-e2e/reactivate");
+  expect(cajaApi.handledRequests).toContain("POST /api/caja/products");
+  expect(cajaApi.handledRequests).toContain("PATCH /api/caja/products/producto-e2e");
+  expect(cajaApi.handledRequests).toContain("PATCH /api/caja/products/producto-e2e/deactivate");
+  expect(cajaApi.handledRequests).toContain("PATCH /api/caja/products/producto-e2e/reactivate");
 });
 
 test("SOCIO is denied Caja administration by the existing role guard", async ({ page }) => {
@@ -160,7 +155,6 @@ test("Caja product writes reject unauthenticated and SOCIO requests", async ({ p
 
 test("catalog API failures show an error and never fall back to local or legacy products", async ({ page, cajaApi }) => {
   cajaApi.failCatalog = true;
-  await signIn(page, "socio");
   await page.goto("/caja");
 
   await expect(page.getByRole("alert")).toHaveText("Catálogo E2E no disponible");

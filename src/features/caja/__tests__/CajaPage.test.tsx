@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import appRouter from "@/routes";
 import type { CajaProduct } from "@/features/caja/types/CajaProduct";
@@ -7,13 +7,8 @@ import type { CajaProduct } from "@/features/caja/types/CajaProduct";
 const mockListCajaProducts = vi.hoisted(() => vi.fn());
 const mockAuth = vi.hoisted(() => ({
     state: {
-        user: {
-            id: "user-1",
-            name: "Rural User",
-            email: "user@example.com",
-            role: "SOCIO" as const,
-        },
-        token: "rural-token",
+        user: null as null | { id: string; name: string; email: string; role: "ADMIN" | "SOCIO" },
+        token: null as string | null,
         loading: false,
         login: vi.fn(),
         logout: vi.fn(),
@@ -53,10 +48,11 @@ function renderCaja() {
 describe("Caja product catalog", () => {
     beforeEach(() => {
         mockListCajaProducts.mockReset();
-        mockAuth.state.token = "rural-token";
+        mockAuth.state.user = null;
+        mockAuth.state.token = null;
     });
 
-    it("loads and renders API products by category with integer-cent prices", async () => {
+    it("loads the public catalog anonymously and renders products without Rural Connect navigation", async () => {
         mockListCajaProducts.mockResolvedValue([
             makeProduct("refresco", "Refresco", "BEBIDA", 180),
             makeProduct("fideua", "Fideuá", "COMIDA", 450),
@@ -70,10 +66,34 @@ describe("Caja product catalog", () => {
         expect(screen.getByText("Fideuá")).toBeInTheDocument();
         expect(screen.getByText(/1,80\s*€/)).toBeInTheDocument();
         expect(screen.getByText(/4,50\s*€/)).toBeInTheDocument();
-        expect(mockListCajaProducts).toHaveBeenCalledWith("rural-token");
+        expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+        for (const privateLink of ["Inicio", "Eventos", "Reservas", "Compartir coche", "Despensa", "Administración"]) {
+            expect(screen.queryByRole("link", { name: privateLink })).not.toBeInTheDocument();
+        }
+        expect(mockListCajaProducts).toHaveBeenCalledWith();
     });
 
-    it("shows a loading state while the authenticated catalog request is pending", async () => {
+    it.each(["/inicio", "/GestionCajaProductos"])(
+        "keeps anonymous users out of protected route %s",
+        async (path) => {
+            const router = createMemoryRouter(appRouter.routes, { initialEntries: [path] });
+            render(<RouterProvider router={router} />);
+
+            await waitFor(() => expect(router.state.location.pathname).toBe("/"));
+        },
+    );
+
+    it("does not require or display a Rural Connect user session", async () => {
+        mockListCajaProducts.mockResolvedValue([makeProduct("agua", "Agua", "BEBIDA", 100)]);
+
+        renderCaja();
+
+        expect(await screen.findByRole("button", { name: "Añadir Agua a la comanda" }))
+            .toBeInTheDocument();
+        expect(screen.queryByText(/Sesión iniciada como/)).not.toBeInTheDocument();
+    });
+
+    it("shows a loading state while the public catalog request is pending", async () => {
         let resolveCatalog!: (products: CajaProduct[]) => void;
         mockListCajaProducts.mockReturnValue(new Promise((resolve) => {
             resolveCatalog = resolve;

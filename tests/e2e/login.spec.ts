@@ -1,20 +1,21 @@
 import { expect, signIn, test } from "./fixtures/caja";
 import { E2E_API_ORIGIN } from "./config";
 
-test("direct Caja access signs in with Rural Connect and returns to the requested path", async ({ page, cajaApi }) => {
+test("anonymous users can open Caja directly without login or Rural Connect navigation", async ({ page, cajaApi }) => {
   await page.goto("/caja");
-
-  await expect(page).toHaveURL(/\/login$/);
-  await page.getByPlaceholder("Usuario").fill("socio.e2e@example.test");
-  await page.getByPlaceholder("Contraseña").fill("e2e-socio-password");
-  await page.getByRole("button", { name: "Entrar" }).click();
 
   await expect(page).toHaveURL(/\/caja$/);
   await expect(page.getByRole("heading", { name: "Caja Susinos" })).toBeVisible();
-  await expect(page.getByText("Sesión iniciada como Socio E2E")).toBeVisible();
   await expect(page.getByRole("button", { name: "Añadir Cerveza E2E a la comanda" }))
     .toBeVisible();
-  expect(cajaApi.authorizedRequests).toContain("GET /api/caja/products");
+  await expect(page.getByRole("navigation")).toHaveCount(0);
+  for (const privateLink of ["Inicio", "Eventos", "Reservas", "Compartir coche", "Despensa", "Administración"]) {
+    await expect(page.getByRole("link", { name: privateLink })).toHaveCount(0);
+  }
+  expect(cajaApi.loginRequests).toBe(0);
+  expect(cajaApi.handledRequests).toContain("GET /api/caja/products");
+  expect(cajaApi.catalogAuthorizationHeaders.length).toBeGreaterThan(0);
+  expect(cajaApi.catalogAuthorizationHeaders.every((header) => header === "")).toBe(true);
 });
 
 test("existing Rural Connect login and authenticated navigation into Caja work without another login", async ({ page, cajaApi }) => {
@@ -35,5 +36,15 @@ test("existing Rural Connect login and authenticated navigation into Caja work w
   await expect(page).toHaveURL(/\/caja$/);
   await expect(page.getByRole("heading", { name: "Caja Susinos" })).toBeVisible();
   expect(cajaApi.loginRequests).toBe(1);
-  expect(cajaApi.authorizedRequests).toContain("GET /api/caja/products");
+  expect(cajaApi.handledRequests).toContain("GET /api/caja/products");
+  expect(cajaApi.catalogAuthorizationHeaders.length).toBeGreaterThan(0);
+  expect(cajaApi.catalogAuthorizationHeaders.every((header) => header === "")).toBe(true);
+});
+
+test("anonymous users remain redirected from Rural Connect private and admin routes", async ({ page }) => {
+  for (const path of ["/inicio", "/GestionCajaProductos"]) {
+    await page.goto(path);
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByRole("heading", { name: "Gestión de productos de Caja" })).toHaveCount(0);
+  }
 });

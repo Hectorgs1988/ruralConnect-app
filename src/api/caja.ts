@@ -21,12 +21,11 @@ function authenticatedOptions(token: string, method?: string, body?: unknown): R
     };
 }
 
-export async function listCajaProducts(token: string): Promise<CajaProduct[]> {
-    const response = await apiFetch("/api/caja/products", {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    });
+export async function listCajaProducts(token?: string): Promise<CajaProduct[]> {
+    const options = token
+        ? { headers: { Authorization: `Bearer ${token}` } }
+        : undefined;
+    const response = await apiFetch("/api/caja/products", options);
 
     if (!response.ok) {
         throw new Error(
