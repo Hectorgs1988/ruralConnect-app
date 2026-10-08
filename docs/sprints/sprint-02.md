@@ -260,6 +260,18 @@ complete flow before deployment.
   Rural Connect account, separate backend, or separate identity system.
 - `GET /api/caja/products` is public and returns active products only.
 - Caja administration and all product writes remain authenticated ADMIN-only.
+- Caja products have a persistent integer `sortOrder` scoped by category.
+  Public and admin catalog reads order by category, `sortOrder`, name, then ID;
+  the public response does not expose the order field. Existing products are
+  backfilled in their previous category/name/ID order without changing product
+  IDs, names, categories, prices, or active state.
+- `PUT /api/caja/admin/products/order` is ADMIN-only and accepts the complete
+  ordered ID list for one category, including inactive products. The backend
+  validates and writes contiguous positions in one serializable transaction.
+  Product creation and category changes append to the destination category;
+  edits within a category and activation changes preserve position; deletion
+  may leave a gap. Numeric prefixes in product names are not automatically
+  removed by schema migration or seed behavior.
 - Permanent Caja product deletion is an explicit exception to the earlier
   deactivate-to-preserve-history rule. Since Caja does not persist orders,
   tickets, or payment history, an ADMIN may permanently remove products

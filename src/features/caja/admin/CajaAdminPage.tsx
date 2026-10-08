@@ -6,11 +6,12 @@ import {
     deactivateCajaProduct,
     deleteCajaProduct,
     listAdminCajaProducts,
+    reorderCajaProducts,
     reactivateCajaProduct,
     updateCajaProduct,
 } from "@/api/caja";
 import { useAuth } from "@/context/AuthContext";
-import type { CajaProduct } from "@/features/caja/types/CajaProduct";
+import type { CajaProduct, CajaProductCategory } from "@/features/caja/types/CajaProduct";
 import CajaAdminDialog from "./CajaAdminDialog";
 import CajaProductForm from "./CajaProductForm";
 import type { CajaProductDraft } from "./productForm";
@@ -19,6 +20,7 @@ type ProductStatusFilter = "all" | "active" | "inactive";
 type AdminDialogState =
     | { kind: "form"; product: CajaProduct | null }
     | { kind: "deactivate" | "reactivate"; product: CajaProduct }
+    | { kind: "reorder" }
     | null;
 
 const priceFormatter = new Intl.NumberFormat("es-ES", {
@@ -40,6 +42,9 @@ export default function CajaAdminPage() {
     const [success, setSuccess] = useState<string | null>(null);
     const [mutationError, setMutationError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
+    const [savingOrder, setSavingOrder] = useState(false);
+    const [reorderCategory, setReorderCategory] = useState<CajaProductCategory>("BEBIDA");
+    const [reorderIds, setReorderIds] = useState<string[]>([]);
     const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
     const [reactivatingId, setReactivatingId] = useState<string | null>(null);
     const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -51,7 +56,8 @@ export default function CajaAdminPage() {
     const isMutating = saving
         || deactivatingId !== null
         || reactivatingId !== null
-        || deletingId !== null;
+        || deletingId !== null
+        || savingOrder;
 
     const visibleProducts = useMemo(() => {
         const normalizedSearch = search.trim().toLocaleLowerCase("es");
@@ -104,6 +110,16 @@ export default function CajaAdminPage() {
         clearFeedback();
         setConfirmingDelete(false);
         setDialog({ kind: "form", product });
+    }
+
+    function openReorderDialog(event: MouseEvent<HTMLButtonElement>) {
+        returnFocusRef.current = event.currentTarget;
+        clearFeedback();
+        setReorderCategory("BEBIDA");
+        setReorderIds(products
+            .filter((product) => product.category === "BEBIDA")
+            .map((product) => product.id));
+        setDialog({ kind: "reorder" });
     }
 
     function closeDialog() {
@@ -196,6 +212,47 @@ export default function CajaAdminPage() {
         }
     }
 
+    function selectReorderCategory(category: CajaProductCategory) {
+        setReorderCategory(category);
+        setReorderIds(products
+            .filter((product) => product.category === category)
+            .map((product) => product.id));
+        setMutationError(null);
+    }
+
+    function moveReorderProduct(id: string, direction: -1 | 1) {
+        setMutationError(null);
+        setReorderIds((current) => {
+            const index = current.indexOf(id);
+            const targetIndex = index + direction;
+            if (index < 0 || targetIndex < 0 || targetIndex >= current.length) return current;
+            const next = [...current];
+            [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+            return next;
+        });
+    }
+
+    async function saveReorder() {
+        if (!token || savingOrder || dialog?.kind !== "reorder") return;
+        setSavingOrder(true);
+        setMutationError(null);
+        setSuccess(null);
+        try {
+            await reorderCajaProducts(token, {
+                category: reorderCategory,
+                orderedIds: reorderIds,
+            });
+            const refreshedProducts = await listAdminCajaProducts(token);
+            setProducts(refreshedProducts);
+            setDialog(null);
+            setSuccess("Orden de productos guardada.");
+        } catch (saveError) {
+            setMutationError(errorMessage(saveError, "No se pudo guardar el orden de productos."));
+        } finally {
+            setSavingOrder(false);
+        }
+    }
+
     function openLifecycleDialog(
         kind: "deactivate" | "reactivate",
         product: CajaProduct,
@@ -212,6 +269,8 @@ export default function CajaAdminPage() {
             ? "caja-deactivation-title"
             : dialog?.kind === "reactivate"
                 ? "caja-reactivation-title"
+                : dialog?.kind === "reorder"
+                    ? "caja-reorder-title"
                 : "";
 
     return (
@@ -225,7 +284,15 @@ export default function CajaAdminPage() {
                     </p>
                 </header>
 
-                <div className="flex justify-end">
+                <div className="flex flex-wrap justify-end gap-2">
+                    <button
+                        type="button"
+                        className="rc-btn-secondary min-h-11"
+                        disabled={loading || isMutating || products.length === 0}
+                        onClick={(event) => openReorderDialog(event)}
+                    >
+                        Ordenar productos
+                    </button>
                     <button
                         type="button"
                         className="rc-btn-primary min-h-11"
@@ -405,6 +472,95 @@ export default function CajaAdminPage() {
                             }}
                             onConfirmDelete={() => void confirmDeletion()}
                         />
+                    ) : dialog.kind === "reorder" ? (
+                        <div className="space-y-4">
+                            <header>
+                                <h2 id="caja-reorder-title" className="text-xl font-semibold">
+                                    Ordenar productos
+                                </h2>
+                                <p className="mt-2 text-sm text-muted">
+                                    Cambia el orden con los controles. Los productos inactivos también se incluyen.
+                                </p>
+                            </header>
+                            <label className="block space-y-1 text-sm font-medium" htmlFor="caja-reorder-category">
+                                Categoría
+                                <select
+                                    id="caja-reorder-category"
+                                    className="min-h-12 w-full rounded-xl border border-borderSoft bg-surfaceMuted px-3 text-base text-dark"
+                                    value={reorderCategory}
+                                    disabled={savingOrder}
+                                    data-dialog-autofocus
+                                    onChange={(event) => selectReorderCategory(event.target.value as CajaProductCategory)}
+                                >
+                                    <option value="BEBIDA">Bebida</option>
+                                    <option value="COMIDA">Comida</option>
+                                </select>
+                            </label>
+                            {reorderIds.length === 0 ? (
+                                <p className="rounded-xl border border-borderSoft p-4 text-center text-sm text-muted">
+                                    No hay productos en esta categoría.
+                                </p>
+                            ) : (
+                                <ol className="caja-admin-reorder-list" aria-label={`Orden de ${reorderCategory === "BEBIDA" ? "Bebida" : "Comida"}`}>
+                                    {reorderIds.map((id, index) => {
+                                        const product = products.find((item) => item.id === id);
+                                        if (!product) return null;
+                                        return (
+                                            <li key={id} className="caja-admin-reorder-row">
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="break-words font-medium">{product.name}</p>
+                                                    <span className={`caja-admin-status ${product.active
+                                                        ? "caja-admin-status-active"
+                                                        : "caja-admin-status-inactive"}`}
+                                                    >
+                                                        <span aria-hidden="true" className="h-2 w-2 rounded-full bg-current" />
+                                                        {product.active ? "Activo" : "Inactivo"}
+                                                    </span>
+                                                </div>
+                                                <div className="flex shrink-0 gap-2">
+                                                    <button
+                                                        type="button"
+                                                        className="rc-btn-secondary min-h-11 min-w-11 px-3"
+                                                        aria-label={`Subir ${product.name}`}
+                                                        disabled={savingOrder || index === 0}
+                                                        onClick={() => moveReorderProduct(id, -1)}
+                                                    >
+                                                        Subir
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="rc-btn-secondary min-h-11 min-w-11 px-3"
+                                                        aria-label={`Bajar ${product.name}`}
+                                                        disabled={savingOrder || index === reorderIds.length - 1}
+                                                        onClick={() => moveReorderProduct(id, 1)}
+                                                    >
+                                                        Bajar
+                                                    </button>
+                                                </div>
+                                            </li>
+                                        );
+                                    })}
+                                </ol>
+                            )}
+                            <div className="caja-admin-dialog-actions">
+                                <button
+                                    type="button"
+                                    className="rc-btn-secondary min-h-12"
+                                    disabled={savingOrder}
+                                    onClick={closeDialog}
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="button"
+                                    className="rc-btn-primary min-h-12"
+                                    disabled={savingOrder}
+                                    onClick={() => void saveReorder()}
+                                >
+                                    {savingOrder ? "Guardando orden..." : "Guardar orden"}
+                                </button>
+                            </div>
+                        </div>
                     ) : dialog.kind === "deactivate" ? (
                         <div className="space-y-4">
                             <div>

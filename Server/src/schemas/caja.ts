@@ -14,3 +14,8 @@ export const updateCajaProductSchema = z.object({
     category: z.enum(['BEBIDA', 'COMIDA']).optional(),
     priceCents: z.number().int().nonnegative().max(MAX_CAJA_PRICE_CENTS).optional(),
 }).strict().refine((data) => Object.keys(data).length > 0);
+
+export const reorderCajaProductsSchema = z.object({
+    category: z.enum(['BEBIDA', 'COMIDA']),
+    orderedIds: z.array(z.string().min(1)),
+}).strict().refine(({ orderedIds }) => new Set(orderedIds).size === orderedIds.length);

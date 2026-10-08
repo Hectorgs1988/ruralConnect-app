@@ -17,6 +17,7 @@ interface CajaE2EProduct {
 interface CajaApiFixture {
   handledRequests: string[];
   catalogAuthorizationHeaders: string[];
+  reorderRequests: Array<{ category: CajaCategory; orderedIds: string[] }>;
   get loginRequests(): number;
   failCatalog: boolean;
 }
@@ -112,9 +113,11 @@ export const test = base.extend<Fixtures>({
     let loginRequests = 0;
     const handledRequests: string[] = [];
     const catalogAuthorizationHeaders: string[] = [];
+    const reorderRequests: CajaApiFixture["reorderRequests"] = [];
     const fixture: CajaApiFixture = {
       handledRequests,
       catalogAuthorizationHeaders,
+      reorderRequests,
       get loginRequests() {
         return loginRequests;
       },
@@ -138,7 +141,7 @@ export const test = base.extend<Fixtures>({
           status: 204,
           headers: {
             "access-control-allow-origin": "http://localhost:5173",
-            "access-control-allow-methods": "GET, POST, PATCH, DELETE, OPTIONS",
+            "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
             "access-control-allow-headers": "authorization, content-type",
           },
         });
@@ -175,6 +178,36 @@ export const test = base.extend<Fixtures>({
         }
         handledRequests.push(`${method} ${url.pathname}`);
         await route.fulfill(jsonResponse(200, products));
+        return;
+      }
+
+      if (url.pathname === "/api/caja/admin/products/order" && method === "PUT") {
+        if (!isAuthorized(request, "admin")) {
+          await route.fulfill(jsonResponse(isAuthorized(request) ? 403 : 401, { error: "No autorizado" }));
+          return;
+        }
+        handledRequests.push(`${method} ${url.pathname}`);
+        const body = request.postDataJSON() as { category: CajaCategory; orderedIds: string[] };
+        const categoryProducts = products.filter((product) => product.category === body.category);
+        if (
+          !Array.isArray(body.orderedIds)
+          || new Set(body.orderedIds).size !== body.orderedIds.length
+          || body.orderedIds.length !== categoryProducts.length
+          || categoryProducts.some((product) => !body.orderedIds.includes(product.id))
+        ) {
+          await route.fulfill(jsonResponse(400, { error: "El orden debe incluir todos los productos de la categoría" }));
+          return;
+        }
+        const orderedById = new Map(categoryProducts.map((product) => [product.id, product]));
+        const reorderedProducts = body.orderedIds
+          .map((id) => orderedById.get(id))
+          .filter((product): product is CajaE2EProduct => product !== undefined);
+        let nextIndex = 0;
+        products = products.map((product) => product.category === body.category
+          ? reorderedProducts[nextIndex++]
+          : product);
+        reorderRequests.push(body);
+        await route.fulfill(jsonResponse(200, body));
         return;
       }
 
