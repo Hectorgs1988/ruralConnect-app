@@ -15,7 +15,8 @@ interface CajaE2EProduct {
 }
 
 interface CajaApiFixture {
-  authorizedRequests: string[];
+  handledRequests: string[];
+  catalogAuthorizationHeaders: string[];
   get loginRequests(): number;
   failCatalog: boolean;
 }
@@ -100,9 +101,11 @@ export const test = base.extend<Fixtures>({
   cajaApi: [async ({ page }, use) => {
     let products = initialProducts();
     let loginRequests = 0;
-    const authorizedRequests: string[] = [];
+    const handledRequests: string[] = [];
+    const catalogAuthorizationHeaders: string[] = [];
     const fixture: CajaApiFixture = {
-      authorizedRequests,
+      handledRequests,
+      catalogAuthorizationHeaders,
       get loginRequests() {
         return loginRequests;
       },
@@ -146,11 +149,8 @@ export const test = base.extend<Fixtures>({
       }
 
       if (url.pathname === "/api/caja/products" && method === "GET") {
-        if (!isAuthorized(request)) {
-          await route.fulfill(jsonResponse(401, { error: "No autenticado" }));
-          return;
-        }
-        authorizedRequests.push(`${method} ${url.pathname}`);
+        catalogAuthorizationHeaders.push(request.headers().authorization ?? "");
+        handledRequests.push(`${method} ${url.pathname}`);
         if (fixture.failCatalog) {
           await route.fulfill(jsonResponse(503, { error: "Catálogo E2E no disponible" }));
           return;
@@ -164,7 +164,7 @@ export const test = base.extend<Fixtures>({
           await route.fulfill(jsonResponse(isAuthorized(request) ? 403 : 401, { error: "No autorizado" }));
           return;
         }
-        authorizedRequests.push(`${method} ${url.pathname}`);
+        handledRequests.push(`${method} ${url.pathname}`);
         await route.fulfill(jsonResponse(200, products));
         return;
       }
@@ -174,7 +174,7 @@ export const test = base.extend<Fixtures>({
           await route.fulfill(jsonResponse(isAuthorized(request) ? 403 : 401, { error: "No autorizado" }));
           return;
         }
-        authorizedRequests.push(`${method} ${url.pathname}`);
+        handledRequests.push(`${method} ${url.pathname}`);
         const body = request.postDataJSON() as Omit<CajaE2EProduct, "active" | "createdAt" | "updatedAt">;
         if (products.some((product) => product.id === body.id)) {
           await route.fulfill(jsonResponse(409, { error: "Ya existe un producto con ese ID" }));
@@ -193,7 +193,7 @@ export const test = base.extend<Fixtures>({
           await route.fulfill(jsonResponse(isAuthorized(request) ? 403 : 401, { error: "No autorizado" }));
           return;
         }
-        authorizedRequests.push(`${method} ${url.pathname}`);
+        handledRequests.push(`${method} ${url.pathname}`);
         const id = decodeURIComponent(reactivateMatch[1]);
         const product = products.find((item) => item.id === id);
         if (!product) {
@@ -212,7 +212,7 @@ export const test = base.extend<Fixtures>({
           await route.fulfill(jsonResponse(isAuthorized(request) ? 403 : 401, { error: "No autorizado" }));
           return;
         }
-        authorizedRequests.push(`${method} ${url.pathname}`);
+        handledRequests.push(`${method} ${url.pathname}`);
         const id = decodeURIComponent(deactivateMatch[1]);
         const product = products.find((item) => item.id === id);
         if (!product) {
@@ -231,7 +231,7 @@ export const test = base.extend<Fixtures>({
           await route.fulfill(jsonResponse(isAuthorized(request) ? 403 : 401, { error: "No autorizado" }));
           return;
         }
-        authorizedRequests.push(`${method} ${url.pathname}`);
+        handledRequests.push(`${method} ${url.pathname}`);
         const id = decodeURIComponent(updateMatch[1]);
         const product = products.find((item) => item.id === id);
         if (!product) {

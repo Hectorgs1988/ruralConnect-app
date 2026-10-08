@@ -68,14 +68,7 @@ describe('GET /api/caja/products', () => {
         vi.clearAllMocks();
     });
 
-    it('rejects requests without Rural Connect authentication', async () => {
-        const response = await request(app).get('/api/caja/products');
-
-        expect(response.status).toBe(401);
-        expect(mockedFindMany).not.toHaveBeenCalled();
-    });
-
-    it('returns active products in deterministic order with the catalog response shape', async () => {
+    it('allows anonymous catalog reads with active products in deterministic order and no account data', async () => {
         const createdAt = new Date('2026-10-07T10:00:00.000Z');
         const updatedAt = new Date('2026-10-07T11:00:00.000Z');
         const catalog: CajaProduct[] = [
@@ -133,9 +126,7 @@ describe('GET /api/caja/products', () => {
                 left.id.localeCompare(right.id));
         mockedFindMany.mockResolvedValue(databaseResult);
 
-        const response = await request(app)
-            .get('/api/caja/products')
-            .set('Authorization', `Bearer ${makeToken('SOCIO')}`);
+        const response = await request(app).get('/api/caja/products');
 
         expect(response.status).toBe(200);
         expect(response.body.map((product: { id: string }) => product.id)).toEqual([
@@ -165,6 +156,9 @@ describe('GET /api/caja/products', () => {
             },
         ]));
         expect(response.body.map((product: { id: string }) => product.id)).not.toContain('inactiva');
+        expect(response.body.every((product: Record<string, unknown>) =>
+            Object.keys(product).sort().join(',') === 'active,category,createdAt,id,name,priceCents,updatedAt',
+        )).toBe(true);
         expect(mockedFindMany).toHaveBeenCalledWith({
             where: { active: true },
             orderBy: [

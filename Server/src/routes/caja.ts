@@ -30,7 +30,7 @@ function handlePrismaWriteError(error: unknown, res: import('express').Response)
     return false;
 }
 
-cajaRouter.get('/products', requireAuth, async (_req, res, next) => {
+cajaRouter.get('/products', async (_req, res, next) => {
     try {
         const products = await prisma.cajaProduct.findMany({
             where: { active: true },

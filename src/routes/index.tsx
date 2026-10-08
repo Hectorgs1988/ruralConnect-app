@@ -37,7 +37,7 @@ const router = createBrowserRouter([
     { path: "/CompartirCoche", element: (<PrivateRoute><CompartirCoche /></PrivateRoute>), },
     { path: "/OfrecerViaje", element: (<PrivateRoute><OfrecerViaje /></PrivateRoute>), },
     { path: "/Despensa", element: (<PrivateRoute><Despensa /></PrivateRoute>), },
-    { path: "/caja", element: (<PrivateRoute redirectToLogin><CajaPage /></PrivateRoute>), },
+    { path: "/caja", element: <CajaPage />, },
 
     // solo ADMIN
     { path: "/PanelAdmin", element: (<RoleGuard role="ADMIN"><PanelAdmin /></RoleGuard>), },

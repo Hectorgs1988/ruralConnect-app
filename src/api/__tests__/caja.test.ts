@@ -138,6 +138,17 @@ describe("listCajaProducts", () => {
         });
     });
 
+    it("requests the public Caja catalog without an Authorization header when no token is supplied", async () => {
+        mockApiFetch.mockResolvedValue({
+            ok: true,
+            json: vi.fn().mockResolvedValue([product]),
+        });
+
+        await expect(listCajaProducts()).resolves.toEqual([product]);
+
+        expect(mockApiFetch).toHaveBeenCalledWith("/api/caja/products", undefined);
+    });
+
     it("surfaces API errors instead of treating them as an empty catalog", async () => {
         mockApiFetch.mockResolvedValue({ ok: false, status: 503 });
         mockGetErrorMessage.mockResolvedValue("Catalog service unavailable");
