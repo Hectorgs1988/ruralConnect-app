@@ -1,61 +1,87 @@
 import { expect, signIn, test } from "./fixtures/caja";
 import { E2E_API_URL } from "./config";
 
-test("Caja catalog and ticket support quantity changes, removal, totals and clear", async ({ page }) => {
+test("Caja catalog and checkout review support quantity changes, removal, totals and clear", async ({ page }) => {
   await page.goto("/caja");
 
   const beer = page.getByRole("button", { name: "Añadir Cerveza E2E a la comanda" });
   await beer.click();
   await beer.click();
-  await expect(page.getByLabel("Número de artículos")).toHaveText("2 artículos");
-  await expect(page.getByLabel("Total de la comanda")).toHaveText("3,00 €");
-
-  await page.getByRole("button", { name: "Sumar una unidad de Cerveza E2E a 1,50 €" }).click();
-  await expect(page.getByLabel("Cantidad de Cerveza E2E", { exact: true })).toHaveText("3");
-  await expect(page.getByLabel("Número de artículos")).toHaveText("3 artículos");
-  await expect(page.getByLabel("Total de la comanda")).toHaveText("4,50 €");
-
-  await page.getByRole("button", { name: "Restar una unidad de Cerveza E2E a 1,50 €" }).click();
-  await expect(page.getByLabel("Total de la comanda")).toHaveText("3,00 €");
   await page.getByRole("button", { name: "Añadir Pincho E2E a la comanda" }).click();
   await expect(page.getByLabel("Número de artículos")).toHaveText("3 artículos");
   await expect(page.getByLabel("Total de la comanda")).toHaveText("4,49 €");
+  await page.getByRole("button", { name: "Cobrar" }).click();
 
-  await page.getByRole("button", { name: "Quitar Pincho E2E a 1,49 € de la comanda" }).click();
-  await expect(page.getByLabel("Número de artículos")).toHaveText("2 artículos");
-  await expect(page.getByLabel("Total de la comanda")).toHaveText("3,00 €");
+  await page.getByRole("button", { name: "Sumar una unidad de Cerveza E2E a 1,50 €" }).click();
+  await expect(page.getByLabel("Cantidad de Cerveza E2E", { exact: true })).toHaveText("3");
+  await expect(page.getByLabel("Total revisado")).toHaveText("5,99 €");
+  await page.getByRole("button", { name: "Restar una unidad de Cerveza E2E a 1,50 €" }).click();
+  await page.getByRole("button", { name: "Quitar Pincho E2E de la comanda (1,49 €)" }).click();
+  await expect(page.getByLabel("Número de artículos en revisión")).toHaveText("2 artículos");
+  await expect(page.getByLabel("Total revisado")).toHaveText("3,00 €");
+
   await page.getByRole("button", { name: "Restar una unidad de Cerveza E2E a 1,50 €" }).click();
   await page.getByRole("button", { name: "Restar una unidad de Cerveza E2E a 1,50 €" }).click();
   await expect(page.getByText("Aún no hay productos en la comanda.")).toBeVisible();
-  await expect(page.getByLabel("Total de la comanda")).toHaveText("0,00 €");
-
+  await page.getByRole("button", { name: "Volver" }).click();
   await beer.click();
+  await page.getByRole("button", { name: "Cobrar" }).click();
   await page.getByRole("button", { name: "Vaciar" }).click();
-  await expect(page.getByText("Aún no hay productos en la comanda.")).toBeVisible();
+  await expect(page.getByLabel("Número de artículos")).toHaveText("0 artículos");
 });
 
-test("voucher guidance preserves legacy totals, rounding, selection and reset behavior", async ({ page }) => {
+test("voucher checkout preserves guidance and only completes after confirmation", async ({ page }) => {
   await page.goto("/caja");
   await page.getByRole("button", { name: "Añadir Pincho E2E a la comanda" }).click();
-  await page.getByRole("button", { name: "Pagar con vale" }).click();
+  await page.getByRole("button", { name: "Cobrar" }).click();
+  await page.getByRole("button", { name: "Vale 24 EUR" }).click();
 
-  await expect(page.getByRole("button", { name: "Vale 24 EUR" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByText("Total: 1,49 EUR - Tacha 1 fila.")).toBeVisible();
   await page.getByRole("button", { name: "Vale 12 EUR" }).click();
   await expect(page.getByText("Total: 1,49 EUR - Tacha 1 fila + 1 de 20 + 1 de 10.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirmar ticket" })).toBeEnabled();
 
-  await page.getByRole("button", { name: "Vaciar" }).click();
-  await expect(page.getByRole("group", { name: "Tipo de vale" })).toHaveCount(0);
-  await page.getByRole("button", { name: "Añadir Pincho E2E a la comanda" }).click();
-  await page.getByRole("button", { name: "Pagar con vale" }).click();
-  await expect(page.getByRole("button", { name: "Vale 12 EUR" })).toHaveAttribute("aria-pressed", "true");
-
-  await page.getByRole("button", { name: "Completar ticket" }).click();
+  await page.getByRole("button", { name: "Volver" }).click();
+  await expect(page.getByLabel("Número de artículos")).toHaveText("1 artículo");
+  await page.getByRole("button", { name: "Cobrar" }).click();
+  await expect(page.getByRole("button", { name: "Vale 24 EUR" })).toHaveAttribute("aria-pressed", "false");
+  await page.getByRole("button", { name: "Vale 12 EUR" }).click();
+  await page.getByRole("button", { name: "Confirmar ticket" }).click();
   await expect(page.getByRole("status")).toContainText("Ticket completado: 1,49");
-  await expect(page.getByRole("group", { name: "Tipo de vale" })).toHaveCount(0);
+  await expect(page.getByLabel("Número de artículos")).toHaveText("0 artículos");
+});
+
+test("mobile sticky checkout supports cash and voucher completion without payment or order APIs", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 360 });
+  const prohibitedApiRequests: string[] = [];
+  page.on("request", (request) => {
+    const pathname = new URL(request.url()).pathname;
+    if (/\/api\/(payments?|orders?)(\/|$)/i.test(pathname)) prohibitedApiRequests.push(pathname);
+  });
+  await page.goto("/caja");
+  await expect(page.getByRole("heading", { name: "Bebida" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Añadir Cerveza E2E a la comanda" }).click();
+  await page.getByRole("button", { name: "Añadir Agua E2E a la comanda" }).click();
+  const stickyBar = page.locator(".caja-sticky-checkout");
+  await expect(stickyBar).toBeInViewport();
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await expect(stickyBar).toBeInViewport();
+
+  await page.getByRole("button", { name: "Cobrar" }).click();
+  await page.getByRole("button", { name: "Efectivo" }).click();
+  await page.getByLabel("Otro importe").fill("3,00");
+  await expect(page.getByLabel("Cambio")).toHaveText("0,50 €");
+  await page.getByRole("button", { name: "Confirmar ticket" }).click();
+  await expect(page.getByRole("status")).toContainText("No se ha guardado un pedido ni un pago");
+
   await page.getByRole("button", { name: "Añadir Pincho E2E a la comanda" }).click();
-  await page.getByRole("button", { name: "Pagar con vale" }).click();
-  await expect(page.getByRole("button", { name: "Vale 12 EUR" })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Cobrar" }).click();
+  await page.getByRole("button", { name: "Vale 12 EUR" }).click();
+  await expect(page.getByText("Total: 1,49 EUR - Tacha 1 fila + 1 de 20 + 1 de 10.")).toBeVisible();
+  await page.getByRole("button", { name: "Confirmar ticket" }).click();
+  await expect(page.getByLabel("Número de artículos")).toHaveText("0 artículos");
+  expect(prohibitedApiRequests).toEqual([]);
 });
 
 test("ADMIN can create, edit and soft-deactivate a Caja product without exposing it in the cashier catalog", async ({ page, cajaApi }) => {
