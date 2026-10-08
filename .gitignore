@@ -22,3 +22,6 @@ Server/prisma/*.db
 
 # Docker
 mysql_data/
+
+#legacy
+legacy/

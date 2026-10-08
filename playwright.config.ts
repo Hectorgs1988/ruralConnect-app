@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { E2E_API_URL } from './tests/e2e/config';
 
 export default defineConfig({
   testDir: 'tests/e2e',
@@ -15,9 +16,12 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev',
+    command: 'npm run dev -- --host 127.0.0.1 --port 5173 --strictPort',
     url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
+    env: {
+      VITE_API_URL: E2E_API_URL,
+    },
+    reuseExistingServer: false,
     timeout: 120_000,
   },
 });

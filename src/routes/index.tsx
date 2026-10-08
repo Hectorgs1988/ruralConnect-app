@@ -18,6 +18,8 @@ import GestionEspacios from '../pages/GestionEspacios'
 import Despensa from '../pages/Despensa'
 import GestionDespensa from '../pages/GestionDespensa'
 import PrivateRoute, { RoleGuard } from "@/components/guards/PrivateRoute";
+import CajaPage from "@/features/caja/CajaPage";
+import CajaAdminPage from "@/features/caja/admin/CajaAdminPage";
 
 const router = createBrowserRouter([
     // públicas
@@ -35,6 +37,7 @@ const router = createBrowserRouter([
     { path: "/CompartirCoche", element: (<PrivateRoute><CompartirCoche /></PrivateRoute>), },
     { path: "/OfrecerViaje", element: (<PrivateRoute><OfrecerViaje /></PrivateRoute>), },
     { path: "/Despensa", element: (<PrivateRoute><Despensa /></PrivateRoute>), },
+    { path: "/caja", element: (<PrivateRoute redirectToLogin><CajaPage /></PrivateRoute>), },
 
     // solo ADMIN
     { path: "/PanelAdmin", element: (<RoleGuard role="ADMIN"><PanelAdmin /></RoleGuard>), },
@@ -43,6 +46,7 @@ const router = createBrowserRouter([
     { path: "/ResumenGeneral", element: (<RoleGuard role="ADMIN"><ResumenGeneral /></RoleGuard>), },
     { path: "/GestionEspacios", element: (<RoleGuard role="ADMIN"><GestionEspacios /></RoleGuard>), },
     { path: "/GestionDespensa", element: (<RoleGuard role="ADMIN"><GestionDespensa /></RoleGuard>), },
+    { path: "/GestionCajaProductos", element: (<RoleGuard role="ADMIN"><CajaAdminPage /></RoleGuard>), },
 
     { path: "/AsociacionMosquitos", element: <AsociacionMosquitos /> },
 ]);

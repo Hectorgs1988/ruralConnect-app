@@ -8,10 +8,6 @@ WORKDIR /app
 # Instalar certificados raíz del sistema (por si acaso)
 RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificates
 
-# Solo para entorno de desarrollo: desactivar verificación TLS
-# Para evitar el error "unable to verify the first certificate" al descargar dependencias de npm
-ENV NODE_TLS_REJECT_UNAUTHORIZED=0
-
 # Instalar dependencias
 COPY package*.json ./
 RUN npm install
@@ -25,6 +21,9 @@ COPY . .
 
 # Compilar TypeScript a dist/
 RUN npm run build
+
+# The container runs the backend in production mode; local Compose overrides this.
+ENV NODE_ENV=production
 
 # Copiar el entrypoint
 COPY docker-entrypoint.sh ./docker-entrypoint.sh

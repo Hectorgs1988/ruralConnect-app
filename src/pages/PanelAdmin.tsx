@@ -2,7 +2,7 @@ import type { FC } from "react";
 import Header from "@/components/Header";
 import ActionCard from "@/components/ui/ActionCard";
 import Footer from "@/components/Footer";
-import { Users, Calendar1, ChartColumnBig, HousePlus, ShoppingBasket } from "lucide-react";
+import { Users, Calendar1, ChartColumnBig, HousePlus, ShoppingBasket, Package } from "lucide-react";
 
 
 const PanelAdmin: FC = () => {
@@ -54,6 +54,13 @@ const PanelAdmin: FC = () => {
                         buttonText="Acceder"
                         href="/GestionDespensa"
                     />
+                    <ActionCard
+                        icon={<Package size={36} className="text-black/90" />}
+                        title="Gestión de productos de Caja"
+                        description="Crear, editar y preparar la desactivación de productos Caja"
+                        buttonText="Acceder"
+                        href="/GestionCajaProductos"
+                    />
 
                 </div>
             </main>
@@ -64,4 +71,3 @@ const PanelAdmin: FC = () => {
 };
 
 export default PanelAdmin;
-

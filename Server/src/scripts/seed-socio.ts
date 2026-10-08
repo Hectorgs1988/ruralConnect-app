@@ -1,7 +1,9 @@
 import { prisma } from '../db/prisma.js';
 import bcrypt from 'bcrypt';
+import { assertDefaultUserSeedAllowed } from './seed-guard.js';
 
 async function main() {
+    assertDefaultUserSeedAllowed();
     const email = 'socio@test.com';
     const exists = await prisma.user.findUnique({ where: { email } });
     if (exists) {
