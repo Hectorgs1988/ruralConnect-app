@@ -10,7 +10,9 @@
   html:has(.rc-modal-overlay),
   body:has(.rc-modal-overlay),
   html:has(.caja-checkout-overlay),
-  body:has(.caja-checkout-overlay) {
+  body:has(.caja-checkout-overlay),
+  html:has(.caja-admin-dialog-overlay),
+  body:has(.caja-admin-dialog-overlay) {
     overflow: hidden;
   }
 }
@@ -88,6 +90,52 @@
     padding-bottom: max(0.25rem, env(safe-area-inset-bottom));
     margin-bottom: calc(-1 * max(0.25rem, env(safe-area-inset-bottom)));
     box-shadow: 0 -8px 20px -16px rgba(15, 23, 42, 0.45);
+  }
+
+  .caja-admin-dialog-overlay {
+    @apply fixed inset-0 z-[70] flex items-end justify-center bg-black/50 backdrop-blur-sm;
+    padding: 0;
+    overscroll-behavior: contain;
+  }
+
+  .caja-admin-dialog-panel {
+    @apply w-full overflow-y-auto rounded-t-3xl border border-borderSoft bg-surface p-5 text-dark shadow-2xl;
+    max-height: 92dvh;
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .caja-admin-status {
+    @apply inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold;
+  }
+
+  .caja-admin-status-active {
+    @apply bg-green-100 text-green-800;
+  }
+
+  .caja-admin-status-inactive {
+    @apply bg-slate-100 text-slate-700;
+  }
+
+  .caja-admin-danger-link {
+    @apply inline-flex items-center justify-center rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-600/60 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .caja-admin-danger-button {
+    @apply inline-flex items-center justify-center rounded-full bg-red-700 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-700/60 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  @media (min-width: 640px) {
+    .caja-admin-dialog-overlay {
+      @apply items-center px-4 py-6;
+    }
+
+    .caja-admin-dialog-panel {
+      @apply max-w-2xl rounded-2xl p-6;
+      max-height: calc(100dvh - 3rem);
+      padding-bottom: 1.5rem;
+    }
   }
 
   .rc-btn-secondary {

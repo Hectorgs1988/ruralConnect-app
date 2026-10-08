@@ -40,7 +40,10 @@ function makeProduct(overrides: Partial<CajaProduct> = {}): CajaProduct {
     };
 }
 
-function writeRequest(operation: 'create' | 'edit' | 'deactivate' | 'reactivate', role?: 'ADMIN' | 'SOCIO') {
+function writeRequest(
+    operation: 'create' | 'edit' | 'deactivate' | 'reactivate' | 'delete',
+    role?: 'ADMIN' | 'SOCIO',
+) {
     let testRequest;
 
     if (operation === 'create') {
@@ -53,8 +56,10 @@ function writeRequest(operation: 'create' | 'edit' | 'deactivate' | 'reactivate'
             .send({ name: 'Cerveza especial' });
     } else if (operation === 'deactivate') {
         testRequest = request(app).patch('/api/caja/products/cerveza/deactivate');
-    } else {
+    } else if (operation === 'reactivate') {
         testRequest = request(app).patch('/api/caja/products/cerveza/reactivate');
+    } else {
+        testRequest = request(app).delete('/api/caja/products/cerveza');
     }
 
     if (role) {
@@ -260,7 +265,7 @@ describe('GET /api/caja/products', () => {
             vi.clearAllMocks();
         });
 
-        it.each(['create', 'edit', 'deactivate', 'reactivate'] as const)(
+        it.each(['create', 'edit', 'deactivate', 'reactivate', 'delete'] as const)(
             'rejects unauthenticated %s requests',
             async (operation) => {
                 const response = await writeRequest(operation);
@@ -268,10 +273,11 @@ describe('GET /api/caja/products', () => {
                 expect(response.status).toBe(401);
                 expect(mockedCreate).not.toHaveBeenCalled();
                 expect(mockedUpdate).not.toHaveBeenCalled();
+                expect(mockedDelete).not.toHaveBeenCalled();
             },
         );
 
-        it.each(['create', 'edit', 'deactivate', 'reactivate'] as const)(
+        it.each(['create', 'edit', 'deactivate', 'reactivate', 'delete'] as const)(
             'rejects non-admin %s requests',
             async (operation) => {
                 const response = await writeRequest(operation, 'SOCIO');
@@ -279,6 +285,7 @@ describe('GET /api/caja/products', () => {
                 expect(response.status).toBe(403);
                 expect(mockedCreate).not.toHaveBeenCalled();
                 expect(mockedUpdate).not.toHaveBeenCalled();
+                expect(mockedDelete).not.toHaveBeenCalled();
             },
         );
 
@@ -525,13 +532,67 @@ describe('GET /api/caja/products', () => {
             expect(mockedUpdate).not.toHaveBeenCalled();
         });
 
-        it('does not expose a hard-delete endpoint', async () => {
-            const response = await request(app)
-                .delete('/api/caja/products/cerveza')
+        it('allows an ADMIN to permanently delete only the requested product', async () => {
+            const requestedProduct = makeProduct({ id: 'cerveza' });
+            const unrelatedProduct = makeProduct({ id: 'agua', name: 'Agua' });
+            mockedDelete.mockResolvedValue(requestedProduct);
+
+            const response = await writeRequest('delete', 'ADMIN');
+
+            expect(response.status).toBe(204);
+            expect(response.text).toBe('');
+            expect(mockedDelete).toHaveBeenCalledTimes(1);
+            expect(mockedDelete).toHaveBeenCalledWith({
+                where: { id: requestedProduct.id },
+            });
+            expect(mockedCreate).not.toHaveBeenCalled();
+            expect(mockedUpdate).not.toHaveBeenCalled();
+
+            mockedFindMany.mockResolvedValue([unrelatedProduct]);
+
+            const adminListResponse = await request(app)
+                .get('/api/caja/admin/products')
                 .set('Authorization', `Bearer ${makeToken('ADMIN')}`);
+            expect(adminListResponse.status).toBe(200);
+            expect(adminListResponse.body.map((product: { id: string }) => product.id))
+                .toEqual([unrelatedProduct.id]);
+
+            mockedFindMany.mockResolvedValue([unrelatedProduct]);
+
+            const publicCatalogResponse = await request(app).get('/api/caja/products');
+            expect(publicCatalogResponse.status).toBe(200);
+            expect(publicCatalogResponse.body.map((product: { id: string }) => product.id))
+                .toEqual([unrelatedProduct.id]);
+            expect(mockedFindMany).toHaveBeenLastCalledWith({
+                where: { active: true },
+                orderBy: [
+                    { category: 'asc' },
+                    { name: 'asc' },
+                    { id: 'asc' },
+                ],
+                select: {
+                    id: true,
+                    name: true,
+                    category: true,
+                    priceCents: true,
+                    active: true,
+                    createdAt: true,
+                    updatedAt: true,
+                },
+            });
+        });
+
+        it('returns 404 when an ADMIN permanently deletes a missing product', async () => {
+            mockedDelete.mockRejectedValue(Object.assign(new Error('missing'), { code: 'P2025' }));
+
+            const response = await writeRequest('delete', 'ADMIN');
 
             expect(response.status).toBe(404);
-            expect(mockedDelete).not.toHaveBeenCalled();
+            expect(mockedDelete).toHaveBeenCalledWith({
+                where: { id: 'cerveza' },
+            });
+            expect(mockedCreate).not.toHaveBeenCalled();
+            expect(mockedUpdate).not.toHaveBeenCalled();
         });
     });
 });

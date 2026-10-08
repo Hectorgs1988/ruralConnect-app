@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
     createCajaProduct,
+    deleteCajaProduct,
     deactivateCajaProduct,
     listAdminCajaProducts,
     listCajaProducts,
@@ -122,6 +123,27 @@ describe("listCajaProducts", () => {
             mockGetErrorMessage.mockResolvedValue("Producto no encontrado");
             await expect(reactivateCajaProduct("admin-token", product.id))
                 .rejects.toThrow("Producto no encontrado");
+        });
+
+        it("permanently deletes through the ADMIN endpoint without expecting a response body", async () => {
+            mockApiFetch.mockResolvedValue({ ok: true, status: 204 });
+
+            await expect(deleteCajaProduct("admin-token", "id/con segmento")).resolves.toBeUndefined();
+            expect(mockApiFetch).toHaveBeenCalledWith(
+                "/api/caja/products/id%2Fcon%20segmento",
+                {
+                    method: "DELETE",
+                    headers: { Authorization: "Bearer admin-token" },
+                },
+            );
+        });
+
+        it("surfaces permanent-delete API errors including not-found", async () => {
+            mockApiFetch.mockResolvedValue({ ok: false, status: 404 });
+            mockGetErrorMessage.mockResolvedValue("Producto de Caja no encontrado");
+
+            await expect(deleteCajaProduct("admin-token", product.id))
+                .rejects.toThrow("Producto de Caja no encontrado");
         });
     });
 

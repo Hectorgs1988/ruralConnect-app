@@ -129,3 +129,15 @@ cajaRouter.patch('/products/:id/reactivate', requireAuth, requireAdmin, async (r
         next(error);
     }
 });
+
+cajaRouter.delete('/products/:id', requireAuth, requireAdmin, async (req, res, next) => {
+    try {
+        await prisma.cajaProduct.delete({
+            where: { id: req.params.id },
+        });
+        res.status(204).end();
+    } catch (error) {
+        if (handlePrismaWriteError(error, res)) return;
+        next(error);
+    }
+});

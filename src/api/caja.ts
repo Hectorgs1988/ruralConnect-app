@@ -90,3 +90,14 @@ export async function reactivateCajaProduct(
     await assertSuccessfulResponse(response, "Error al reactivar el producto de Caja");
     return (await response.json()) as CajaProduct;
 }
+
+export async function deleteCajaProduct(
+    token: string,
+    id: CajaProduct["id"],
+): Promise<void> {
+    const response = await apiFetch(
+        `/api/caja/products/${encodeURIComponent(id)}`,
+        authenticatedOptions(token, "DELETE"),
+    );
+    await assertSuccessfulResponse(response, "Error al eliminar definitivamente el producto de Caja");
+}
