@@ -150,8 +150,9 @@ complete flow before deployment.
   - Client validation matches backend rules for stable IDs, category, and
     non-negative integer-cent prices; server errors such as validation,
     conflict, not-found, and forbidden responses are shown clearly.
-  - Deactivation uses the soft-deactivation endpoint; the UI exposes no
-    hard-delete action.
+  - Deactivation continues to use the soft-deactivation endpoint. Permanent
+    deletion is a separate ADMIN-only API operation and is never performed
+    through deactivate, edit, or reactivate.
   - The public active-only catalog remains unchanged.
   - If administrators need to view inactive products and the current API
     cannot provide them, the gap is confirmed with the backend owner and any
@@ -259,6 +260,15 @@ complete flow before deployment.
   Rural Connect account, separate backend, or separate identity system.
 - `GET /api/caja/products` is public and returns active products only.
 - Caja administration and all product writes remain authenticated ADMIN-only.
+- Permanent Caja product deletion is an explicit exception to the earlier
+  deactivate-to-preserve-history rule. Since Caja does not persist orders,
+  tickets, or payment history, an ADMIN may permanently remove products
+  created by mistake or obsolete products the owner explicitly wants removed.
+  This is implemented separately as `DELETE /api/caja/products/:id`, returns
+  `204` on success and `404` when the product does not exist, and deletes only
+  the selected `CajaProduct`. It does not change deactivate/reactivate
+  semantics or affect other tables. If a UI exposes permanent deletion, it
+  must require explicit confirmation that the action cannot be undone.
 - Rural Connect private routes remain protected by their existing guards.
 - Authenticated Rural Connect users can enter the same `/caja` implementation
   without a second login.

@@ -12,6 +12,7 @@ const mockCajaApi = vi.hoisted(() => ({
     updateCajaProduct: vi.fn(),
     deactivateCajaProduct: vi.fn(),
     reactivateCajaProduct: vi.fn(),
+    deleteCajaProduct: vi.fn(),
 }));
 const mockAuth = vi.hoisted(() => ({
     state: {
@@ -73,6 +74,50 @@ describe("Caja product administration UI", () => {
         expect(mockCajaApi.listAdminCajaProducts).toHaveBeenCalledWith("rural-token");
     });
 
+    it("uses responsive product cards without a horizontally scrolling table", async () => {
+        renderAdminPage();
+
+        const card = await screen.findByRole("article");
+        expect(card).toHaveTextContent("Cerveza");
+        expect(card).toHaveTextContent("Bebida");
+        expect(card).toHaveTextContent(/1,50\s*€/);
+        expect(card).toHaveTextContent("Activo");
+        expect(screen.queryByRole("table")).not.toBeInTheDocument();
+        expect(document.querySelector(".overflow-x-auto")).not.toBeInTheDocument();
+    });
+
+    it("filters products by name and active status on the client", async () => {
+        const inactiveProduct = {
+            ...product,
+            id: "agua",
+            name: "Agua con gas",
+            category: "COMIDA" as const,
+            active: false,
+        };
+        mockCajaApi.listAdminCajaProducts.mockResolvedValue([product, inactiveProduct]);
+        renderAdminPage();
+
+        expect(await screen.findAllByRole("article")).toHaveLength(2);
+
+        fireEvent.change(screen.getByRole("searchbox", { name: "Buscar por nombre" }), {
+            target: { value: "AGUA" },
+        });
+        expect(screen.getAllByRole("article")).toHaveLength(1);
+        expect(screen.getByText("Agua con gas")).toBeInTheDocument();
+
+        fireEvent.change(screen.getByLabelText("Estado"), { target: { value: "active" } });
+        expect(screen.getByText(/No hay productos que coincidan/)).toBeInTheDocument();
+
+        fireEvent.change(screen.getByLabelText("Estado"), { target: { value: "inactive" } });
+        expect(screen.getByRole("article")).toHaveTextContent("Agua con gas");
+
+        fireEvent.change(screen.getByRole("searchbox", { name: "Buscar por nombre" }), {
+            target: { value: "" },
+        });
+        fireEvent.change(screen.getByLabelText("Estado"), { target: { value: "all" } });
+        expect(screen.getAllByRole("article")).toHaveLength(2);
+    });
+
     it("shows active and inactive products with reactivation available only for inactive products", async () => {
         const inactiveProduct = { ...product, id: "inactiva", name: "Producto inactivo", active: false };
         mockCajaApi.listAdminCajaProducts.mockResolvedValue([product, inactiveProduct]);
@@ -98,8 +143,11 @@ describe("Caja product administration UI", () => {
     it("opens a creation form and validates required fields", async () => {
         renderAdminPage();
 
-        fireEvent.click(await screen.findByRole("button", { name: "Crear producto" }));
+        const createButton = await screen.findByRole("button", { name: "Crear producto" });
+        fireEvent.click(createButton);
         expect(screen.getByRole("heading", { name: "Crear producto" })).toBeInTheDocument();
+        expect(screen.getByRole("dialog")).toHaveAttribute("aria-modal", "true");
+        expect(screen.getByLabelText("ID")).toHaveFocus();
         fireEvent.click(screen.getByRole("button", { name: "Guardar producto" }));
 
         expect(screen.getByText("El ID es obligatorio.")).toBeInTheDocument();
@@ -111,14 +159,44 @@ describe("Caja product administration UI", () => {
     it("opens the edit form with existing values and keeps the product ID read-only", async () => {
         renderAdminPage();
 
-        fireEvent.click(await screen.findByRole("button", { name: "Editar" }));
+        const editButton = await screen.findByRole("button", { name: "Editar" });
+        fireEvent.click(editButton);
 
         expect(screen.getByRole("heading", { name: "Editar Cerveza" })).toBeInTheDocument();
+        expect(screen.getByRole("dialog")).toHaveAttribute("aria-modal", "true");
+        expect(screen.getByLabelText("ID")).toHaveFocus();
         expect(screen.getByLabelText("ID")).toHaveValue("cerveza");
         expect(screen.getByLabelText("ID")).toHaveAttribute("readonly");
         expect(screen.getByLabelText("Nombre")).toHaveValue("Cerveza");
         expect(screen.getByLabelText("Categoría")).toHaveValue("BEBIDA");
         expect(screen.getByLabelText("Precio (EUR)")).toHaveValue("1.50");
+    });
+
+    it("closes the form on Escape and restores focus to its trigger", async () => {
+        renderAdminPage();
+        const createButton = await screen.findByRole("button", { name: "Crear producto" });
+        fireEvent.click(createButton);
+        const appRoot = screen.getByRole("main").closest(".rc-page")?.parentElement;
+        expect(appRoot).toHaveProperty("inert", true);
+
+        fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        expect(appRoot).not.toHaveProperty("inert", true);
+        expect(createButton).toHaveFocus();
+    });
+
+    it("cancels deactivation without mutating and restores focus to the action", async () => {
+        renderAdminPage();
+        const deactivateButton = await screen.findByRole("button", { name: "Desactivar" });
+        fireEvent.click(deactivateButton);
+
+        expect(screen.getByRole("heading", { name: "Desactivar «Cerveza»" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Cancelar" })).toHaveFocus();
+        fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+
+        expect(mockCajaApi.deactivateCajaProduct).not.toHaveBeenCalled();
+        expect(deactivateButton).toHaveFocus();
     });
 
     it("rejects an invalid category and a negative price", () => {
@@ -319,7 +397,7 @@ describe("Caja product administration UI", () => {
         renderAdminPage();
 
         fireEvent.click(await screen.findByRole("button", { name: "Reactivar" }));
-        expect(screen.getByRole("heading", { name: "Confirmar reactivación: Cerveza" }))
+        expect(screen.getByRole("heading", { name: "Reactivar «Cerveza»" }))
             .toBeInTheDocument();
         expect(mockCajaApi.reactivateCajaProduct).not.toHaveBeenCalled();
 
@@ -340,9 +418,20 @@ describe("Caja product administration UI", () => {
         fireEvent.click(await screen.findByRole("button", { name: "Reactivar" }));
         fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
 
-        expect(screen.queryByRole("heading", { name: "Confirmar reactivación: Cerveza" }))
+        expect(screen.queryByRole("heading", { name: "Reactivar «Cerveza»" }))
             .not.toBeInTheDocument();
         expect(mockCajaApi.reactivateCajaProduct).not.toHaveBeenCalled();
+    });
+
+    it("closes reactivation confirmation on Escape without mutating", async () => {
+        mockCajaApi.listAdminCajaProducts.mockResolvedValue([{ ...product, active: false }]);
+        renderAdminPage();
+
+        fireEvent.click(await screen.findByRole("button", { name: "Reactivar" }));
+        fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+
+        expect(mockCajaApi.reactivateCajaProduct).not.toHaveBeenCalled();
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
 
     it("shows reactivation API errors without refreshing", async () => {
@@ -403,13 +492,67 @@ describe("Caja product administration UI", () => {
         expect(await screen.findByRole("status")).toHaveTextContent("Producto nuevo creado.");
     });
 
-    it("offers soft-deactivation but no hard-delete action or separate credentials", async () => {
+    it("requires a second confirmation before permanent deletion and cancels without a request", async () => {
         renderAdminPage();
 
         expect(await screen.findByRole("button", { name: "Desactivar" })).toBeInTheDocument();
-        expect(screen.queryByRole("button", { name: /eliminar|borrar/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Eliminar definitivamente" }))
+            .not.toBeInTheDocument();
         expect(screen.queryByLabelText(/contraseña|credenciales/i)).not.toBeInTheDocument();
 
-        expect(mockCajaApi.deactivateCajaProduct).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+        fireEvent.click(screen.getByRole("button", { name: "Eliminar definitivamente" }));
+
+        expect(screen.getByRole("heading", {
+            name: "Eliminar definitivamente «Cerveza»",
+        })).toBeInTheDocument();
+        expect(screen.getByText("Esta acción no se puede deshacer.")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Cancelar" })).toHaveFocus();
+        expect(mockCajaApi.deleteCajaProduct).not.toHaveBeenCalled();
+
+        fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+
+        expect(mockCajaApi.deleteCajaProduct).not.toHaveBeenCalled();
+        expect(screen.getByRole("heading", { name: "Editar Cerveza" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Eliminar definitivamente" })).toHaveFocus();
+    });
+
+    it("deletes only after final confirmation and removes the product with success feedback", async () => {
+        mockCajaApi.deleteCajaProduct.mockResolvedValue(undefined);
+        renderAdminPage();
+        fireEvent.click(await screen.findByRole("button", { name: "Editar" }));
+        fireEvent.click(screen.getByRole("button", { name: "Eliminar definitivamente" }));
+
+        fireEvent.click(screen.getByRole("button", { name: "Eliminar definitivamente" }));
+
+        expect(mockCajaApi.deleteCajaProduct).toHaveBeenCalledWith("rural-token", "cerveza");
+        expect(await screen.findByRole("status"))
+            .toHaveTextContent("Producto Cerveza eliminado definitivamente.");
+        expect(screen.queryByRole("article")).not.toBeInTheDocument();
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("keeps the product visible and surfaces 404 when permanent deletion fails", async () => {
+        mockCajaApi.deleteCajaProduct.mockRejectedValue(new Error("Producto de Caja no encontrado"));
+        renderAdminPage();
+        fireEvent.click(await screen.findByRole("button", { name: "Editar" }));
+        fireEvent.click(screen.getByRole("button", { name: "Eliminar definitivamente" }));
+        fireEvent.click(screen.getByRole("button", { name: "Eliminar definitivamente" }));
+
+        expect(await screen.findByRole("alert"))
+            .toHaveTextContent("Producto de Caja no encontrado");
+        expect(screen.getByRole("article")).toHaveTextContent("Cerveza");
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
+
+    it("keeps the form state and focus context when the delete action is cancelled", async () => {
+        renderAdminPage();
+        fireEvent.click(await screen.findByRole("button", { name: "Editar" }));
+        fireEvent.change(screen.getByLabelText("Nombre"), { target: { value: "Cerveza editada" } });
+        fireEvent.click(screen.getByRole("button", { name: "Eliminar definitivamente" }));
+        fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+
+        expect(screen.getByLabelText("Nombre")).toHaveValue("Cerveza editada");
+        expect(screen.getByRole("button", { name: "Eliminar definitivamente" })).toHaveFocus();
     });
 });

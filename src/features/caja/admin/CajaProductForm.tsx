@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import type { CajaProduct } from "@/features/caja/types/CajaProduct";
 import {
     priceCentsToEurosInput,
@@ -13,6 +13,11 @@ interface CajaProductFormProps {
     isSubmitting: boolean;
     onCancel: () => void;
     onValidDraft: (draft: CajaProductDraft) => Promise<void>;
+    onRequestDelete?: () => void;
+    isDeleteConfirming?: boolean;
+    isDeleting?: boolean;
+    onCancelDeleteConfirmation?: () => void;
+    onConfirmDelete?: () => void;
 }
 
 function initialValues(product?: CajaProduct): CajaProductFormValues {
@@ -29,10 +34,21 @@ export default function CajaProductForm({
     isSubmitting,
     onCancel,
     onValidDraft,
+    onRequestDelete,
+    isDeleteConfirming = false,
+    isDeleting = false,
+    onCancelDeleteConfirmation,
+    onConfirmDelete,
 }: CajaProductFormProps) {
     const mode = product ? "edit" : "create";
     const [values, setValues] = useState(() => initialValues(product));
     const [errors, setErrors] = useState<CajaProductFormErrors>({});
+    const deleteActionRef = useRef<HTMLButtonElement>(null);
+    const deleteCancelRef = useRef<HTMLButtonElement>(null);
+
+    useLayoutEffect(() => {
+        (isDeleteConfirming ? deleteCancelRef.current : deleteActionRef.current)?.focus();
+    }, [isDeleteConfirming]);
 
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -50,14 +66,53 @@ export default function CajaProductForm({
         setErrors((current) => ({ ...current, [field]: undefined }));
     }
 
+    if (isDeleteConfirming && product) {
+        return (
+            <div className="space-y-4">
+                <div>
+                    <h2 id="caja-product-form-title" className="text-xl font-semibold">
+                        Eliminar definitivamente «{product.name}»
+                    </h2>
+                    <p className="mt-2 font-medium text-error">
+                        Esta acción no se puede deshacer.
+                    </p>
+                    <p className="mt-2 text-sm text-muted">
+                        El producto se eliminará definitivamente de Caja.
+                    </p>
+                </div>
+                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                    <button
+                        ref={deleteCancelRef}
+                        type="button"
+                        className="rc-btn-secondary min-h-11"
+                        disabled={isDeleting}
+                        onClick={onCancelDeleteConfirmation}
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="button"
+                        className="caja-admin-danger-button min-h-11"
+                        disabled={isDeleting}
+                        onClick={onConfirmDelete}
+                    >
+                        {isDeleting ? "Eliminando..." : "Eliminar definitivamente"}
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <section className="rc-card space-y-4 p-5" aria-labelledby="caja-product-form-title">
-            <h2 id="caja-product-form-title" className="text-xl font-semibold">
-                {product ? `Editar ${product.name}` : "Crear producto"}
-            </h2>
-            <p className="text-sm text-muted">
-                Gestiona los datos del producto Caja.
-            </p>
+        <div className="space-y-4">
+            <div>
+                <h2 id="caja-product-form-title" className="text-xl font-semibold">
+                    {product ? `Editar ${product.name}` : "Crear producto"}
+                </h2>
+                <p className="mt-1 text-sm text-muted">
+                    Gestiona los datos del producto Caja.
+                </p>
+            </div>
             <form className="grid gap-4 sm:grid-cols-2" onSubmit={submit} noValidate>
                 <label className="space-y-1">
                     <span>ID</span>
@@ -114,22 +169,44 @@ export default function CajaProductForm({
                         <span id="caja-product-price-error" role="alert">{errors.priceEuros}</span>
                     )}
                 </label>
-                <div className="flex flex-wrap gap-2 sm:col-span-2">
-                    <button type="submit" className="rc-btn-primary" disabled={isSubmitting}>
-                        {isSubmitting
-                            ? "Guardando..."
-                            : mode === "create" ? "Guardar producto" : "Guardar cambios"}
-                    </button>
-                    <button
-                        type="button"
-                        className="rc-btn-secondary"
-                        onClick={onCancel}
-                        disabled={isSubmitting}
-                    >
-                        Cancelar
-                    </button>
+                <div className="flex flex-col gap-3 border-t border-borderSoft pt-4 sm:col-span-2">
+                    <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                        <button
+                            type="button"
+                            className="rc-btn-secondary min-h-11"
+                            onClick={onCancel}
+                            disabled={isSubmitting}
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            className="rc-btn-primary min-h-11"
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting
+                                ? "Guardando..."
+                                : mode === "create" ? "Guardar producto" : "Guardar cambios"}
+                        </button>
+                    </div>
+                    {mode === "edit" && onRequestDelete && (
+                        <div className="border-t border-borderSoft pt-3">
+                            <p className="mb-2 text-xs text-muted">
+                                Acción irreversible, separada de la edición habitual.
+                            </p>
+                            <button
+                                ref={deleteActionRef}
+                                type="button"
+                                className="caja-admin-danger-link min-h-11"
+                                onClick={onRequestDelete}
+                                disabled={isSubmitting || isDeleting}
+                            >
+                                Eliminar definitivamente
+                            </button>
+                        </div>
+                    )}
                 </div>
             </form>
-        </section>
+        </div>
     );
 }
