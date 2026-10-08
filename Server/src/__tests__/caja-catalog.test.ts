@@ -40,7 +40,7 @@ function makeProduct(overrides: Partial<CajaProduct> = {}): CajaProduct {
     };
 }
 
-function writeRequest(operation: 'create' | 'edit' | 'deactivate', role?: 'ADMIN' | 'SOCIO') {
+function writeRequest(operation: 'create' | 'edit' | 'deactivate' | 'reactivate', role?: 'ADMIN' | 'SOCIO') {
     let testRequest;
 
     if (operation === 'create') {
@@ -51,8 +51,10 @@ function writeRequest(operation: 'create' | 'edit' | 'deactivate', role?: 'ADMIN
         testRequest = request(app)
             .patch('/api/caja/products/cerveza')
             .send({ name: 'Cerveza especial' });
-    } else {
+    } else if (operation === 'deactivate') {
         testRequest = request(app).patch('/api/caja/products/cerveza/deactivate');
+    } else {
+        testRequest = request(app).patch('/api/caja/products/cerveza/reactivate');
     }
 
     if (role) {
@@ -264,7 +266,7 @@ describe('GET /api/caja/products', () => {
             vi.clearAllMocks();
         });
 
-        it.each(['create', 'edit', 'deactivate'] as const)(
+        it.each(['create', 'edit', 'deactivate', 'reactivate'] as const)(
             'rejects unauthenticated %s requests',
             async (operation) => {
                 const response = await writeRequest(operation);
@@ -275,7 +277,7 @@ describe('GET /api/caja/products', () => {
             },
         );
 
-        it.each(['create', 'edit', 'deactivate'] as const)(
+        it.each(['create', 'edit', 'deactivate', 'reactivate'] as const)(
             'rejects non-admin %s requests',
             async (operation) => {
                 const response = await writeRequest(operation, 'SOCIO');
@@ -459,6 +461,35 @@ describe('GET /api/caja/products', () => {
             mockedUpdate.mockRejectedValue(Object.assign(new Error('missing'), { code: 'P2025' }));
 
             const response = await writeRequest('deactivate', 'ADMIN');
+
+            expect(response.status).toBe(404);
+        });
+
+        it('allows an ADMIN to reactivate a product without changing its other fields or ID', async () => {
+            const inactiveProduct = makeProduct({ active: false });
+            mockedUpdate.mockResolvedValue({ ...inactiveProduct, active: true });
+
+            const response = await writeRequest('reactivate', 'ADMIN');
+
+            expect(response.status).toBe(200);
+            expect(response.body).toMatchObject({
+                id: inactiveProduct.id,
+                name: inactiveProduct.name,
+                category: inactiveProduct.category,
+                priceCents: inactiveProduct.priceCents,
+                active: true,
+            });
+            expect(mockedUpdate).toHaveBeenCalledWith({
+                where: { id: 'cerveza' },
+                data: { active: true },
+            });
+            expect(mockedDelete).not.toHaveBeenCalled();
+        });
+
+        it('returns 404 when an ADMIN reactivates a missing product', async () => {
+            mockedUpdate.mockRejectedValue(Object.assign(new Error('missing'), { code: 'P2025' }));
+
+            const response = await writeRequest('reactivate', 'ADMIN');
 
             expect(response.status).toBe(404);
         });

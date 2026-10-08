@@ -79,3 +79,15 @@ export async function deactivateCajaProduct(
     await assertSuccessfulResponse(response, "Error al desactivar el producto de Caja");
     return (await response.json()) as CajaProduct;
 }
+
+export async function reactivateCajaProduct(
+    token: string,
+    id: CajaProduct["id"],
+): Promise<CajaProduct> {
+    const response = await apiFetch(
+        `/api/caja/products/${encodeURIComponent(id)}/reactivate`,
+        authenticatedOptions(token, "PATCH"),
+    );
+    await assertSuccessfulResponse(response, "Error al reactivar el producto de Caja");
+    return (await response.json()) as CajaProduct;
+}

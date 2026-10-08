@@ -4,6 +4,7 @@ import {
     deactivateCajaProduct,
     listAdminCajaProducts,
     listCajaProducts,
+    reactivateCajaProduct,
     updateCajaProduct,
 } from "../caja";
 import type { CajaProduct } from "@/features/caja/types/CajaProduct";
@@ -102,6 +103,25 @@ describe("listCajaProducts", () => {
             mockApiFetch.mockResolvedValueOnce({ ok: false, status: 403 });
             mockGetErrorMessage.mockResolvedValue("No autorizado");
             await expect(listAdminCajaProducts("admin-token")).rejects.toThrow("No autorizado");
+        });
+
+        it("uses the authenticated reactivation endpoint and surfaces API errors", async () => {
+            mockApiFetch.mockResolvedValueOnce({
+                ok: true,
+                json: vi.fn().mockResolvedValue({ ...product, active: true }),
+            });
+
+            await expect(reactivateCajaProduct("admin-token", product.id))
+                .resolves.toMatchObject({ id: product.id, active: true });
+            expect(mockApiFetch).toHaveBeenCalledWith(
+                "/api/caja/products/refresco/reactivate",
+                { method: "PATCH", headers: { Authorization: "Bearer admin-token" } },
+            );
+
+            mockApiFetch.mockResolvedValueOnce({ ok: false, status: 404 });
+            mockGetErrorMessage.mockResolvedValue("Producto no encontrado");
+            await expect(reactivateCajaProduct("admin-token", product.id))
+                .rejects.toThrow("Producto no encontrado");
         });
     });
 
