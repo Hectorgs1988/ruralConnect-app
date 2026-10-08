@@ -1,6 +1,52 @@
 import { expect, signIn, test } from "./fixtures/caja";
 import { E2E_API_URL } from "./config";
 
+test("mobile sticky checkout can clear the whole ticket after confirmation", async ({ page, cajaApi }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/caja");
+
+  const clearButton = page.getByRole("button", { name: "Vaciar" });
+  const cobrarButton = page.getByRole("button", { name: "Cobrar" });
+  await expect(clearButton).toHaveCount(0);
+  await expect(cobrarButton).toBeDisabled();
+
+  const water = page.getByRole("button", { name: "Añadir Agua E2E a la comanda" });
+  await water.click();
+  await water.click();
+  await page.getByRole("button", { name: "Añadir Pincho E2E a la comanda" }).click();
+  await expect(page.getByLabel("Número de artículos")).toHaveText("3 artículos");
+  await expect(clearButton).toBeVisible();
+  await expect(cobrarButton).toBeEnabled();
+  await clearButton.click();
+
+  const dialog = page.getByRole("alertdialog", { name: "¿Vaciar la comanda?" });
+  await expect(dialog).toContainText("Se eliminarán los 3 artículos seleccionados.");
+  await expect(dialog.getByRole("button", { name: "Cancelar" })).toBeFocused();
+  const dialogBox = await dialog.boundingBox();
+  const clearControl = await dialog.getByRole("button", { name: "Vaciar" }).boundingBox();
+  expect(dialogBox?.y).toBeGreaterThanOrEqual(0);
+  expect((dialogBox?.y ?? 1000) + (dialogBox?.height ?? 0)).toBeLessThanOrEqual(844);
+  expect(clearControl?.height).toBeGreaterThanOrEqual(44);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth))
+    .toBe(true);
+
+  await dialog.press("Escape");
+  await expect(page.getByRole("alertdialog")).toHaveCount(0);
+  await expect(clearButton).toBeFocused();
+  await expect(page.getByLabel("Número de artículos")).toHaveText("3 artículos");
+  expect(cajaApi.handledRequests.every((request) => request === "GET /api/caja/products")).toBe(true);
+
+  await clearButton.click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Vaciar" }).click();
+  await expect(page.getByLabel("Número de artículos")).toHaveText("0 artículos");
+  await expect(page.getByLabel("Total de la comanda")).toHaveText("0,00 €");
+  await expect(page.getByRole("button", { name: "Añadir Agua E2E a la comanda" })).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByRole("button", { name: "Añadir Pincho E2E a la comanda" })).toHaveAttribute("aria-pressed", "false");
+  await expect(clearButton).toHaveCount(0);
+  await expect(cobrarButton).toBeDisabled();
+  expect(cajaApi.handledRequests.every((request) => request === "GET /api/caja/products")).toBe(true);
+});
+
 test("Caja catalog and checkout review support quantity changes, removal, totals and clear", async ({ page }) => {
   await page.goto("/caja");
 

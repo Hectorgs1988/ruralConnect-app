@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import appRouter from "@/routes";
 import type { CajaProduct } from "@/features/caja/types/CajaProduct";
@@ -232,6 +232,63 @@ describe("Caja product catalog", () => {
         expect(screen.getByLabelText("Número de artículos")).toHaveTextContent("1 artículo");
         expect(screen.getByLabelText("Total de la comanda")).toHaveTextContent(/1,00\s*€/);
         expect(screen.getByRole("button", { name: "Cobrar" })).toHaveFocus();
+    });
+
+    it("shows Vaciar only for a non-empty ticket and cancel preserves the ticket", async () => {
+        mockListCajaProducts.mockResolvedValue([
+            makeProduct("agua-id", "Agua", "BEBIDA", 100),
+            makeProduct("pincho-id", "Pincho", "COMIDA", 250),
+        ]);
+
+        renderCaja();
+
+        const cobrar = await screen.findByRole("button", { name: "Cobrar" });
+        expect(cobrar).toBeDisabled();
+        expect(screen.queryByRole("button", { name: "Vaciar" })).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole("button", { name: "Añadir Agua a la comanda" }));
+        fireEvent.click(screen.getByRole("button", { name: "Añadir Pincho a la comanda" }));
+        fireEvent.click(screen.getByRole("button", { name: "Vaciar" }));
+
+        const dialog = screen.getByRole("alertdialog", { name: "¿Vaciar la comanda?" });
+        expect(dialog).toHaveTextContent("Se eliminarán los 2 artículos seleccionados.");
+        expect(within(dialog).getByRole("button", { name: "Cancelar" })).toHaveFocus();
+        fireEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+
+        expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+        expect(screen.getByLabelText("Número de artículos")).toHaveTextContent("2 artículos");
+        expect(screen.getByLabelText("Total de la comanda")).toHaveTextContent(/3,50\s*€/);
+        expect(screen.getByLabelText("Cantidad seleccionada de Agua")).toHaveTextContent("×1");
+        expect(screen.getByLabelText("Cantidad seleccionada de Pincho")).toHaveTextContent("×1");
+        expect(cobrar).toBeEnabled();
+        expect(mockListCajaProducts).toHaveBeenCalledTimes(1);
+    });
+
+    it("confirms clearing all items locally and resets cards, count, total, and Cobrar", async () => {
+        mockListCajaProducts.mockResolvedValue([
+            makeProduct("agua-id", "Agua", "BEBIDA", 100),
+            makeProduct("pincho-id", "Pincho", "COMIDA", 250),
+        ]);
+
+        renderCaja();
+        const waterCard = await screen.findByRole("button", { name: "Añadir Agua a la comanda" });
+        fireEvent.click(waterCard);
+        fireEvent.click(waterCard);
+        fireEvent.click(screen.getByRole("button", { name: "Añadir Pincho a la comanda" }));
+        fireEvent.click(screen.getByRole("button", { name: "Vaciar" }));
+
+        const dialog = screen.getByRole("alertdialog", { name: "¿Vaciar la comanda?" });
+        expect(dialog).toHaveTextContent("Se eliminarán los 3 artículos seleccionados.");
+        fireEvent.click(within(dialog).getByRole("button", { name: "Vaciar" }));
+
+        expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+        expect(screen.getByLabelText("Número de artículos")).toHaveTextContent("0 artículos");
+        expect(screen.getByLabelText("Total de la comanda")).toHaveTextContent(/0,00\s*€/);
+        expect(screen.getByRole("button", { name: "Añadir Agua a la comanda" })).toHaveAttribute("aria-pressed", "false");
+        expect(screen.getByRole("button", { name: "Añadir Pincho a la comanda" })).toHaveAttribute("aria-pressed", "false");
+        expect(screen.queryByRole("button", { name: "Vaciar" })).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Cobrar" })).toBeDisabled();
+        expect(mockListCajaProducts).toHaveBeenCalledTimes(1);
     });
 
     it("clears the ticket locally from checkout review", async () => {

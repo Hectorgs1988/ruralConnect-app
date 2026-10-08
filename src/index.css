@@ -220,6 +220,11 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 
+  .caja-clear-dialog {
+    @apply w-full rounded-t-2xl bg-surface p-5 text-dark shadow-xl;
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+  }
+
   .caja-checkout-content {
     min-height: 0;
     flex: 1 1 auto;
@@ -249,6 +254,11 @@
       @apply max-w-2xl rounded-2xl;
       max-height: calc(100dvh - 2rem);
       padding-bottom: 0;
+    }
+
+    .caja-clear-dialog {
+      @apply max-w-md rounded-2xl;
+      padding-bottom: 1.25rem;
     }
   }
 }

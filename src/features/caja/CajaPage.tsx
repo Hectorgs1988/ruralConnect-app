@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState, type KeyboardEvent } from "react";
 import { listCajaProducts } from "@/api/caja";
 import type { CajaProduct } from "@/features/caja/types/CajaProduct";
 import CajaCheckoutPanel from "@/features/caja/components/CajaCheckoutPanel";
@@ -30,13 +30,21 @@ export default function CajaPage() {
     const [refreshCatalog, setRefreshCatalog] = useState(0);
     const [completionMessage, setCompletionMessage] = useState<string | null>(null);
     const [checkoutOpen, setCheckoutOpen] = useState(false);
+    const [clearConfirmationOpen, setClearConfirmationOpen] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<"cash" | CajaVoucherType | null>(null);
     const [voucherType, setVoucherType] = useState<CajaVoucherType>("24");
     const [cashInput, setCashInput] = useState("");
     const [isCompleting, setIsCompleting] = useState(false);
     const completionInProgress = useRef(false);
     const checkoutTrigger = useRef<HTMLButtonElement>(null);
+    const clearTrigger = useRef<HTMLButtonElement>(null);
+    const clearCancelButton = useRef<HTMLButtonElement>(null);
+    const catalogMain = useRef<HTMLElement>(null);
     const returnFocusToCheckout = useCallback(() => checkoutTrigger.current, []);
+
+    useEffect(() => {
+        if (clearConfirmationOpen) clearCancelButton.current?.focus();
+    }, [clearConfirmationOpen]);
 
     useEffect(() => {
         let isMounted = true;
@@ -129,6 +137,35 @@ export default function CajaPage() {
         resetCheckoutState();
     }
 
+    function cancelClearConfirmation() {
+        setClearConfirmationOpen(false);
+        requestAnimationFrame(() => clearTrigger.current?.focus());
+    }
+
+    function confirmClearTicket() {
+        dispatchTicket({ type: "clear" });
+        setClearConfirmationOpen(false);
+        requestAnimationFrame(() => catalogMain.current?.focus());
+    }
+
+    function trapClearDialogFocus(event: KeyboardEvent<HTMLDivElement>) {
+        if (event.key === "Escape") {
+            event.preventDefault();
+            cancelClearConfirmation();
+            return;
+        }
+        if (event.key !== "Tab") return;
+        const first = clearCancelButton.current;
+        const last = event.currentTarget.querySelector<HTMLButtonElement>("[data-clear-confirm]");
+        if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first?.focus();
+        }
+    }
+
     function completeTicket() {
         if (completionInProgress.current || ticketLines.length === 0 || paymentMethod === null) return;
         if (paymentMethod === "cash" && (cashReceivedCents === null || cashReceivedCents < ticketTotalCents)) return;
@@ -146,7 +183,7 @@ export default function CajaPage() {
 
     return (
         <div className="rc-page">
-            <header className="w-full border-b border-borderSoft bg-surface" aria-hidden={checkoutOpen} inert={checkoutOpen}>
+            <header className="w-full border-b border-borderSoft bg-surface" aria-hidden={checkoutOpen || clearConfirmationOpen} inert={checkoutOpen || clearConfirmationOpen}>
                 <div className="rc-shell flex h-14 items-center justify-between gap-3">
                     <span className="text-base font-bold text-dark">Caja Susinos</span>
                     <button
@@ -161,9 +198,11 @@ export default function CajaPage() {
                 </div>
             </header>
             <main
+                ref={catalogMain}
                 className="rc-shell flex-1 space-y-4 pb-32 pt-4 sm:pt-6"
-                aria-hidden={checkoutOpen}
-                inert={checkoutOpen}
+                aria-hidden={checkoutOpen || clearConfirmationOpen}
+                inert={checkoutOpen || clearConfirmationOpen}
+                tabIndex={-1}
             >
                 <h1 className="sr-only">Caja Susinos</h1>
                 {completionMessage && <p role="status" className="rounded-xl bg-primarySoft p-3">{completionMessage}</p>}
@@ -257,7 +296,7 @@ export default function CajaPage() {
                     </div>
                 )}
             </main>
-            <footer className="caja-sticky-checkout" aria-hidden={checkoutOpen} inert={checkoutOpen}>
+            <footer className="caja-sticky-checkout" aria-hidden={checkoutOpen || clearConfirmationOpen} inert={checkoutOpen || clearConfirmationOpen}>
                 <div className="rc-shell flex items-center justify-between gap-3 py-2">
                     <div className="min-w-0">
                         <p aria-label="Número de artículos" className="text-xs text-muted">
@@ -267,17 +306,65 @@ export default function CajaPage() {
                             {priceFormatter.format(ticketTotalCents / 100)}
                         </p>
                     </div>
-                    <button
-                        ref={checkoutTrigger}
-                        type="button"
-                        className="rc-btn-primary min-h-12 min-w-32 px-6 text-base"
-                        disabled={ticketItemCount === 0}
-                        onClick={openCheckout}
-                    >
-                        Cobrar
-                    </button>
+                    <div className="flex shrink-0 items-center gap-2">
+                        {ticketItemCount > 0 && (
+                            <button
+                                ref={clearTrigger}
+                                type="button"
+                                className="rc-btn-secondary min-h-12 px-4 text-sm"
+                                onClick={() => setClearConfirmationOpen(true)}
+                            >
+                                Vaciar
+                            </button>
+                        )}
+                        <button
+                            ref={checkoutTrigger}
+                            type="button"
+                            className="rc-btn-primary min-h-12 min-w-32 px-6 text-base"
+                            disabled={ticketItemCount === 0}
+                            onClick={openCheckout}
+                        >
+                            Cobrar
+                        </button>
+                    </div>
                 </div>
             </footer>
+            {clearConfirmationOpen && (
+                <div className="caja-checkout-overlay">
+                    <div
+                        className="caja-clear-dialog"
+                        role="alertdialog"
+                        aria-modal="true"
+                        aria-labelledby="caja-clear-title"
+                        aria-describedby="caja-clear-description"
+                        tabIndex={-1}
+                        onKeyDown={trapClearDialogFocus}
+                    >
+                        <h2 id="caja-clear-title" className="text-xl font-semibold">¿Vaciar la comanda?</h2>
+                        <p id="caja-clear-description" className="mt-2 text-sm text-muted">
+                            Se eliminarán los {ticketItemCount} artículos seleccionados.
+                        </p>
+                        <div className="mt-6 grid grid-cols-2 gap-3">
+                            <button
+                                ref={clearCancelButton}
+                                type="button"
+                                className="rc-btn-secondary min-h-12"
+                                onClick={cancelClearConfirmation}
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="button"
+                                className="rc-btn-primary min-h-12"
+                                data-clear-confirm
+                                onClick={confirmClearTicket}
+                            >
+                                Vaciar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             {checkoutOpen && (
                 <CajaCheckoutPanel
                     lines={ticketLines}
