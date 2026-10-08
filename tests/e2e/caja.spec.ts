@@ -75,7 +75,10 @@ test("mobile sticky checkout supports cash and voucher completion without paymen
 
   await page.getByRole("button", { name: "Cobrar" }).click();
   await page.getByRole("button", { name: "Efectivo" }).click();
-  await page.getByLabel("Otro importe").fill("3,00");
+  await page.getByRole("button", { name: "Exacto" }).click();
+  await expect(page.getByLabel("Importe recibido")).toHaveValue("2,50");
+  await expect(page.getByLabel("Cambio")).toHaveText("0,00 €");
+  await page.getByLabel("Importe recibido").fill("3,00");
   await expect(page.getByLabel("Cambio")).toHaveText("0,50 €");
   await page.getByRole("button", { name: "Confirmar ticket" }).click();
   await expect(page.getByRole("status")).toHaveText("Ticket completado");
@@ -87,6 +90,33 @@ test("mobile sticky checkout supports cash and voucher completion without paymen
   await page.getByRole("button", { name: "Confirmar ticket" }).click();
   await expect(page.getByLabel("Número de artículos")).toHaveText("0 artículos");
   expect(prohibitedApiRequests).toEqual([]);
+});
+
+test("mobile product cards keep their dimensions as selection controls appear", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/caja");
+
+  const shortCard = page.locator(".caja-product-card").filter({
+    has: page.getByRole("button", { name: "Añadir Cerveza E2E a la comanda" }),
+  });
+  const longName = "Bocadillo especial de la casa con ingredientes variados";
+  const longCard = page.locator(".caja-product-card").filter({
+    has: page.getByRole("button", { name: `Añadir ${longName} a la comanda` }),
+  });
+  const shortCardBefore = await shortCard.boundingBox();
+  const longCardBefore = await longCard.boundingBox();
+  expect(shortCardBefore).not.toBeNull();
+  expect(longCardBefore).not.toBeNull();
+  expect(longCardBefore?.height).toBe(shortCardBefore?.height);
+
+  await page.getByRole("button", { name: `Añadir ${longName} a la comanda` }).click();
+
+  const longCardAfter = await longCard.boundingBox();
+  expect(longCardAfter?.height).toBe(longCardBefore?.height);
+  await expect(page.getByLabel(`Cantidad seleccionada de ${longName}`)).toHaveText("×1");
+  await page.getByRole("button", { name: `Restar una unidad de ${longName}` }).click();
+  await expect(page.getByLabel("Número de artículos")).toHaveText("0 artículos");
+  await expect(page.getByLabel("Total de la comanda")).toHaveText("0,00 €");
 });
 
 test("ADMIN can manage Caja products and permanently delete them from the mobile admin screen", async ({ page, cajaApi }) => {

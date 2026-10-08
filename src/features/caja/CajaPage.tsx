@@ -147,8 +147,17 @@ export default function CajaPage() {
     return (
         <div className="rc-page">
             <header className="w-full border-b border-borderSoft bg-surface" aria-hidden={checkoutOpen} inert={checkoutOpen}>
-                <div className="rc-shell flex h-14 items-center">
+                <div className="rc-shell flex h-14 items-center justify-between gap-3">
                     <span className="text-base font-bold text-dark">Caja Susinos</span>
+                    <button
+                        type="button"
+                        className="rc-btn-secondary min-h-9 px-3 text-xs"
+                        aria-label="Actualizar catálogo"
+                        disabled={loading}
+                        onClick={() => setRefreshCatalog((attempt) => attempt + 1)}
+                    >
+                        Actualizar
+                    </button>
                 </div>
             </header>
             <main
@@ -172,27 +181,9 @@ export default function CajaPage() {
                         </button>
                     </div>
                 ) : products.length === 0 ? (
-                    <div className="space-y-3 text-center">
-                        <p className="text-muted">No hay productos disponibles.</p>
-                        <button
-                            type="button"
-                            className="rc-btn-secondary min-h-10 px-4 text-xs"
-                            onClick={() => setRefreshCatalog((attempt) => attempt + 1)}
-                        >
-                            Actualizar catálogo
-                        </button>
-                    </div>
+                    <p className="text-center text-muted">No hay productos disponibles.</p>
                 ) : (
                     <div className="space-y-5" aria-label="Catálogo de Caja">
-                        <div className="flex justify-end">
-                            <button
-                                type="button"
-                                className="rc-btn-secondary min-h-10 px-4 text-xs"
-                                onClick={() => setRefreshCatalog((attempt) => attempt + 1)}
-                            >
-                                Actualizar catálogo
-                            </button>
-                        </div>
                         {(["BEBIDA", "COMIDA"] as const).map((category) => {
                             const categoryProducts = productsByCategory[category];
                             if (categoryProducts.length === 0) return null;
@@ -202,7 +193,7 @@ export default function CajaPage() {
                                     <h2 id={`caja-${category}`} className="mb-2 text-lg font-semibold">
                                         {category === "BEBIDA" ? "Bebida" : "Comida"}
                                     </h2>
-                                    <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                                    <ul className="caja-product-grid grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
                                         {categoryProducts.map((product) => {
                                             const selectedQuantity = selectedQuantities.get(product.id) ?? 0;
                                             return (
@@ -218,15 +209,22 @@ export default function CajaPage() {
                                                                 setCompletionMessage(null);
                                                             }}
                                                         >
-                                                            <span className="line-clamp-2 min-w-0 break-words font-medium" title={product.name}>
+                                                            <span className="caja-product-name line-clamp-2 min-w-0 break-words font-medium" title={product.name}>
                                                                 {product.name}
                                                             </span>
-                                                            <span className="font-semibold">
+                                                            <span className="caja-product-price font-semibold">
                                                                 {priceFormatter.format(product.priceCents / 100)}
                                                             </span>
                                                         </button>
-                                                        {selectedQuantity > 0 && (
-                                                            <div className="caja-catalog-quantity" aria-label={`Ajustar cantidad de ${product.name}`}>
+                                                        <div
+                                                            className="caja-catalog-quantity"
+                                                            aria-label={selectedQuantity > 0
+                                                                ? `Ajustar cantidad de ${product.name}`
+                                                                : undefined}
+                                                            aria-hidden={selectedQuantity === 0}
+                                                        >
+                                                            {selectedQuantity > 0 ? (
+                                                                <>
                                                                 <button
                                                                     type="button"
                                                                     className="caja-touch-button"
@@ -243,8 +241,11 @@ export default function CajaPage() {
                                                                 <span aria-label={`Cantidad seleccionada de ${product.name}`}>
                                                                     ×{selectedQuantity}
                                                                 </span>
-                                                            </div>
-                                                        )}
+                                                                </>
+                                                            ) : (
+                                                                <span className="sr-only">Sin seleccionar</span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </li>
                                             );
