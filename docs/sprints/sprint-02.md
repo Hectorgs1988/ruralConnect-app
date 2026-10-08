@@ -12,7 +12,8 @@ complete flow before deployment.
 
 - Decide and document how the maintained Caja frontend is packaged and
   deployed while preserving a direct Caja entry point and Rural Connect access.
-- Reuse Rural Connect authentication for direct Caja access and API requests.
+- Allow public, anonymous cashier access while retaining Rural Connect
+  authentication for private application areas and Caja administration.
 - Connect the Caja frontend to the shared Caja product API.
 - Remove runtime reads/imports of the legacy static product JSON and any
   duplicated fallback catalog.
@@ -38,44 +39,47 @@ complete flow before deployment.
     or is integrated into the Rural Connect frontend.
   - Both direct Caja access and entry from Rural Connect are supported by the
     chosen approach.
-  - The decision describes how both access paths use the same Rural Connect
-    identity, shared backend, and maintained Caja implementation.
+  - The decision describes how both access paths use the same maintained Caja
+    implementation and shared backend; the public cashier does not require a
+    Rural Connect identity.
   - Any deployment, routing, API-origin, or authentication constraints are
     identified before dependent implementation begins.
 - **Status:** DONE
 
-### S2-01 — Integrating Rural Connect authentication for direct Caja access
+### S2-01 — Defining public Caja access and retaining Rural Connect permissions
 
-- **Objective:** Ensure direct users and users entering Caja from Rural Connect
-  authenticate with the shared Rural Connect identity.
+- **Objective:** Allow external users to use the public Caja cashier without a
+  Rural Connect account while retaining shared authentication for protected
+  Rural Connect functionality and Caja administration.
 - **Responsible agent:** frontend, coordinated with backend
 - **Dependencies:** S2-00
 - **Affected areas:** Caja/Rural Connect frontend authentication and routing;
   shared backend authentication integration
 - **Acceptance criteria:**
-  - Direct Caja access follows the authentication flow supported by the S2-00
-    packaging decision.
-  - API requests use the existing Rural Connect authentication mechanism.
-  - Unauthenticated users are sent through the supported sign-in flow or
-    shown an appropriate access-denied/sign-in state.
-  - Authenticated users retain the expected identity/role when moving between
-    Rural Connect and Caja.
+  - `/caja` is publicly accessible and does not require Rural Connect
+    authentication.
+  - Direct anonymous Caja access uses the same maintained implementation as
+    Rural Connect users.
+  - Rural Connect private routes and Caja administration continue to use
+    existing authentication and authorization.
+  - Authenticated Rural Connect users can enter `/caja` without a second login.
   - No separate Caja credential store or frontend-only administrator secret
     is introduced.
 
 - **Status:** DONE
 
-### S2-02 — Connecting Caja to the shared product API
+### S2-02 — Connecting the public Caja cashier to the shared product API
 
-- **Objective:** Replace static runtime catalog loading with the authenticated
-  shared Caja product API.
+- **Objective:** Replace static runtime catalog loading with the public,
+  active-products-only Caja API.
 - **Responsible agent:** frontend
 - **Dependencies:** S2-01; S1-05
 - **Affected areas:** Maintained Caja frontend data loading, API client/config,
   runtime product-data references
 - **Acceptance criteria:**
-  - The cashier catalog is loaded from `GET /api/caja/products`.
-  - The frontend uses the authenticated Rural Connect API client/pattern.
+  - The cashier catalog is loaded anonymously from `GET /api/caja/products`.
+  - The endpoint returns active products only and does not require an
+    Authorization header.
   - Runtime imports/fetches of `legacy/CajaSusinos/public/products.json` and
     duplicated fallback product catalogs are removed from the maintained
     runtime path.
@@ -184,8 +188,8 @@ complete flow before deployment.
 - **Affected areas:** Frontend end-to-end tests, backend API integration, test
   configuration and fixtures
 - **Acceptance criteria:**
-  - Tests cover direct Caja access and access from Rural Connect with shared
-    authentication.
+  - Tests cover anonymous direct Caja access and access from Rural Connect
+    without requiring a second login.
   - Tests cover loading the API catalog, adding products, changing
     quantities, removing items, and checking ticket totals.
   - Tests cover admin create/edit/deactivate flows and verify that
@@ -212,8 +216,9 @@ complete flow before deployment.
     committed secrets.
   - The deployed frontend can reach the shared Rural Connect backend using
     the approved authentication flow and configured origins/routes.
-  - A smoke test verifies direct Caja entry, sign-in, active catalog loading,
-    and the Rural Connect entry path in the target environment.
+  - A smoke test verifies anonymous direct Caja entry and active catalog
+    loading, as well as the authenticated Rural Connect entry path, in the
+    target environment.
   - The existing `caja-susinos.vercel.app` deployment remains available during
     migration; cutover occurs only after the maintained Rural Connect `/caja`
     implementation passes its agreed validation.
@@ -250,19 +255,24 @@ complete flow before deployment.
 
 - Rural Connect remains the shared backend and database.
 - Caja products remain separate from Despensa products and inventory behavior.
-- Caja remains directly accessible to users; direct access does not require a
-  separate backend or identity system.
-- Rural Connect authentication and role authorization are reused.
+- Caja remains directly accessible to users; cashier use does not require a
+  Rural Connect account, separate backend, or separate identity system.
+- `GET /api/caja/products` is public and returns active products only.
+- Caja administration and all product writes remain authenticated ADMIN-only.
+- Rural Connect private routes remain protected by their existing guards.
+- Authenticated Rural Connect users can enter the same `/caja` implementation
+  without a second login.
 - The approved frontend architecture is Option B: maintain Caja inside the
   Rural Connect frontend under `src/features/caja/`, using its existing
   router, `AuthProvider`, role guards, and API configuration.
-- Caja is directly accessible through a protected route such as `/caja`, and
-  Rural Connect navigation points to that same maintained implementation.
-- Prefer redirecting `caja-susinos.vercel.app` to the canonical Rural Connect
-  `/caja` URL if domain and project control permit it. Do not serve a separate
-  Caja origin unless a concrete deployment requirement later justifies it.
-- Do not implement SSO or cross-domain token sharing in this sprint; revisit
-  only if a separately served Caja origin becomes necessary.
+- Caja is directly accessible through the public `/caja` route, and Rural
+  Connect navigation points to that same maintained implementation.
+- The legacy `caja-susinos.vercel.app` redirects to
+  `https://www.rural-connect.es/caja`, which is compatible with the public
+  cashier route. Do not serve a separate Caja origin unless a concrete
+  deployment requirement later justifies it.
+- Do not implement SSO or cross-domain token sharing; the public cashier and
+  same-origin `/caja` route do not require them.
 - The Rural Connect frontend deploys automatically to Vercel from the Rural
   Connect main branch, and the Rural Connect backend deploys automatically to
   the project owner's server from that same main branch.
@@ -270,12 +280,9 @@ complete flow before deployment.
   Caja repository's main branch. That repository is frozen and receives no new
   product development; all migration and maintenance work belongs in the
   Rural Connect repository.
-- The legacy Caja deployment may remain available temporarily while migration
-  proceeds. Do not cut over `caja-susinos.vercel.app` until the maintained
-  Rural Connect `/caja` experience has been validated.
-- Prefer configuring the legacy Caja domain/project to redirect to the
-  canonical Rural Connect `/caja` URL if control permits, without resuming
-  development in the legacy repository.
+- The legacy Caja redirect to `https://www.rural-connect.es/caja` is
+  compatible with the public cashier route. Keep the target available and do
+  not resume product development in the frozen legacy repository.
 - `legacy/CajaSusinos` is a migration/reference source, not a runtime
   dependency.
 - Existing calculator, cart, ticket, and voucher behavior is preserved unless
@@ -288,12 +295,8 @@ complete flow before deployment.
 
 ## Risks / unknowns
 
-- Confirm control over the legacy Caja Vercel project/domain and the redirect
-  mechanism before cutover; keep the existing deployment available until the
-  maintained Rural Connect implementation is validated.
-- Direct access requires a secure, user-friendly way to obtain and retain
-  Rural Connect authentication. Token/session storage and expiration behavior
-  must follow existing project security patterns.
+- Maintain the legacy Caja redirect target and verify the canonical `/caja`
+  route after deployment.
 - The public catalog API returns active products only. The admin UI may need
   an admin-authorized way to inspect inactive products; confirm this need
   before adding backend scope.
@@ -328,9 +331,10 @@ complete flow before deployment.
 
 ## Recommended execution order
 
-1. Complete S2-00 and get human approval for the frontend packaging/direct
+1. Complete S2-00 and get human approval for the frontend packaging/public
    access decision.
-2. Implement S2-01 authentication and direct-access flow.
+2. Implement S2-01 public cashier access while retaining protected
+   administration and Rural Connect routes.
 3. Implement S2-02 API catalog integration, then S2-03 calculator/cart
    preservation.
 4. Characterize and verify voucher behavior in S2-06 alongside cashier

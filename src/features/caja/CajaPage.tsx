@@ -1,6 +1,4 @@
 import { useEffect, useReducer, useState } from "react";
-import Header from "@/components/Header";
-import { useAuth } from "@/context/AuthContext";
 import { listCajaProducts } from "@/api/caja";
 import type { CajaProduct } from "@/features/caja/types/CajaProduct";
 import CajaTicket from "@/features/caja/components/CajaTicket";
@@ -20,7 +18,6 @@ const priceFormatter = new Intl.NumberFormat("es-ES", {
 });
 
 export default function CajaPage() {
-    const { user, token } = useAuth();
     const [products, setProducts] = useState<CajaProduct[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -35,16 +32,10 @@ export default function CajaPage() {
 
         async function loadProducts() {
             setProducts([]);
-            if (!token) {
-                setError("No se pudo validar la sesión para cargar el catálogo.");
-                setLoading(false);
-                return;
-            }
-
             setLoading(true);
             setError(null);
             try {
-                const catalog = await listCajaProducts(token);
+                const catalog = await listCajaProducts();
                 if (isMounted) setProducts(catalog);
             } catch (loadError) {
                 if (isMounted) {
@@ -61,7 +52,7 @@ export default function CajaPage() {
         return () => {
             isMounted = false;
         };
-    }, [token, refreshCatalog]);
+    }, [refreshCatalog]);
 
     const productsByCategory = {
         BEBIDA: products.filter((product) => product.category === "BEBIDA"),
@@ -94,12 +85,13 @@ export default function CajaPage() {
 
     return (
         <div className="rc-page">
-            <Header />
+            <header className="w-full border-b border-borderSoft bg-surface">
+                <div className="rc-shell flex h-[72px] items-center">
+                    <span className="text-lg font-bold text-dark">Punto de venta</span>
+                </div>
+            </header>
             <main className="rc-shell flex-1 space-y-4 py-10">
                 <h1 className="rc-hero-title">Caja Susinos</h1>
-                <p className="text-center text-sm text-muted">
-                    Sesión iniciada como {user?.name}
-                </p>
                 <CajaTicket
                     lines={ticketLines}
                     itemCount={ticketItemCount}
