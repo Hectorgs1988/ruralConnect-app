@@ -7,22 +7,27 @@ test("Caja catalog and checkout review support quantity changes, removal, totals
   const beer = page.getByRole("button", { name: "Añadir Cerveza E2E a la comanda" });
   await beer.click();
   await beer.click();
-  await page.getByRole("button", { name: "Añadir Pincho E2E a la comanda" }).click();
+  const pincho = page.getByRole("button", { name: "Añadir Pincho E2E a la comanda" });
+  await pincho.click();
   await expect(page.getByLabel("Número de artículos")).toHaveText("3 artículos");
   await expect(page.getByLabel("Total de la comanda")).toHaveText("4,49 €");
+  await page.getByRole("button", { name: "Restar una unidad de Cerveza E2E" }).click();
+  await expect(page.getByLabel("Número de artículos")).toHaveText("2 artículos");
+  await expect(page.getByLabel("Total de la comanda")).toHaveText("2,99 €");
+  await page.getByRole("button", { name: "Restar una unidad de Cerveza E2E" }).click();
+  await expect(page.getByLabel("Número de artículos")).toHaveText("1 artículo");
+  await expect(beer).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByLabel("Total de la comanda")).toHaveText("1,49 €");
   await page.getByRole("button", { name: "Cobrar" }).click();
 
-  await page.getByRole("button", { name: "Sumar una unidad de Cerveza E2E a 1,50 €" }).click();
-  await expect(page.getByLabel("Cantidad de Cerveza E2E", { exact: true })).toHaveText("3");
-  await expect(page.getByLabel("Total revisado")).toHaveText("5,99 €");
-  await page.getByRole("button", { name: "Restar una unidad de Cerveza E2E a 1,50 €" }).click();
-  await page.getByRole("button", { name: "Quitar Pincho E2E de la comanda (1,49 €)" }).click();
-  await expect(page.getByLabel("Número de artículos en revisión")).toHaveText("2 artículos");
-  await expect(page.getByLabel("Total revisado")).toHaveText("3,00 €");
-
-  await page.getByRole("button", { name: "Restar una unidad de Cerveza E2E a 1,50 €" }).click();
-  await page.getByRole("button", { name: "Restar una unidad de Cerveza E2E a 1,50 €" }).click();
+  expect(await page.getByRole("button", { name: /Quitar .* de la comanda/ }).count()).toBe(0);
+  await page.getByRole("button", { name: "Sumar una unidad de Pincho E2E a 1,49 €" }).click();
+  await expect(page.getByLabel("Cantidad de Pincho E2E", { exact: true })).toHaveText("2");
+  await expect(page.getByLabel("Total revisado")).toHaveText("2,98 €");
+  await page.getByRole("button", { name: "Restar una unidad de Pincho E2E a 1,49 €" }).click();
+  await page.getByRole("button", { name: "Restar una unidad de Pincho E2E a 1,49 €" }).click();
   await expect(page.getByText("Aún no hay productos en la comanda.")).toBeVisible();
+  await expect(page.getByLabel("Total revisado")).toHaveText("0,00 €");
   await page.getByRole("button", { name: "Volver" }).click();
   await beer.click();
   await page.getByRole("button", { name: "Cobrar" }).click();
@@ -47,7 +52,7 @@ test("voucher checkout preserves guidance and only completes after confirmation"
   await expect(page.getByRole("button", { name: "Vale 24 EUR" })).toHaveAttribute("aria-pressed", "false");
   await page.getByRole("button", { name: "Vale 12 EUR" }).click();
   await page.getByRole("button", { name: "Confirmar ticket" }).click();
-  await expect(page.getByRole("status")).toContainText("Ticket completado: 1,49");
+  await expect(page.getByRole("status")).toHaveText("Ticket completado");
   await expect(page.getByLabel("Número de artículos")).toHaveText("0 artículos");
 });
 
@@ -73,7 +78,7 @@ test("mobile sticky checkout supports cash and voucher completion without paymen
   await page.getByLabel("Otro importe").fill("3,00");
   await expect(page.getByLabel("Cambio")).toHaveText("0,50 €");
   await page.getByRole("button", { name: "Confirmar ticket" }).click();
-  await expect(page.getByRole("status")).toContainText("No se ha guardado un pedido ni un pago");
+  await expect(page.getByRole("status")).toHaveText("Ticket completado");
 
   await page.getByRole("button", { name: "Añadir Pincho E2E a la comanda" }).click();
   await page.getByRole("button", { name: "Cobrar" }).click();

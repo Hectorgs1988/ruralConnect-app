@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import appRouter from "@/routes";
 import type { CajaProduct } from "@/features/caja/types/CajaProduct";
@@ -134,9 +134,17 @@ describe("Caja product catalog", () => {
         fireEvent.click(await screen.findByRole("button", { name: "Añadir Refresco a la comanda" }));
         fireEvent.click(screen.getByRole("button", { name: "Añadir Refresco a la comanda" }));
 
-        expect(screen.getByText("×2")).toBeInTheDocument();
+        expect(screen.getByLabelText("Cantidad seleccionada de Refresco")).toHaveTextContent("×2");
         expect(screen.getByLabelText("Número de artículos")).toHaveTextContent("2 artículos");
         expect(screen.getByLabelText("Total de la comanda")).toHaveTextContent(/0,38\s*€/);
+        fireEvent.click(screen.getByRole("button", { name: "Restar una unidad de Refresco" }));
+        expect(screen.getByLabelText("Número de artículos")).toHaveTextContent("1 artículo");
+        expect(screen.getByLabelText("Total de la comanda")).toHaveTextContent(/0,19\s*€/);
+        fireEvent.click(screen.getByRole("button", { name: "Restar una unidad de Refresco" }));
+        expect(screen.queryByLabelText("Cantidad seleccionada de Refresco")).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Añadir Refresco a la comanda" })).toHaveAttribute("aria-pressed", "false");
+        expect(screen.getByLabelText("Número de artículos")).toHaveTextContent("0 artículos");
+        expect(screen.getByLabelText("Total de la comanda")).toHaveTextContent(/0,00\s*€/);
     });
 
     it("keeps long product names in accessible compact product cards", async () => {
@@ -149,12 +157,14 @@ describe("Caja product catalog", () => {
         expect(product).toBeInTheDocument();
         expect(product).toHaveTextContent(longName);
         fireEvent.click(product);
-        expect(screen.getByText("×1")).toBeInTheDocument();
-        expect(screen.getByLabelText("Número de artículos")).toHaveTextContent("1 artículo");
-        expect(screen.getByLabelText("Total de la comanda")).toHaveTextContent(/4,50\s*€/);
+        expect(screen.getByLabelText(`Cantidad seleccionada de ${longName}`)).toHaveTextContent("×1");
+        fireEvent.click(screen.getByRole("button", { name: `Restar una unidad de ${longName}` }));
+        expect(screen.getByRole("button", { name: `Añadir ${longName} a la comanda` })).toHaveAttribute("aria-pressed", "false");
+        expect(screen.getByLabelText("Número de artículos")).toHaveTextContent("0 artículos");
+        expect(screen.getByLabelText("Total de la comanda")).toHaveTextContent(/0,00\s*€/);
     });
 
-    it("opens checkout without completing and supports increment, decrement and remove corrections", async () => {
+    it("opens checkout without completing and decrementing one to zero removes the ticket row", async () => {
         mockListCajaProducts.mockResolvedValue([
             makeProduct("refresco-id", "Refresco", "BEBIDA", 100),
         ]);
@@ -165,13 +175,16 @@ describe("Caja product catalog", () => {
         fireEvent.click(screen.getByRole("button", { name: "Cobrar" }));
         expect(screen.getByRole("dialog", { name: "Cobrar" })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Confirmar ticket" })).toBeDisabled();
+        expect(screen.queryByRole("button", { name: /Quitar .* de la comanda/ })).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Sumar una unidad de Refresco a 1,00 €" }));
         expect(screen.getByLabelText("Cantidad de Refresco")).toHaveTextContent("2");
 
         fireEvent.click(screen.getByRole("button", { name: "Restar una unidad de Refresco a 1,00 €" }));
         expect(screen.getByLabelText("Cantidad de Refresco")).toHaveTextContent("1");
-        fireEvent.click(screen.getByRole("button", { name: "Quitar Refresco de la comanda (1,00 €)" }));
+        fireEvent.click(screen.getByRole("button", { name: "Restar una unidad de Refresco a 1,00 €" }));
         expect(screen.getByText("Aún no hay productos en la comanda.")).toBeInTheDocument();
+        expect(screen.getByLabelText("Total revisado")).toHaveTextContent(/0,00\s*€/);
+        expect(screen.queryByRole("button", { name: /Quitar .* de la comanda/ })).not.toBeInTheDocument();
     });
 
     it("disables Cobrar when empty and cancellation preserves the ticket", async () => {
@@ -231,6 +244,68 @@ describe("Caja product catalog", () => {
         )).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Confirmar ticket" })).toBeEnabled();
         expect(screen.getByLabelText("Número de artículos")).toHaveTextContent("1 artículo");
+    });
+
+    it("scrolls only the checkout content to cash and voucher details", async () => {
+        mockListCajaProducts.mockResolvedValue([makeProduct("producto", "Producto", "COMIDA", 1830)]);
+        const pageScroll = vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
+        renderCaja();
+        fireEvent.click(await screen.findByRole("button", { name: "Añadir Producto a la comanda" }));
+        fireEvent.click(screen.getByRole("button", { name: "Cobrar" }));
+
+        const checkoutContent = document.querySelector<HTMLElement>(".caja-checkout-content");
+        expect(checkoutContent).not.toBeNull();
+        const contentScroll = vi.fn();
+        Object.defineProperty(checkoutContent, "scrollTo", { configurable: true, value: contentScroll });
+
+        try {
+            fireEvent.click(screen.getByRole("button", { name: "Efectivo" }));
+            await waitFor(() => expect(contentScroll).toHaveBeenCalledWith(expect.objectContaining({ behavior: "smooth" })));
+            expect(screen.getByRole("region", { name: "Pago en efectivo" })).toBeVisible();
+            expect(pageScroll).not.toHaveBeenCalled();
+
+            contentScroll.mockClear();
+            fireEvent.click(screen.getByRole("button", { name: "Vale 24 EUR" }));
+            await waitFor(() => expect(contentScroll).toHaveBeenCalled());
+            expect(screen.getByText(/Tacha/)).toBeVisible();
+            expect(screen.getByRole("button", { name: "Efectivo" })).toBeVisible();
+            expect(pageScroll).not.toHaveBeenCalled();
+        } finally {
+            pageScroll.mockRestore();
+        }
+    });
+
+    it("scrolls to change after a preset or first valid custom amount without scrolling the page", async () => {
+        mockListCajaProducts.mockResolvedValue([makeProduct("producto", "Producto", "COMIDA", 1830)]);
+        const pageScroll = vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
+        renderCaja();
+        fireEvent.click(await screen.findByRole("button", { name: "Añadir Producto a la comanda" }));
+        fireEvent.click(screen.getByRole("button", { name: "Cobrar" }));
+        fireEvent.click(screen.getByRole("button", { name: "Efectivo" }));
+
+        const checkoutContent = document.querySelector<HTMLElement>(".caja-checkout-content");
+        expect(checkoutContent).not.toBeNull();
+        const contentScroll = vi.fn();
+        Object.defineProperty(checkoutContent, "scrollTo", { configurable: true, value: contentScroll });
+
+        try {
+            await waitFor(() => expect(contentScroll).toHaveBeenCalled());
+            contentScroll.mockClear();
+            fireEvent.click(screen.getByRole("button", { name: "19,00 €" }));
+            await waitFor(() => expect(contentScroll).toHaveBeenCalled());
+            expect(screen.getByLabelText("Cambio")).toBeVisible();
+
+            contentScroll.mockClear();
+            const cashInput = screen.getByLabelText("Otro importe");
+            fireEvent.change(cashInput, { target: { value: "18,00" } });
+            expect(contentScroll).not.toHaveBeenCalled();
+            fireEvent.change(cashInput, { target: { value: "18,50" } });
+            await waitFor(() => expect(contentScroll).toHaveBeenCalled());
+            expect(screen.getByLabelText("Cambio")).toHaveTextContent(/0,20\s*€/);
+            expect(pageScroll).not.toHaveBeenCalled();
+        } finally {
+            pageScroll.mockRestore();
+        }
     });
 
     it("offers adaptive cash presets, exact cash and prominent change", async () => {
@@ -340,7 +415,7 @@ describe("Caja product catalog", () => {
             .toEqual(["2", "1"]);
         expect(screen.getByText(/1,50\s*€ × 2 = 3,00\s*€/)).toBeInTheDocument();
         expect(screen.getByText(/1,80\s*€ × 1 = 1,80\s*€/)).toBeInTheDocument();
-        expect(screen.getByText("×3")).toBeInTheDocument();
+        expect(screen.getByLabelText("Cantidad seleccionada de Cerveza")).toHaveTextContent("×3");
         expect(screen.getByLabelText("Número de artículos en revisión")).toHaveTextContent("3 artículos");
         expect(screen.getByLabelText("Total revisado")).toHaveTextContent(/4,80\s*€/);
     });
@@ -365,7 +440,7 @@ describe("Caja product catalog", () => {
         )).toBeInTheDocument();
     });
 
-    it("routes UI quantity and remove controls to the matching price-snapshot line", async () => {
+    it("routes checkout quantity controls to the matching price-snapshot line", async () => {
         mockListCajaProducts
             .mockResolvedValueOnce([makeProduct("cerveza-id", "Cerveza", "BEBIDA", 150)])
             .mockResolvedValueOnce([makeProduct("cerveza-id", "Cerveza", "BEBIDA", 180)]);
@@ -380,13 +455,17 @@ describe("Caja product catalog", () => {
         expect(screen.getAllByLabelText("Cantidad de Cerveza").map((node) => node.textContent))
             .toEqual(["2", "1"]);
 
-        fireEvent.click(screen.getByRole("button", { name: "Quitar Cerveza de la comanda (1,80 €)" }));
+        expect(screen.queryByRole("button", { name: /Quitar .* de la comanda/ })).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Restar una unidad de Cerveza a 1,50 €" }));
         expect(screen.getAllByLabelText("Cantidad de Cerveza").map((node) => node.textContent))
-            .toEqual(["2"]);
-        expect(screen.getByLabelText("Total revisado")).toHaveTextContent(/3,00\s*€/);
+            .toEqual(["1", "1"]);
+        fireEvent.click(screen.getByRole("button", { name: "Restar una unidad de Cerveza a 1,50 €" }));
+        expect(screen.getAllByLabelText("Cantidad de Cerveza").map((node) => node.textContent))
+            .toEqual(["1"]);
+        expect(screen.getByLabelText("Total revisado")).toHaveTextContent(/1,80\s*€/);
     });
 
-    it("completes once by explicit confirmation without writing persistence", async () => {
+    it("shows temporary completion feedback and clears the ticket without writing persistence", async () => {
         mockListCajaProducts.mockResolvedValue([
             makeProduct("refresco-id", "Refresco", "BEBIDA", 180),
         ]);
@@ -397,14 +476,27 @@ describe("Caja product catalog", () => {
         fireEvent.click(screen.getByRole("button", { name: "Cobrar" }));
         fireEvent.click(screen.getByRole("button", { name: "Efectivo" }));
         fireEvent.change(screen.getByLabelText("Otro importe"), { target: { value: "2,00" } });
-        fireEvent.click(screen.getByRole("button", { name: "Confirmar ticket" }));
+        vi.useFakeTimers();
+        try {
+            fireEvent.click(screen.getByRole("button", { name: "Confirmar ticket" }));
 
-        expect(await screen.findByRole("status")).toHaveTextContent("Ticket completado: 1,80");
-        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-        expect(screen.getByLabelText("Número de artículos")).toHaveTextContent("0 artículos");
-        expect(storageWrite).not.toHaveBeenCalled();
-        expect(mockListCajaProducts).toHaveBeenCalledTimes(1);
-        storageWrite.mockRestore();
+            expect(screen.getByRole("status")).toHaveTextContent("Ticket completado");
+            expect(screen.getByRole("status")).not.toHaveTextContent(/No se ha guardado|pedido|pago/i);
+            expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+            expect(screen.getByLabelText("Número de artículos")).toHaveTextContent("0 artículos");
+            expect(storageWrite).not.toHaveBeenCalled();
+            expect(mockListCajaProducts).toHaveBeenCalledTimes(1);
+            await act(async () => {
+                vi.advanceTimersByTime(2500);
+            });
+            expect(screen.queryByRole("status")).not.toBeInTheDocument();
+            fireEvent.click(screen.getByRole("button", { name: "Añadir Refresco a la comanda" }));
+            expect(screen.queryByRole("status")).not.toBeInTheDocument();
+            expect(screen.getByLabelText("Número de artículos")).toHaveTextContent("1 artículo");
+        } finally {
+            storageWrite.mockRestore();
+            vi.useRealTimers();
+        }
     });
 
     it("keeps the ticket while showing a catalog refresh error", async () => {

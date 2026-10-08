@@ -15,7 +15,6 @@ interface CajaTicketProps {
     totalCents: number;
     onIncrement: (lineId: string) => void;
     onDecrement: (lineId: string) => void;
-    onRemove: (lineId: string) => void;
     onClear: () => void;
 }
 
@@ -25,7 +24,6 @@ export default function CajaTicket({
     totalCents,
     onIncrement,
     onDecrement,
-    onRemove,
     onClear,
 }: CajaTicketProps) {
     return (
@@ -41,7 +39,7 @@ export default function CajaTicket({
             ) : (
                 <ul className="divide-y divide-borderSoft rounded-xl border border-borderSoft">
                     {lines.map((line) => (
-                        <li key={line.lineId} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 p-3">
+                        <li key={line.lineId} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 p-3">
                             <div className="min-w-0">
                                 <p className="break-words font-medium">{line.name}</p>
                                 <p className="text-sm text-muted">
@@ -50,16 +48,7 @@ export default function CajaTicket({
                                     {formatCents(line.priceCents * line.quantity)}
                                 </p>
                             </div>
-                            <button
-                                type="button"
-                                className="caja-touch-button justify-self-end text-error"
-                                aria-label={`Quitar ${line.name} de la comanda (${formatCents(line.priceCents)})`}
-                                title={`Quitar ${line.name} de la comanda`}
-                                onClick={() => onRemove(line.lineId)}
-                            >
-                                ×
-                            </button>
-                            <div className="col-span-2 flex items-center justify-end gap-2" aria-label={`Ajustar cantidad de ${line.name}`}>
+                            <div className="flex shrink-0 items-center gap-2" aria-label={`Ajustar cantidad de ${line.name}`}>
                                 <button
                                     type="button"
                                     className="caja-touch-button"
