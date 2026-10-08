@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import appRouter from "@/routes";
 import type { CajaProduct } from "@/features/caja/types/CajaProduct";
@@ -13,6 +13,7 @@ const mockCajaApi = vi.hoisted(() => ({
     deactivateCajaProduct: vi.fn(),
     reactivateCajaProduct: vi.fn(),
     deleteCajaProduct: vi.fn(),
+    reorderCajaProducts: vi.fn(),
 }));
 const mockAuth = vi.hoisted(() => ({
     state: {
@@ -184,6 +185,151 @@ describe("Caja product administration UI", () => {
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
         expect(appRoot).not.toHaveProperty("inert", true);
         expect(createButton).toHaveFocus();
+    });
+
+    it("opens focused reorder mode, includes inactive products, and changes category", async () => {
+        const inactive = { ...product, id: "inactivo", name: "Producto inactivo", active: false };
+        const food = { ...product, id: "pincho", name: "Pincho", category: "COMIDA" as const };
+        mockCajaApi.listAdminCajaProducts.mockResolvedValue([product, inactive, food]);
+        renderAdminPage();
+        const trigger = await screen.findByRole("button", { name: "Ordenar productos" });
+        fireEvent.click(trigger);
+
+        const dialog = screen.getByRole("dialog");
+        expect(screen.getByRole("heading", { name: "Ordenar productos" })).toBeInTheDocument();
+        expect(screen.getByLabelText("Categoría")).toHaveValue("BEBIDA");
+        expect(screen.getByLabelText("Categoría")).toHaveFocus();
+        expect(dialog).toHaveAttribute("aria-modal", "true");
+        expect(screen.getByRole("main").closest(".rc-page")?.parentElement).toHaveProperty("inert", true);
+        expect(within(dialog).getByText("Cerveza")).toBeInTheDocument();
+        expect(within(dialog).getByText("Producto inactivo")).toBeInTheDocument();
+        expect(within(dialog).getByText("Inactivo")).toBeInTheDocument();
+        expect(within(dialog).queryByRole("searchbox", { name: "Buscar por nombre" })).not.toBeInTheDocument();
+        expect(within(dialog).queryByLabelText("Estado")).not.toBeInTheDocument();
+
+        fireEvent.change(screen.getByLabelText("Categoría"), { target: { value: "COMIDA" } });
+        expect(within(dialog).getByText("Pincho")).toBeInTheDocument();
+        expect(within(dialog).queryByText("Cerveza")).not.toBeInTheDocument();
+        expect(within(dialog).queryByText("Producto inactivo")).not.toBeInTheDocument();
+    });
+
+    it("moves items locally, respects boundaries, and cancel discards the draft", async () => {
+        const water = { ...product, id: "agua", name: "Agua" };
+        const inactive = { ...product, id: "inactivo", name: "Producto inactivo", active: false };
+        mockCajaApi.listAdminCajaProducts.mockResolvedValue([product, water, inactive]);
+        renderAdminPage();
+        const trigger = await screen.findByRole("button", { name: "Ordenar productos" });
+        fireEvent.click(trigger);
+
+        const dialog = screen.getByRole("dialog");
+        const getNamesInOrder = () => within(dialog).getAllByRole("listitem")
+            .map((item) => item.querySelector("p")?.textContent);
+        expect(getNamesInOrder()).toEqual(["Cerveza", "Agua", "Producto inactivo"]);
+        expect(within(dialog).getByRole("button", { name: "Subir Cerveza" })).toBeDisabled();
+        expect(within(dialog).getByRole("button", { name: "Bajar Producto inactivo" })).toBeDisabled();
+
+        fireEvent.click(within(dialog).getByRole("button", { name: "Bajar Cerveza" }));
+        expect(getNamesInOrder()).toEqual(["Agua", "Cerveza", "Producto inactivo"]);
+        expect(mockCajaApi.reorderCajaProducts).not.toHaveBeenCalled();
+
+        fireEvent.click(within(dialog).getByRole("button", { name: "Subir Cerveza" }));
+        expect(getNamesInOrder()).toEqual(["Cerveza", "Agua", "Producto inactivo"]);
+        fireEvent.click(within(dialog).getByRole("button", { name: "Bajar Cerveza" }));
+        fireEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+
+        expect(mockCajaApi.reorderCajaProducts).not.toHaveBeenCalled();
+        expect(trigger).toHaveFocus();
+        fireEvent.click(trigger);
+        const reopenedDialog = screen.getByRole("dialog");
+        expect(within(reopenedDialog).getAllByRole("listitem").map((item) =>
+            item.querySelector("p")?.textContent,
+        )).toEqual(["Cerveza", "Agua", "Producto inactivo"]);
+    });
+
+    it("closes reorder mode on Escape and restores focus to its trigger", async () => {
+        renderAdminPage();
+        const trigger = await screen.findByRole("button", { name: "Ordenar productos" });
+        fireEvent.click(trigger);
+        const dialog = screen.getByRole("dialog");
+        const categorySelect = within(dialog).getByLabelText("Categoría");
+        expect(categorySelect).toHaveFocus();
+        fireEvent.keyDown(dialog, { key: "Escape" });
+
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        expect(trigger).toHaveFocus();
+        expect(mockCajaApi.reorderCajaProducts).not.toHaveBeenCalled();
+    });
+
+    it("saves the complete order, refreshes products, and closes on success", async () => {
+        const water = { ...product, id: "agua", name: "Agua" };
+        const inactive = { ...product, id: "inactivo", name: "Producto inactivo", active: false };
+        mockCajaApi.listAdminCajaProducts
+            .mockResolvedValueOnce([product, water, inactive])
+            .mockResolvedValueOnce([water, product, inactive]);
+        mockCajaApi.reorderCajaProducts.mockResolvedValue({
+            category: "BEBIDA",
+            orderedIds: ["agua", "cerveza", "inactivo"],
+        });
+        renderAdminPage();
+        fireEvent.click(await screen.findByRole("button", { name: "Ordenar productos" }));
+        const dialog = screen.getByRole("dialog");
+        fireEvent.click(within(dialog).getByRole("button", { name: "Bajar Cerveza" }));
+        fireEvent.click(within(dialog).getByRole("button", { name: "Guardar orden" }));
+
+        expect(await screen.findByRole("status")).toHaveTextContent("Orden de productos guardada.");
+        expect(mockCajaApi.reorderCajaProducts).toHaveBeenCalledWith("rural-token", {
+            category: "BEBIDA",
+            orderedIds: ["agua", "cerveza", "inactivo"],
+        });
+        expect(mockCajaApi.listAdminCajaProducts).toHaveBeenCalledTimes(2);
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        expect(screen.getAllByRole("article").map((article) => article.querySelector("h3")?.textContent))
+            .toEqual(["Agua", "Cerveza", "Producto inactivo"]);
+    });
+
+    it("keeps reorder draft visible and reports API failure without refetching", async () => {
+        const water = { ...product, id: "agua", name: "Agua" };
+        mockCajaApi.listAdminCajaProducts.mockResolvedValue([product, water]);
+        mockCajaApi.reorderCajaProducts.mockRejectedValue(new Error("El catálogo cambió"));
+        renderAdminPage();
+        fireEvent.click(await screen.findByRole("button", { name: "Ordenar productos" }));
+        const dialog = screen.getByRole("dialog");
+        fireEvent.click(within(dialog).getByRole("button", { name: "Bajar Cerveza" }));
+        fireEvent.click(within(dialog).getByRole("button", { name: "Guardar orden" }));
+
+        expect(await within(dialog).findByRole("alert")).toHaveTextContent("El catálogo cambió");
+        expect(within(dialog).getAllByRole("listitem").map((item) => item.querySelector("p")?.textContent))
+            .toEqual(["Agua", "Cerveza"]);
+        expect(mockCajaApi.listAdminCajaProducts).toHaveBeenCalledTimes(1);
+    });
+
+    it("prevents duplicate order saves while the request is pending", async () => {
+        let resolveOrder!: (value: { category: "BEBIDA"; orderedIds: string[] }) => void;
+        mockCajaApi.reorderCajaProducts.mockReturnValue(new Promise((resolve) => {
+            resolveOrder = resolve;
+        }));
+        renderAdminPage();
+        fireEvent.click(await screen.findByRole("button", { name: "Ordenar productos" }));
+        const dialog = screen.getByRole("dialog");
+        const saveButton = within(dialog).getByRole("button", { name: "Guardar orden" });
+        fireEvent.click(saveButton);
+
+        const pendingButton = within(dialog).getByRole("button", { name: "Guardando orden..." });
+        expect(pendingButton).toBeDisabled();
+        fireEvent.click(pendingButton);
+        expect(mockCajaApi.reorderCajaProducts).toHaveBeenCalledTimes(1);
+
+        resolveOrder({ category: "BEBIDA", orderedIds: ["cerveza"] });
+        expect(await screen.findByRole("status")).toHaveTextContent("Orden de productos guardada.");
+    });
+
+    it("keeps reorder mode within a narrow mobile viewport", async () => {
+        renderAdminPage();
+        fireEvent.click(await screen.findByRole("button", { name: "Ordenar productos" }));
+
+        expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(document.documentElement.clientWidth);
+        expect(document.querySelector(".caja-admin-dialog-panel")?.scrollWidth)
+            .toBeLessThanOrEqual(document.querySelector(".caja-admin-dialog-panel")?.clientWidth ?? 0);
     });
 
     it("cancels deactivation without mutating and restores focus to the action", async () => {

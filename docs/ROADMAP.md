@@ -172,6 +172,7 @@ An authorized administrator can manage the Caja product catalog using the shared
 - Activate/deactivate product
 - Define price
 - Define category
+- Configure the display order of products within each category
 - Validate admin permissions
 - Connect administration UI to backend API
 

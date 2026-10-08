@@ -1,8 +1,12 @@
 import { apiFetch, getErrorMessage } from "@/api/client";
-import type { CajaProduct } from "@/features/caja/types/CajaProduct";
+import type { CajaProduct, CajaProductCategory } from "@/features/caja/types/CajaProduct";
 
 export type CajaProductCreate = Pick<CajaProduct, "id" | "name" | "category" | "priceCents">;
 export type CajaProductUpdate = Pick<CajaProduct, "name" | "category" | "priceCents">;
+export type CajaProductOrder = {
+    category: CajaProductCategory;
+    orderedIds: string[];
+};
 
 async function assertSuccessfulResponse(response: Response, fallback: string): Promise<void> {
     if (!response.ok) {
@@ -40,6 +44,18 @@ export async function listAdminCajaProducts(token: string): Promise<CajaProduct[
     const response = await apiFetch("/api/caja/admin/products", authenticatedOptions(token));
     await assertSuccessfulResponse(response, "Error al cargar la administración de Caja");
     return (await response.json()) as CajaProduct[];
+}
+
+export async function reorderCajaProducts(
+    token: string,
+    order: CajaProductOrder,
+): Promise<CajaProductOrder> {
+    const response = await apiFetch(
+        "/api/caja/admin/products/order",
+        authenticatedOptions(token, "PUT", order),
+    );
+    await assertSuccessfulResponse(response, "Error al guardar el orden de productos de Caja");
+    return (await response.json()) as CajaProductOrder;
 }
 
 export async function createCajaProduct(

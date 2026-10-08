@@ -126,6 +126,20 @@
     @apply inline-flex items-center justify-center rounded-full bg-red-700 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-700/60 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
+  .caja-admin-reorder-list {
+    @apply m-0 list-none space-y-2 p-0;
+  }
+
+  .caja-admin-reorder-row {
+    @apply flex min-w-0 items-center gap-3 rounded-xl border border-borderSoft bg-surface p-3;
+  }
+
+  .caja-admin-dialog-actions {
+    @apply sticky bottom-0 grid grid-cols-2 gap-2 border-t border-borderSoft bg-surface pt-3;
+    padding-bottom: max(0.25rem, env(safe-area-inset-bottom));
+    margin-bottom: calc(-1 * max(0.25rem, env(safe-area-inset-bottom)));
+  }
+
   @media (min-width: 640px) {
     .caja-admin-dialog-overlay {
       @apply items-center px-4 py-6;
