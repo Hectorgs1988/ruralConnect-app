@@ -89,56 +89,76 @@ test("mobile sticky checkout supports cash and voucher completion without paymen
   expect(prohibitedApiRequests).toEqual([]);
 });
 
-test("ADMIN can create, edit and soft-deactivate a Caja product without exposing it in the cashier catalog", async ({ page, cajaApi }) => {
+test("ADMIN can manage Caja products and permanently delete them from the mobile admin screen", async ({ page, cajaApi }) => {
   await signIn(page, "admin");
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/GestionCajaProductos");
 
   await expect(page.getByRole("heading", { name: "Gestión de productos de Caja" })).toBeVisible();
-  await expect(page.getByRole("row").filter({ hasText: "Inactivo E2E" })).toContainText("Inactivo");
-  await expect(page.getByRole("row", { name: /Cerveza E2E/ })).toBeVisible();
+  await expect(page.getByRole("article").filter({ hasText: "Inactivo E2E" })).toContainText("Inactivo");
+  await expect(page.getByRole("article").filter({ hasText: "Cerveza E2E" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth))
+    .toBe(true);
 
   await page.getByRole("button", { name: "Crear producto" }).click();
   await page.getByRole("textbox", { name: "ID", exact: true }).fill("producto-e2e");
   await page.getByRole("textbox", { name: "Nombre", exact: true }).fill("Producto Nuevo E2E");
-  await page.getByRole("combobox").selectOption("COMIDA");
+  await page.getByLabel("Categoría").selectOption("COMIDA");
   await page.getByLabel("Precio (EUR)").fill("2.35");
   await page.getByRole("button", { name: "Guardar producto" }).click();
   await expect(page.getByText("Producto producto-e2e creado.", { exact: true })).toBeVisible();
 
-  const productRow = page.getByRole("row", { name: /producto-e2e Producto Nuevo E2E/ });
-  await productRow.getByRole("button", { name: "Editar" }).click();
+  const newProductCard = page.getByRole("article").filter({ hasText: "producto-e2e" });
+  await newProductCard.getByRole("button", { name: "Editar" }).click();
   await expect(page.getByRole("textbox", { name: "ID", exact: true })).toHaveAttribute("readonly");
   await page.getByRole("textbox", { name: "Nombre", exact: true }).fill("Producto Editado E2E");
   await page.getByLabel("Precio (EUR)").fill("2.50");
   await page.getByRole("button", { name: "Guardar cambios" }).click();
   await expect(page.getByText("Producto producto-e2e actualizado.", { exact: true })).toBeVisible();
 
-  const editedRow = page.getByRole("row", { name: /producto-e2e Producto Editado E2E/ });
-  await editedRow.getByRole("button", { name: "Desactivar" }).click();
+  const editedProductCard = page.getByRole("article").filter({ hasText: "producto-e2e" });
+  await editedProductCard.getByRole("button", { name: "Desactivar" }).click();
   await page.getByRole("button", { name: "Confirmar desactivación" }).click();
   await expect(page.getByText("Producto producto-e2e desactivado.", { exact: true })).toBeVisible();
-  await expect(page.getByRole("row").filter({ hasText: "producto-e2e" })).toContainText("Inactivo");
+  await expect(page.getByRole("article").filter({ hasText: "producto-e2e" })).toContainText("Inactivo");
 
-  await page.getByRole("link", { name: "Caja Susinos" }).click();
+  await page.goto("/caja");
   await expect(page.getByRole("heading", { name: "Caja Susinos" })).toBeVisible();
   await expect(page.getByText("Producto Editado E2E")).toHaveCount(0);
 
   await page.goto("/GestionCajaProductos");
-  await page.getByRole("row").filter({ hasText: "producto-e2e" })
+  await page.getByRole("article").filter({ hasText: "producto-e2e" })
     .getByRole("button", { name: "Reactivar" }).click();
-  await expect(page.getByRole("heading", { name: "Confirmar reactivación: Producto Editado E2E" }))
+  await expect(page.getByRole("heading", { name: "Reactivar «Producto Editado E2E»" }))
     .toBeVisible();
   await page.getByRole("button", { name: "Confirmar reactivación" }).click();
   await expect(page.getByText("Producto producto-e2e reactivado.", { exact: true })).toBeVisible();
-  await expect(page.getByRole("row").filter({ hasText: "producto-e2e" })).toContainText("Activo");
+  await expect(page.getByRole("article").filter({ hasText: "producto-e2e" })).toContainText("Activo");
   await page.goto("/caja");
   await expect(page.getByRole("button", { name: "Añadir Producto Editado E2E a la comanda" }))
     .toBeVisible();
+
+  await page.goto("/GestionCajaProductos");
+  await page.getByRole("article").filter({ hasText: "producto-e2e" })
+    .getByRole("button", { name: "Editar" }).click();
+  await page.getByRole("button", { name: "Eliminar definitivamente" }).click();
+  await expect(page.getByRole("heading", { name: "Eliminar definitivamente «Producto Editado E2E»" }))
+    .toBeVisible();
+  await expect(page.getByText("Esta acción no se puede deshacer.")).toBeVisible();
+  await page.getByRole("button", { name: "Eliminar definitivamente" }).click();
+  const deleteSuccess = page.getByRole("status");
+  await expect(deleteSuccess).toHaveText("Producto Producto Editado E2E eliminado definitivamente.");
+  await expect(deleteSuccess).toBeHidden({ timeout: 4000 });
+  await expect(page.getByRole("article").filter({ hasText: "producto-e2e" })).toHaveCount(0);
+  await page.goto("/caja");
+  await expect(page.getByRole("button", { name: "Añadir Producto Editado E2E a la comanda" }))
+    .toHaveCount(0);
 
   expect(cajaApi.handledRequests).toContain("POST /api/caja/products");
   expect(cajaApi.handledRequests).toContain("PATCH /api/caja/products/producto-e2e");
   expect(cajaApi.handledRequests).toContain("PATCH /api/caja/products/producto-e2e/deactivate");
   expect(cajaApi.handledRequests).toContain("PATCH /api/caja/products/producto-e2e/reactivate");
+  expect(cajaApi.handledRequests).toContain("DELETE /api/caja/products/producto-e2e");
 });
 
 test("SOCIO is denied Caja administration by the existing role guard", async ({ page }) => {

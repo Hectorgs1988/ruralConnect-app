@@ -129,7 +129,7 @@ export const test = base.extend<Fixtures>({
           status: 204,
           headers: {
             "access-control-allow-origin": "http://localhost:5173",
-            "access-control-allow-methods": "GET, POST, PATCH, OPTIONS",
+            "access-control-allow-methods": "GET, POST, PATCH, DELETE, OPTIONS",
             "access-control-allow-headers": "authorization, content-type",
           },
         });
@@ -184,6 +184,27 @@ export const test = base.extend<Fixtures>({
         const created: CajaE2EProduct = { ...body, active: true, createdAt: now, updatedAt: now };
         products = [...products, created];
         await route.fulfill(jsonResponse(201, created));
+        return;
+      }
+
+      const deleteMatch = url.pathname.match(/^\/api\/caja\/products\/([^/]+)$/);
+      if (deleteMatch && method === "DELETE") {
+        if (!isAuthorized(request, "admin")) {
+          await route.fulfill(jsonResponse(isAuthorized(request) ? 403 : 401, { error: "No autorizado" }));
+          return;
+        }
+        handledRequests.push(`${method} ${url.pathname}`);
+        const id = decodeURIComponent(deleteMatch[1]);
+        const existingProduct = products.some((product) => product.id === id);
+        if (!existingProduct) {
+          await route.fulfill(jsonResponse(404, { error: "Producto no encontrado" }));
+          return;
+        }
+        products = products.filter((product) => product.id !== id);
+        await route.fulfill({
+          status: 204,
+          headers: { "access-control-allow-origin": "http://localhost:5173" },
+        });
         return;
       }
 
