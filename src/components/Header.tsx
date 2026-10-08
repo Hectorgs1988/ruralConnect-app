@@ -10,6 +10,7 @@ const navItems = [
     { to: "/ReservarEspacio", label: "Reservas" },
     { to: "/CompartirCoche", label: "Compartir coche" },
     { to: "/Despensa", label: "Despensa" },
+    { to: "/caja", label: "Caja Susinos" },
 ];
 
 const mobileNavItems = [
@@ -18,6 +19,7 @@ const mobileNavItems = [
     { to: "/ReservarEspacio", label: "Espacios" },
     { to: "/CompartirCoche", label: "Viajes" },
     { to: "/Despensa", label: "Despensa" },
+    { to: "/caja", label: "Caja Susinos" },
     { to: "/AsociacionMosquitos", label: "Descubre Rural Connect" },
 ];
 
