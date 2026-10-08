@@ -96,9 +96,23 @@ test("ADMIN can create, edit and soft-deactivate a Caja product without exposing
   await page.getByRole("link", { name: "Caja Susinos" }).click();
   await expect(page.getByRole("heading", { name: "Caja Susinos" })).toBeVisible();
   await expect(page.getByText("Producto Editado E2E")).toHaveCount(0);
+
+  await page.goto("/GestionCajaProductos");
+  await page.getByRole("row").filter({ hasText: "producto-e2e" })
+    .getByRole("button", { name: "Reactivar" }).click();
+  await expect(page.getByRole("heading", { name: "Confirmar reactivación: Producto Editado E2E" }))
+    .toBeVisible();
+  await page.getByRole("button", { name: "Confirmar reactivación" }).click();
+  await expect(page.getByText("Producto producto-e2e reactivado.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("row").filter({ hasText: "producto-e2e" })).toContainText("Activo");
+  await page.goto("/caja");
+  await expect(page.getByRole("button", { name: "Añadir Producto Editado E2E a la comanda" }))
+    .toBeVisible();
+
   expect(cajaApi.authorizedRequests).toContain("POST /api/caja/products");
   expect(cajaApi.authorizedRequests).toContain("PATCH /api/caja/products/producto-e2e");
   expect(cajaApi.authorizedRequests).toContain("PATCH /api/caja/products/producto-e2e/deactivate");
+  expect(cajaApi.authorizedRequests).toContain("PATCH /api/caja/products/producto-e2e/reactivate");
 });
 
 test("SOCIO is denied Caja administration by the existing role guard", async ({ page }) => {

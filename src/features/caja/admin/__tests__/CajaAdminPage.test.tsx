@@ -11,6 +11,7 @@ const mockCajaApi = vi.hoisted(() => ({
     createCajaProduct: vi.fn(),
     updateCajaProduct: vi.fn(),
     deactivateCajaProduct: vi.fn(),
+    reactivateCajaProduct: vi.fn(),
 }));
 const mockAuth = vi.hoisted(() => ({
     state: {
@@ -72,7 +73,7 @@ describe("Caja product administration UI", () => {
         expect(mockCajaApi.listAdminCajaProducts).toHaveBeenCalledWith("rural-token");
     });
 
-    it("shows active and inactive products without offering reactivation", async () => {
+    it("shows active and inactive products with reactivation available only for inactive products", async () => {
         const inactiveProduct = { ...product, id: "inactiva", name: "Producto inactivo", active: false };
         mockCajaApi.listAdminCajaProducts.mockResolvedValue([product, inactiveProduct]);
 
@@ -80,8 +81,8 @@ describe("Caja product administration UI", () => {
 
         expect(await screen.findByText("Producto inactivo")).toBeInTheDocument();
         expect(screen.getAllByText("Inactivo")).toHaveLength(1);
-        expect(screen.getByText(/no existe una acción de reactivación/i)).toBeInTheDocument();
-        expect(screen.getByText("Reactivación no disponible")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Reactivar" })).toBeInTheDocument();
+        expect(screen.queryByText(/reactivación no disponible/i)).not.toBeInTheDocument();
         expect(screen.getAllByRole("button", { name: "Desactivar" })).toHaveLength(1);
     });
 
@@ -295,8 +296,7 @@ describe("Caja product administration UI", () => {
         expect(await screen.findByRole("status")).toHaveTextContent("Producto cerveza desactivado.");
         expect(mockCajaApi.deactivateCajaProduct).toHaveBeenCalledWith("rural-token", "cerveza");
         expect(await screen.findByText("Inactivo")).toBeInTheDocument();
-        expect(screen.getByText("Reactivación no disponible")).toBeInTheDocument();
-        expect(screen.queryByRole("button", { name: /reactivar/i })).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Reactivar" })).toBeInTheDocument();
         expect(mockCajaApi.listAdminCajaProducts).toHaveBeenCalledTimes(2);
     });
 
@@ -308,6 +308,76 @@ describe("Caja product administration UI", () => {
 
         expect(await screen.findByRole("alert")).toHaveTextContent("No autorizado");
         expect(mockCajaApi.listAdminCajaProducts).toHaveBeenCalledTimes(1);
+    });
+
+    it("confirms reactivation, calls the API, and refreshes the product as active", async () => {
+        const inactiveProduct = { ...product, active: false };
+        mockCajaApi.reactivateCajaProduct.mockResolvedValue(product);
+        mockCajaApi.listAdminCajaProducts
+            .mockResolvedValueOnce([inactiveProduct])
+            .mockResolvedValueOnce([product]);
+        renderAdminPage();
+
+        fireEvent.click(await screen.findByRole("button", { name: "Reactivar" }));
+        expect(screen.getByRole("heading", { name: "Confirmar reactivación: Cerveza" }))
+            .toBeInTheDocument();
+        expect(mockCajaApi.reactivateCajaProduct).not.toHaveBeenCalled();
+
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar reactivación" }));
+
+        expect(await screen.findByText("Producto cerveza reactivado.")).toBeInTheDocument();
+        expect(mockCajaApi.reactivateCajaProduct).toHaveBeenCalledWith("rural-token", "cerveza");
+        expect(await screen.findByText("Activo")).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Reactivar" })).not.toBeInTheDocument();
+        expect(mockCajaApi.listAdminCajaProducts).toHaveBeenCalledTimes(2);
+    });
+
+    it("allows cancelling the reactivation confirmation without an API request", async () => {
+        const inactiveProduct = { ...product, active: false };
+        mockCajaApi.listAdminCajaProducts.mockResolvedValue([inactiveProduct]);
+        renderAdminPage();
+
+        fireEvent.click(await screen.findByRole("button", { name: "Reactivar" }));
+        fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+
+        expect(screen.queryByRole("heading", { name: "Confirmar reactivación: Cerveza" }))
+            .not.toBeInTheDocument();
+        expect(mockCajaApi.reactivateCajaProduct).not.toHaveBeenCalled();
+    });
+
+    it("shows reactivation API errors without refreshing", async () => {
+        const inactiveProduct = { ...product, active: false };
+        mockCajaApi.listAdminCajaProducts.mockResolvedValue([inactiveProduct]);
+        mockCajaApi.reactivateCajaProduct.mockRejectedValue(new Error("No autorizado"));
+        renderAdminPage();
+
+        fireEvent.click(await screen.findByRole("button", { name: "Reactivar" }));
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar reactivación" }));
+
+        expect(await screen.findByRole("alert")).toHaveTextContent("No autorizado");
+        expect(mockCajaApi.listAdminCajaProducts).toHaveBeenCalledTimes(1);
+        expect(screen.getByRole("button", { name: "Reactivar" })).toBeInTheDocument();
+    });
+
+    it("prevents duplicate reactivation submissions while the request is pending", async () => {
+        const inactiveProduct = { ...product, active: false };
+        let resolveReactivation!: (reactivated: CajaProduct) => void;
+        mockCajaApi.listAdminCajaProducts.mockResolvedValue([inactiveProduct]);
+        mockCajaApi.reactivateCajaProduct.mockReturnValue(new Promise((resolve) => {
+            resolveReactivation = resolve;
+        }));
+        renderAdminPage();
+
+        fireEvent.click(await screen.findByRole("button", { name: "Reactivar" }));
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar reactivación" }));
+
+        const pendingButton = screen.getByRole("button", { name: "Reactivando..." });
+        expect(pendingButton).toBeDisabled();
+        fireEvent.click(pendingButton);
+        expect(mockCajaApi.reactivateCajaProduct).toHaveBeenCalledTimes(1);
+
+        resolveReactivation(product);
+        expect(await screen.findByText("Producto cerveza reactivado.")).toBeInTheDocument();
     });
 
     it("prevents duplicate create submissions while the request is pending", async () => {
@@ -333,7 +403,7 @@ describe("Caja product administration UI", () => {
         expect(await screen.findByRole("status")).toHaveTextContent("Producto nuevo creado.");
     });
 
-    it("offers deactivation but no hard-delete action or separate credentials", async () => {
+    it("offers soft-deactivation but no hard-delete action or separate credentials", async () => {
         renderAdminPage();
 
         expect(await screen.findByRole("button", { name: "Desactivar" })).toBeInTheDocument();

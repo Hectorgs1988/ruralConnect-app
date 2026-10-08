@@ -5,6 +5,7 @@ import {
     createCajaProduct,
     deactivateCajaProduct,
     listAdminCajaProducts,
+    reactivateCajaProduct,
     updateCajaProduct,
 } from "@/api/caja";
 import { useAuth } from "@/context/AuthContext";
@@ -28,6 +29,8 @@ export default function CajaAdminPage() {
     const [saving, setSaving] = useState(false);
     const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
     const [deactivationProduct, setDeactivationProduct] = useState<CajaProduct | null>(null);
+    const [reactivatingId, setReactivatingId] = useState<string | null>(null);
+    const [reactivationProduct, setReactivationProduct] = useState<CajaProduct | null>(null);
 
     async function loadProducts(): Promise<CajaProduct[]> {
         if (!token) throw new Error("No se pudo validar la sesión para cargar los productos.");
@@ -56,6 +59,7 @@ export default function CajaAdminPage() {
         setSuccess(null);
         setMutationError(null);
         setDeactivationProduct(null);
+        setReactivationProduct(null);
         setFormProduct(null);
     }
 
@@ -63,6 +67,7 @@ export default function CajaAdminPage() {
         setSuccess(null);
         setMutationError(null);
         setDeactivationProduct(null);
+        setReactivationProduct(null);
         setFormProduct(product);
     }
 
@@ -116,6 +121,26 @@ export default function CajaAdminPage() {
                 : "No se pudo desactivar el producto de Caja.");
         } finally {
             setDeactivatingId(null);
+        }
+    }
+
+    async function confirmReactivation() {
+        if (!token || !reactivationProduct || reactivatingId) return;
+        const productToReactivate = reactivationProduct;
+        setReactivatingId(productToReactivate.id);
+        setMutationError(null);
+        setSuccess(null);
+        try {
+            await reactivateCajaProduct(token, productToReactivate.id);
+            setReactivationProduct(null);
+            setSuccess(`Producto ${productToReactivate.id} reactivado.`);
+            await refreshProducts();
+        } catch (reactivateError) {
+            setMutationError(reactivateError instanceof Error
+                ? reactivateError.message
+                : "No se pudo reactivar el producto de Caja.");
+        } finally {
+            setReactivatingId(null);
         }
     }
 
@@ -176,9 +201,31 @@ export default function CajaAdminPage() {
                     </section>
                 )}
 
+                {reactivationProduct && (
+                    <section className="rc-card space-y-3 p-4" aria-labelledby="caja-reactivation-title">
+                        <h2 id="caja-reactivation-title" className="font-semibold">
+                            Confirmar reactivación: {reactivationProduct.name}
+                        </h2>
+                        <p>El producto volverá a aparecer en el catálogo activo de Caja.</p>
+                        <button
+                            type="button"
+                            className="rc-btn-primary"
+                            disabled={reactivatingId !== null || deactivatingId !== null}
+                            onClick={() => void confirmReactivation()}
+                        >
+                            {reactivatingId === reactivationProduct.id ? "Reactivando..." : "Confirmar reactivación"}
+                        </button>
+                        <button
+                            type="button"
+                            className="rc-btn-secondary"
+                            disabled={reactivatingId !== null || deactivatingId !== null}
+                            onClick={() => setReactivationProduct(null)}
+                        >Cancelar</button>
+                    </section>
+                )}
+
                 <p className="text-sm text-muted">
-                    Los productos inactivos se muestran como tales. No existe una acción de reactivación
-                    disponible en la API actual.
+                    Los productos inactivos pueden reactivarse desde esta lista.
                 </p>
 
                 {loading ? (
@@ -225,7 +272,7 @@ export default function CajaAdminPage() {
                                             <button
                                                 type="button"
                                                 className="rc-btn-secondary"
-                                                disabled={saving || deactivatingId !== null}
+                                                disabled={saving || deactivatingId !== null || reactivatingId !== null}
                                                 onClick={() => openEditForm(product)}
                                             >
                                                 Editar
@@ -234,7 +281,7 @@ export default function CajaAdminPage() {
                                                 <button
                                                     type="button"
                                                     className="rc-btn-secondary"
-                                                    disabled={saving || deactivatingId !== null}
+                                                    disabled={saving || deactivatingId !== null || reactivatingId !== null}
                                                     onClick={() => {
                                                         setSuccess(null);
                                                         setMutationError(null);
@@ -246,9 +293,20 @@ export default function CajaAdminPage() {
                                                 </button>
                                             )}
                                             {!product.active && (
-                                                <span className="text-sm text-muted">
-                                                    Reactivación no disponible
-                                                </span>
+                                                <button
+                                                    type="button"
+                                                    className="rc-btn-secondary"
+                                                    disabled={saving || deactivatingId !== null || reactivatingId !== null}
+                                                    onClick={() => {
+                                                        setSuccess(null);
+                                                        setMutationError(null);
+                                                        setFormProduct(undefined);
+                                                        setDeactivationProduct(null);
+                                                        setReactivationProduct(product);
+                                                    }}
+                                                >
+                                                    Reactivar
+                                                </button>
                                             )}
                                         </td>
                                     </tr>

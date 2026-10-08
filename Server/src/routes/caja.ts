@@ -116,3 +116,16 @@ cajaRouter.patch('/products/:id/deactivate', requireAuth, requireAdmin, async (r
         next(error);
     }
 });
+
+cajaRouter.patch('/products/:id/reactivate', requireAuth, requireAdmin, async (req, res, next) => {
+    try {
+        const product = await prisma.cajaProduct.update({
+            where: { id: req.params.id },
+            data: { active: true },
+        });
+        res.json(product);
+    } catch (error) {
+        if (handlePrismaWriteError(error, res)) return;
+        next(error);
+    }
+});

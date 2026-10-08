@@ -31,6 +31,8 @@ services:
     restart: unless-stopped
     env_file:
       - ./Server/.env
+    environment:
+      NODE_ENV: development
     depends_on:
       - db
     ports:

@@ -225,7 +225,26 @@ complete flow before deployment.
   - Deployment and rollback/recovery steps are documented; no unapproved
     production database writes are performed.
 
-- **Status:** TODO
+- **Status:** DONE
+
+#### Production preflight and rollback
+
+- Production `JWT_SECRET` is confirmed configured in the running backend.
+- Historical default users `admin@test.com` and `socio@test.com` exist in
+  production. Remediation is explicitly deferred to a later security cleanup
+  and is an accepted risk for this release. Automatic creation of these users
+  has been removed from backend startup.
+- `deploy.sh` creates a MySQL backup before deployment, resets production
+  code to `origin/main`, rebuilds the backend image, recreates the backend
+  container, and performs an external health check. It does not roll back
+  automatically.
+- Application rollback is performed by redeploying the previous known-good
+  commit/version. The `CajaProduct` migration is additive, so normal
+  application rollback should leave its table in place. Restore the
+  pre-deployment database backup only for genuine database recovery, not for
+  ordinary application rollback.
+- `seed:caja` remains a one-time, controlled production action; it must not
+  run automatically on backend startup or restart.
 
 ## Approved architectural assumptions
 

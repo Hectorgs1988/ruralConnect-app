@@ -187,6 +187,25 @@ export const test = base.extend<Fixtures>({
         return;
       }
 
+      const reactivateMatch = url.pathname.match(/^\/api\/caja\/products\/([^/]+)\/reactivate$/);
+      if (reactivateMatch && method === "PATCH") {
+        if (!isAuthorized(request, "admin")) {
+          await route.fulfill(jsonResponse(isAuthorized(request) ? 403 : 401, { error: "No autorizado" }));
+          return;
+        }
+        authorizedRequests.push(`${method} ${url.pathname}`);
+        const id = decodeURIComponent(reactivateMatch[1]);
+        const product = products.find((item) => item.id === id);
+        if (!product) {
+          await route.fulfill(jsonResponse(404, { error: "Producto no encontrado" }));
+          return;
+        }
+        product.active = true;
+        product.updatedAt = new Date().toISOString();
+        await route.fulfill(jsonResponse(200, product));
+        return;
+      }
+
       const deactivateMatch = url.pathname.match(/^\/api\/caja\/products\/([^/]+)\/deactivate$/);
       if (deactivateMatch && method === "PATCH") {
         if (!isAuthorized(request, "admin")) {
