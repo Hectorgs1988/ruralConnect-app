@@ -164,6 +164,35 @@ describe("Caja product catalog", () => {
         expect(screen.getByLabelText("Total de la comanda")).toHaveTextContent(/0,00\s*€/);
     });
 
+    it("reserves the same card height and quantity-control region before and after selection", async () => {
+        mockListCajaProducts.mockResolvedValue([
+            makeProduct("corto", "Agua", "BEBIDA", 100),
+            makeProduct("largo", "Bocadillo especial de la casa con ingredientes variados", "BEBIDA", 450),
+        ]);
+
+        renderCaja();
+        const shortProduct = await screen.findByRole("button", { name: "Añadir Agua a la comanda" });
+        const shortCard = shortProduct.closest(".caja-product-card");
+        const longCard = screen.getByRole("button", {
+            name: "Añadir Bocadillo especial de la casa con ingredientes variados a la comanda",
+        }).closest(".caja-product-card");
+        const unselectedSlot = shortCard?.querySelector(".caja-catalog-quantity");
+
+        expect(shortCard).toHaveClass("caja-product-card");
+        expect(longCard).toHaveClass("caja-product-card");
+        expect(unselectedSlot).toHaveAttribute("aria-hidden", "true");
+
+        fireEvent.click(shortProduct);
+
+        expect(shortCard).toHaveClass("is-selected");
+        expect(shortCard?.querySelector(".caja-catalog-quantity"))
+            .toHaveClass("caja-catalog-quantity");
+        expect(shortCard?.querySelector(".caja-catalog-quantity")).not.toHaveAttribute("aria-hidden", "true");
+        expect(longCard).toHaveClass("caja-product-card");
+        expect(screen.getByLabelText("Número de artículos")).toHaveTextContent("1 artículo");
+        expect(screen.getByLabelText("Total de la comanda")).toHaveTextContent(/1,00\s*€/);
+    });
+
     it("opens checkout without completing and decrementing one to zero removes the ticket row", async () => {
         mockListCajaProducts.mockResolvedValue([
             makeProduct("refresco-id", "Refresco", "BEBIDA", 100),
@@ -296,7 +325,7 @@ describe("Caja product catalog", () => {
             expect(screen.getByLabelText("Cambio")).toBeVisible();
 
             contentScroll.mockClear();
-            const cashInput = screen.getByLabelText("Otro importe");
+            const cashInput = screen.getByLabelText("Importe recibido");
             fireEvent.change(cashInput, { target: { value: "18,00" } });
             expect(contentScroll).not.toHaveBeenCalled();
             fireEvent.change(cashInput, { target: { value: "18,50" } });
@@ -320,11 +349,33 @@ describe("Caja product catalog", () => {
         expect(screen.getByRole("button", { name: "50,00 €" })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Confirmar ticket" })).toBeDisabled();
 
-        fireEvent.change(screen.getByLabelText("Otro importe"), { target: { value: "18,30" } });
+        fireEvent.click(screen.getByRole("button", { name: "Exacto" }));
+        expect(screen.getByLabelText("Importe recibido")).toHaveValue("18,30");
+        expect(screen.getByRole("button", { name: "Exacto" })).toHaveAttribute("aria-pressed", "true");
         expect(screen.getByLabelText("Cambio")).toHaveTextContent(/0,00\s*€/);
         expect(screen.getByRole("button", { name: "Confirmar ticket" })).toBeEnabled();
-        fireEvent.change(screen.getByLabelText("Otro importe"), { target: { value: "18.50" } });
+        fireEvent.click(screen.getByRole("button", { name: "19,00 €" }));
+        expect(screen.getByLabelText("Importe recibido")).toHaveValue("19,00");
+        expect(screen.getByRole("button", { name: "Exacto" })).toHaveAttribute("aria-pressed", "false");
+        expect(screen.getByLabelText("Cambio")).toHaveTextContent(/0,70\s*€/);
+        fireEvent.change(screen.getByLabelText("Importe recibido"), { target: { value: "18.50" } });
+        expect(screen.getByLabelText("Importe recibido")).toHaveValue("18.50");
         expect(screen.getByLabelText("Cambio")).toHaveTextContent(/0,20\s*€/);
+    });
+
+    it("shows a single prominent total and one ticket item count in checkout", async () => {
+        mockListCajaProducts.mockResolvedValue([makeProduct("producto", "Producto", "COMIDA", 1830)]);
+
+        renderCaja();
+        fireEvent.click(await screen.findByRole("button", { name: "Añadir Producto a la comanda" }));
+        fireEvent.click(screen.getByRole("button", { name: "Cobrar" }));
+
+        expect(screen.getAllByLabelText("Total revisado")).toHaveLength(1);
+        expect(screen.getByLabelText("Total revisado")).toHaveTextContent(/18,30\s*€/);
+        expect(screen.getAllByLabelText("Número de artículos en revisión")).toHaveLength(1);
+        expect(screen.queryByText(/Total exacto:/)).not.toBeInTheDocument();
+        expect(screen.queryByText(/no se guarda un pedido ni un pago/i)).not.toBeInTheDocument();
+        expect(screen.getByText("Solo se completa este ticket.")).toBeInTheDocument();
     });
 
     it("rejects cash underpayment and malformed custom amounts", async () => {
@@ -334,10 +385,10 @@ describe("Caja product catalog", () => {
         fireEvent.click(await screen.findByRole("button", { name: "Añadir Producto a la comanda" }));
         fireEvent.click(screen.getByRole("button", { name: "Cobrar" }));
         fireEvent.click(screen.getByRole("button", { name: "Efectivo" }));
-        fireEvent.change(screen.getByLabelText("Otro importe"), { target: { value: "18,00" } });
+        fireEvent.change(screen.getByLabelText("Importe recibido"), { target: { value: "18,00" } });
         expect(screen.getByRole("alert")).toHaveTextContent("no alcanza el total");
         expect(screen.getByRole("button", { name: "Confirmar ticket" })).toBeDisabled();
-        fireEvent.change(screen.getByLabelText("Otro importe"), { target: { value: "1.234" } });
+        fireEvent.change(screen.getByLabelText("Importe recibido"), { target: { value: "1.234" } });
         expect(screen.getByRole("alert")).toHaveTextContent("máximo de dos decimales");
         expect(screen.getByRole("button", { name: "Confirmar ticket" })).toBeDisabled();
     });
@@ -351,10 +402,7 @@ describe("Caja product catalog", () => {
         fireEvent.click(screen.getByRole("button", { name: "Efectivo" }));
         fireEvent.click(screen.getByRole("button", { name: "19,00 €" }));
 
-        expect(screen.getByText((_, element) =>
-            element?.tagName === "P"
-            && element.textContent?.replace(/\s+/g, " ").trim() === "Importe recibido: 19,00 €",
-        )).toBeInTheDocument();
+        expect(screen.getByLabelText("Importe recibido")).toHaveValue("19,00");
         expect(screen.getByLabelText("Cambio")).toHaveTextContent(/0,70\s*€/);
     });
 
@@ -372,12 +420,12 @@ describe("Caja product catalog", () => {
         fireEvent.click(await screen.findByRole("button", { name: "Añadir Producto a la comanda" }));
         fireEvent.click(screen.getByRole("button", { name: "Cobrar" }));
         fireEvent.click(screen.getByRole("button", { name: "Efectivo" }));
-        fireEvent.change(screen.getByLabelText("Otro importe"), { target: { value: "2,00" } });
+        fireEvent.change(screen.getByLabelText("Importe recibido"), { target: { value: "2,00" } });
         fireEvent.click(screen.getByRole("button", { name: "Vale 12 EUR" }));
-        expect(screen.queryByLabelText("Otro importe")).not.toBeInTheDocument();
+        expect(screen.queryByLabelText("Importe recibido")).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Volver" }));
         fireEvent.click(screen.getByRole("button", { name: "Cobrar" }));
-        expect(screen.queryByLabelText("Otro importe")).not.toBeInTheDocument();
+        expect(screen.queryByLabelText("Importe recibido")).not.toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Vale 24 EUR" })).toHaveAttribute("aria-pressed", "false");
     });
 
@@ -475,7 +523,7 @@ describe("Caja product catalog", () => {
         fireEvent.click(await screen.findByRole("button", { name: "Añadir Refresco a la comanda" }));
         fireEvent.click(screen.getByRole("button", { name: "Cobrar" }));
         fireEvent.click(screen.getByRole("button", { name: "Efectivo" }));
-        fireEvent.change(screen.getByLabelText("Otro importe"), { target: { value: "2,00" } });
+        fireEvent.change(screen.getByLabelText("Importe recibido"), { target: { value: "2,00" } });
         vi.useFakeTimers();
         try {
             fireEvent.click(screen.getByRole("button", { name: "Confirmar ticket" }));

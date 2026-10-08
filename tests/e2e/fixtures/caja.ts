@@ -71,6 +71,15 @@ function initialProducts(): CajaE2EProduct[] {
       updatedAt: timestamp,
     },
     {
+      id: "bocadillo-e2e",
+      name: "Bocadillo especial de la casa con ingredientes variados",
+      category: "COMIDA",
+      priceCents: 450,
+      active: true,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    },
+    {
       id: "inactivo-e2e",
       name: "Inactivo E2E",
       category: "COMIDA",
