@@ -196,7 +196,7 @@ complete flow before deployment.
   - Existing Rural Connect regression tests relevant to changed shared
     authentication, navigation, and API behavior pass.
 
-- **Status:** TODO
+- **Status:** DONE
 
 ### S2-08 — Preparing deployment and smoke-testing direct Caja access
 
